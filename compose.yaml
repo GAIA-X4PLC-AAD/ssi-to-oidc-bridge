@@ -1,0 +1,120 @@
+version: "3"
+
+services:
+  hydra-migrate:
+    image: oryd/hydra:v2.2.0
+    restart: on-failure
+    networks:
+      - ory-hydra-network
+    command: migrate sql -e --yes
+    environment:
+      - DSN=postgres://hydra:secret@postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
+    depends_on:
+      - postgresd
+
+  hydra:
+    depends_on:
+      - postgresd
+      - jaeger
+    image: oryd/hydra:v2.2.0
+    networks:
+      - ory-hydra-network
+    ports:
+      - 5004:4444 # Public port
+      - 5001:4445 # Admin port
+    command: serve all --dev
+    environment:
+      - LOG_LEAK_SENSITIVE_VALUES=true
+      - URLS_SELF_ISSUER=http://localhost:5004/
+      - URLS_CONSENT=http://localhost:5002/api/consent
+      - URLS_LOGIN=http://localhost:5002/login
+      - DSN=postgres://hydra:secret@postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
+      - SECRETS_SYSTEM=youReallyNeedToChangeThis
+      - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=public,pairwise
+      - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=youReallyNeedToChangeThis
+      - SERVE_PUBLIC_CORS_ENABLED=true
+      - SERVE_PUBLIC_CORS_ALLOWED_METHODS=POST,GET,PUT,DELETE
+      - SERVE_ADMIN_CORS_ENABLED=true
+      - SERVE_ADMIN_CORS_ALLOWED_METHODS=POST,GET,PUT,DELETE
+      - LOG_LEVEL=debug
+      - OAUTH2_EXPOSE_INTERNAL_ERRORS=1
+      - TRACING_PROVIDER=jaeger
+      - TRACING_PROVIDERS_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
+      - TRACING_PROVIDERS_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
+      - TRACING_PROVIDERS_JAEGER_SAMPLING_TYPE=const
+      - TRACING_PROVIDERS_JAEGER_SAMPLING_VALUE=1
+      - WEBFINGER_OIDC_DISCOVERY_USERINFO_URL=http://hydra:4444/userinfo
+      - OIDC_DYNAMIC_CLIENT_REGISTRATION_ENABLED=true
+    restart: on-failure
+
+  postgresd:
+    image: postgres:16
+    networks:
+      - ory-hydra-network
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=hydra
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=hydra
+    volumes:
+      - ./logs:/var/lib/postgresql/data
+    restart: on-failure
+
+  adminer:
+    image: adminer
+    networks:
+      - ory-hydra-network
+    ports:
+      - 9000:8080
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.7.0
+    networks:
+      - ory-hydra-network
+    ports:
+      - 16686:16686
+    restart: on-failure
+
+  # consent:
+  #   networks:
+  #     - ory-hydra-network
+  #   environment:
+  #     - HYDRA_ADMIN_URL=http://hydra:4445
+  #     - NODE_TLS_REJECT_UNAUTHORIZED=0
+  #   image: oryd/hydra-login-consent-node:latest
+  #   ports:
+  #     - 5002:3000
+  #   restart: unless-stopped
+
+  vclogin:
+    environment:
+      - HYDRA_ADMIN_URL=http://hydra:4445
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - NEXT_PUBLIC_TEZOS_RPC_URL=https://ghostnet.ecadinfra.com
+      - NEXT_PUBLIC_BASE_URL=http://localhost:5002
+      - NEXT_PUBLIC_INTERNET_URL=https://b6f3-2003-ee-af00-c900-d86c-d348-d98e-4067.ngrok-free.app
+    networks:
+      - ory-hydra-network
+    ports:
+      - 5002:3000
+    build:
+      context: ./vclogin
+    restart: unless-stopped
+  
+  redis:
+    image: redis:7.2.2
+    networks:
+      - ory-hydra-network
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis-data:/usr/share/redis/data
+    restart: unless-stopped
+
+networks:
+  ory-hydra-network:
+    name: ory-hydra-net

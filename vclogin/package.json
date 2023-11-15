@@ -1,0 +1,48 @@
+{
+  "name": "gxc-vclogin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@airgap/beacon-sdk": "^4.0.1",
+    "@material-tailwind/react": "^2.0.3",
+    "@ory/client": "^0.2.0-alpha.24",
+    "@spruceid/didkit-wasm": "^0.2.1",
+    "@taquito/taquito": "^16.1.2",
+    "@taquito/utils": "^16.1.2",
+    "axios": "^1.4.0",
+    "ioredis": "^5.3.2",
+    "multer": "^1.4.5-lts.1",
+    "next": "13.3.0",
+    "next-connect": "^1.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/multer": "^1.4.7",
+    "@types/node": "^18.15.13",
+    "@types/react": "18.0.37",
+    "@types/react-dom": "18.0.11",
+    "@types/uuid": "^9.0.1",
+    "@wasm-tool/wasm-pack-plugin": "^1.7.0",
+    "autoprefixer": "10.4.14",
+    "eslint": "8.38.0",
+    "eslint-config-next": "13.3.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "postcss": "8.4.23",
+    "prettier": "^2.8.8",
+    "tailwindcss": "3.3.1",
+    "typescript": "5.0.4"
+  },
+  "browser": {
+    "fs": false,
+    "os": false,
+    "path": false
+  }
+}
