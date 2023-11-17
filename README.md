@@ -12,6 +12,15 @@ This bridge allows you to use established OIDC flows to authenticate and authori
 
 There are two main components to this project and a lot of additional containers for monitoring and databases. A company (or at least a small consortium) wanting to support SSI in their existing (or new) systems, is expected to run this full setup to avoid introducing a middle man.
 
+```mermaid
+graph LR
+	Client -- OIDC --> Hydra
+	subgraph gxc-bridge
+	Hydra <-- REST API --> vclogin
+	end
+	vclogin <-- Beacon --> Altme
+```
+
 ### OIDC Provider: Ory Hydra
 
 Hydra is a FOSS and OpenID certified implementation. It should allow any OIDC or OAuth2 client to leverage it as an IdP. For development, it has the advantage of giving us freedom to build a custom login process, as we can specify arbitrary redirects.
