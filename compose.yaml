@@ -58,7 +58,7 @@ services:
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=hydra
     volumes:
-      - ./logs:/var/lib/postgresql/data
+      - ./pgdata:/var/lib/postgresql/data
     restart: on-failure
 
   adminer:

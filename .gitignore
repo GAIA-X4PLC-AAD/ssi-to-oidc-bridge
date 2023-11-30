@@ -1,2 +1,2 @@
-logs/*.txt
-redis-data/*.rdb
+# vscode settings
+.vscode

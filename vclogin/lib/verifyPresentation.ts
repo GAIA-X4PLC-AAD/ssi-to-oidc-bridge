@@ -2,46 +2,25 @@
  * Copyright (C) 2023, Software Engineering for Business Information Systems (sebis) <matthes@tum.de>
  * SPDX-License-Identifier: Apache-2.0
  */
-import { verifyCredential, verifyPresentation } from "@spruceid/didkit-wasm";
+import {
+  verifyCredential,
+  verifyPresentation,
+} from "@spruceid/didkit-wasm-node";
 
-/**
- * Verify the given Verifiable Presentation object, which is expected to contain a credential of type "TezosAssociatedAddress" specifically. This is a specialized method and probably not safe for general use.
- *
- * @param {any} VP - The Verifiable Presentation object to be verified.
- * @return {Promise<boolean>} Returns a Promise that resolves to a boolean indicating whether the Verifiable Presentation was successfully verified or not.
- */
-export const verifyIdentificationPresentation = async (VP: any) => {
-  console.log("Verification endpoint triggered", VP);
+export const verifyAuthenticationPresentation = async (VP: any) => {
   try {
     let status = false;
-    const VC_TYPE = "VerifiableCredential";
-    const VC_TYPE2 = "TezosAssociatedAddress";
-    const VP_TYPE = "VerifiablePresentation";
-    // Check type of the credential (VC or VP)
-    if (VP?.type?.includes(VP_TYPE)) {
-      // Check the data type of the VerifiableCredential field
-      if (VP?.verifiableCredential) {
-        const VC =
-          VP.verifiableCredential.type?.includes(VC_TYPE) &&
-          VP.verifiableCredential.type?.includes(VC_TYPE2)
-            ? VP.verifiableCredential
-            : null;
-        if (VC) {
-          status = await verifyPresentationHelper(VC, VP);
-        } else {
-          const errorMessage =
-            "Unable to find a TezosAssociatedAddress VC in the VP";
-          console.error(errorMessage);
-        }
+    if (VP?.verifiableCredential) {
+      const VC = VP.verifiableCredential;
+      if (VC) {
+        status = await verifyPresentationHelper(VC, VP);
       } else {
-        // No VCs in VP
-        const errorMessage =
-          "Unable to detect verifiable credentials in the VP";
+        const errorMessage = "Unable to find a VC in the VP";
         console.error(errorMessage);
       }
     } else {
-      const errorMessage =
-        "Unable to confirm that this is a Verifiable Presentation.";
+      // No VCs in VP
+      const errorMessage = "Unable to detect verifiable credentials in the VP";
       console.error(errorMessage);
     }
     return status;

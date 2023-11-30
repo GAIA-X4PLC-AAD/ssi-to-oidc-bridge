@@ -1,0 +1,6 @@
+[
+  {
+    "issuer": "did:web:app.altme.io:issuer",
+    "types": ["EmailPass"]
+  }
+]
