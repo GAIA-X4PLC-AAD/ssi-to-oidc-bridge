@@ -9,21 +9,22 @@ import {
 
 export const verifyAuthenticationPresentation = async (VP: any) => {
   try {
-    let status = false;
-    if (VP?.verifiableCredential) {
-      const VC = VP.verifiableCredential;
-      if (VC) {
-        status = await verifyPresentationHelper(VC, VP);
-      } else {
-        const errorMessage = "Unable to find a VC in the VP";
-        console.error(errorMessage);
-      }
-    } else {
-      // No VCs in VP
-      const errorMessage = "Unable to detect verifiable credentials in the VP";
-      console.error(errorMessage);
+    if (!VP?.verifiableCredential) {
+      console.error("Unable to detect verifiable credentials in the VP");
+      return false;
     }
-    return status;
+
+    const creds = Array.isArray(VP.verifiableCredential)
+      ? VP.verifiableCredential
+      : [VP.verifiableCredential];
+
+    for (const cred of creds) {
+      if (!(await verifyPresentationHelper(cred, VP))) {
+        return false;
+      }
+    }
+
+    return true;
   } catch (error) {
     console.error(error);
     return false;
@@ -31,8 +32,6 @@ export const verifyAuthenticationPresentation = async (VP: any) => {
 };
 
 const verifyPresentationHelper = async (VC: any, VP: any): Promise<boolean> => {
-  // TezosAssociatedAddress VCs are signed with the Tezos key, but the VP is signed with a wallet did:key
-  // we need to check that the wallet did:key matches the key confirmed with the Tezos key signature
   if (VP?.holder && VP?.holder === VC?.credentialSubject?.id) {
     // Verify the signature on the VC
     const verifyOptionsString = "{}";
