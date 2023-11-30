@@ -7,7 +7,8 @@ import multer from "multer";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { hydraAdmin } from "@/config/ory";
 import { Redis } from "ioredis";
-import {isTrustedPresentation} from "@/lib/evaluateTrustPolicy";
+import { isTrustedPresentation } from "@/lib/evaluateTrustPolicy";
+import { extractClaims } from "@/lib/extractClaims";
 
 // Multer is a middleware for handling multipart/form-data, which is primarily used for uploading files.
 const upload = multer();
@@ -68,8 +69,8 @@ export default async function handler(
 
         // Verify the presentation and the status of the credential
         if (await verifyAuthenticationPresentation(presentation)) {
-           // Evaluate if the VP should be trusted
-          if(isTrustedPresentation(presentation)) {
+          // Evaluate if the VP should be trusted
+          if (isTrustedPresentation(presentation)) {
             console.log("Presentation verified");
           } else {
             console.log("Presentation not trusted");
@@ -83,10 +84,10 @@ export default async function handler(
           return;
         }
 
-        // Get the address of the user
-        const userDID = presentation["verifiableCredential"]["issuer"];
+        // Get the user claims
+        const userClaims = extractClaims(presentation);
         const challenge = presentation["proof"]["challenge"];
-        console.log("Logging in: " + userDID);
+        console.log("Logging in: " + userClaims.id);
 
         // hydra login
         await hydraAdmin
@@ -95,7 +96,7 @@ export default async function handler(
             hydraAdmin
               .adminAcceptOAuth2LoginRequest(challenge, {
                 // Subject is an alias for user ID. A subject can be a random string, a UUID, an email address, ....
-                subject: userDID,
+                subject: userClaims.id,
                 // This tells hydra to remember the browser and automatically authenticate the user in future requests. This will
                 // set the "skip" parameter in the other route to true on subsequent requests!
                 remember: Boolean(false),
@@ -112,6 +113,7 @@ export default async function handler(
                 //
                 // If that variable is not set, the ACR value will be set to the default passed here ('0')
                 acr: "0",
+                ...userClaims,
               })
               .then(({ data: body }) => {
                 // save the redirect address to redis for the browser
@@ -125,7 +127,7 @@ export default async function handler(
                 );
                 console.log(
                   "Wrote redirect for " +
-                    userDID +
+                    userClaims.id +
                     " to redis: " +
                     String(body.redirect_to),
                 );

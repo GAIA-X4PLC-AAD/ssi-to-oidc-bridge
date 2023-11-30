@@ -25,6 +25,10 @@ export default function Login() {
     );
   };
 
+  const timer = setInterval(() => {
+    refreshData();
+  }, 4000);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
@@ -58,7 +62,7 @@ export default function Login() {
               errorCorrectionLevel: "M",
               margin: 3,
               scale: 4,
-              width: 200,
+              width: 300,
               color: {
                 dark: "#000000FF",
                 light: "#FFFFFFFF",
