@@ -122,12 +122,28 @@ Example result:
 ```
 {
   "active": true,
-  "client_id": "92cb2457-a125-4b41-af31-39a739ccdf19",
-  "exp": 1699045032,
-  "iat": 1699041432,
+  "client_id": "10c75c26-423f-4b3e-9b2c-677d7337db9e",
+  "exp": 1701437721,
+  "ext": {
+    "email": "test@test.com",
+    "ethereumAddress": "0x4C84a36fCDb7Bc750294A7f3B5ad5CA8F74C4A52",
+    "hasCountry": "GER",
+    "hasJurisdiction": "GER",
+    "hasLegallyBindingName": "deltaDAO AG",
+    "hasRegistrationNumber": "DEK1101R.HRB170364",
+    "hash": "9ecf754ffdad0c6de238f60728a90511780b2f7dbe2f0ea015115515f3f389cd",
+    "id": "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
+    "leiCode": "391200FJBNU0YW987L26",
+    "name": "Name Surname",
+    "surname": "Surname",
+    "title": "CEO",
+    "type": "EmployeeCredential"
+  },
+  "iat": 1701434120,
   "iss": "http://localhost:5004/",
-  "nbf": 1699041432,
-  "sub": "did:pkh:tz:tz1Nm5krcMJA899MVKDUUJU5N2torXj3UsPQ",
+  "nbf": 1701434120,
+  "scope": "openid offline",
+  "sub": "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
   "token_type": "Bearer",
   "token_use": "access_token"
 }
