@@ -34,7 +34,7 @@ export default async function handler(
     const { method } = req;
     if (method === "GET") {
       console.log("LOGIN API GET");
-      const challenge = req.query["login_challenge"];
+      const challenge = req.query["login_id"];
       res.status(200).json({
         type: "VerifiablePresentationRequest",
         query: [
@@ -77,7 +77,6 @@ export default async function handler(
             res.status(500).end();
             return;
           }
-          console.log("Presentation verified");
         } else {
           console.log("Presentation invalid");
           res.status(500).end();
@@ -86,8 +85,9 @@ export default async function handler(
 
         // Get the user claims
         const userClaims = extractClaims(presentation);
-        const challenge = presentation["proof"]["challenge"];
-        console.log("Logging in: " + userClaims.id);
+        const login_id = presentation["proof"]["challenge"];
+        const challenge = (await redis.get("" + login_id))!;
+        console.log("Logging in: " + userClaims.id+" with challenge: " + challenge);	
 
         // hydra login
         await hydraAdmin
@@ -113,25 +113,18 @@ export default async function handler(
                 //
                 // If that variable is not set, the ACR value will be set to the default passed here ('0')
                 acr: "0",
-                ...userClaims,
               })
               .then(({ data: body }) => {
                 // save the redirect address to redis for the browser
                 const MAX_AGE = 30; // 30 seconds
                 const EXPIRY_MS = "EX"; // seconds
                 redis.set(
-                  challenge,
+                  "redirect"+login_id,
                   String(body.redirect_to),
                   EXPIRY_MS,
                   MAX_AGE,
                 );
-                console.log(
-                  "Wrote redirect for " +
-                    userClaims.id +
-                    " to redis: " +
-                    String(body.redirect_to),
-                );
-                // phone just get a 200 ok
+                // phone just gets a 200 ok
                 res.status(200).end();
               }),
           )

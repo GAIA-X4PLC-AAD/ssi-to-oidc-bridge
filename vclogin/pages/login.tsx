@@ -2,14 +2,13 @@
  * Copyright (C) 2023, Software Engineering for Business Information Systems (sebis) <matthes@tum.de>
  * SPDX-License-Identifier: Apache-2.0
  */
-import { useSearchParams } from "next/navigation";
 import { Redis } from "ioredis";
 import { NextPageContext } from "next";
 import { useRouter } from "next/router";
 import { useQRCode } from "next-qrcode";
+import { useEffect } from "react";
 
-export default function Login() {
-  const searchParams = useSearchParams();
+export default function Login(props: any) {
   const router = useRouter();
   const { Canvas } = useQRCode();
 
@@ -20,14 +19,17 @@ export default function Login() {
   const getWalletUrl = () => {
     return (
       process.env.NEXT_PUBLIC_INTERNET_URL +
-      "/api/presentCredential?login_challenge=" +
-      searchParams.get("login_challenge")
+      "/api/presentCredential?login_id=" +
+      props.login_id
     );
   };
 
-  const timer = setInterval(() => {
-    refreshData();
-  }, 4000);
+  useEffect(() => {
+    const id = setInterval(() => {
+      refreshData();
+    }, 3000);
+    return () => clearInterval(id);
+  });
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -81,22 +83,35 @@ export default function Login() {
 
 export async function getServerSideProps(context: NextPageContext) {
   try {
-    console.log(
-      "Connecting to redis at: " +
-        process.env.REDIS_HOST +
-        ":" +
-        process.env.REDIS_PORT,
-    );
+    if (context.query["login_challenge"] == undefined) {
+      return {
+        redirect: {
+          destination: "/common/error",
+          permanent: false,
+        },
+      };
+    }
+
     const redis = new Redis(
       parseInt(process.env.REDIS_PORT!),
       process.env.REDIS_HOST!,
     );
 
+    // needs to check if the login_challenge was already turned into a UUID
+    // if not, do it
     const challenge = context.query["login_challenge"];
-    console.log("Challenge: " + context.query["login_challenge"]);
+    var login_id = await redis.get("" + challenge);
+    if (!login_id) {
+      login_id = crypto.randomUUID();
+      const MAX_AGE = 60 * 5; // 5 minutes
+      const EXPIRY_MS = "EX"; // seconds
+      await redis.set("" + challenge, "" + login_id, EXPIRY_MS, MAX_AGE);
+      await redis.set("" + login_id, "" + challenge, EXPIRY_MS, MAX_AGE);
+    }
 
-    const redirect = await redis.get("" + challenge);
-    console.log("Redirect: " + redirect);
+    // needs to check if the login already happened via phone
+    const redirect = await redis.get("redirect" + login_id);
+    console.log("Redirect: " + redirect + " for id " + login_id);
 
     if (redirect) {
       return {
@@ -108,7 +123,7 @@ export async function getServerSideProps(context: NextPageContext) {
     }
 
     return {
-      props: {},
+      props: { login_id: login_id },
     };
   } catch (error) {
     const env = process.env.NODE_ENV;
