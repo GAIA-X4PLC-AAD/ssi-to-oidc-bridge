@@ -87,7 +87,9 @@ export default async function handler(
         const userClaims = extractClaims(presentation);
         const login_id = presentation["proof"]["challenge"];
         const challenge = (await redis.get("" + login_id))!;
-        console.log("Logging in: " + userClaims.id+" with challenge: " + challenge);	
+        console.log(
+          "Logging in: " + userClaims.id + " with challenge: " + challenge,
+        );
 
         // hydra login
         await hydraAdmin
@@ -115,11 +117,20 @@ export default async function handler(
                 acr: "0",
               })
               .then(({ data: body }) => {
-                // save the redirect address to redis for the browser
                 const MAX_AGE = 30; // 30 seconds
                 const EXPIRY_MS = "EX"; // seconds
+
+                // save the user claims to redis
                 redis.set(
-                  "redirect"+login_id,
+                  "" + userClaims.id,
+                  JSON.stringify(userClaims),
+                  EXPIRY_MS,
+                  MAX_AGE,
+                );
+
+                // save the redirect address to redis for the browser
+                redis.set(
+                  "redirect" + login_id,
                   String(body.redirect_to),
                   EXPIRY_MS,
                   MAX_AGE,
