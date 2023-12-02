@@ -18,9 +18,12 @@ export default function Login(props: any) {
 
   const getWalletUrl = () => {
     return (
-      process.env.NEXT_PUBLIC_INTERNET_URL +
-      "/api/presentCredential?login_id=" +
-      props.login_id
+      "openid://?request_uri=" +
+      encodeURIComponent(
+        process.env.NEXT_PUBLIC_INTERNET_URL +
+          "/api/presentCredential?login_id=" +
+          props.login_id,
+      )
     );
   };
 

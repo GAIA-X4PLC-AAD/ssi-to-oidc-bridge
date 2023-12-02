@@ -102,6 +102,8 @@ While the repository already demonstrates a working front-to-back flow, here are
 6. Follow the login flow and present your Account Ownership VC generated on Altme startup
 7. End up at `http://localhost:9010/callback` with metadata about the login being displayed
 
+ISSUE: https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22
+But you can manually replay that request on ngrok interface.
 
 ## Token Introspection
 
