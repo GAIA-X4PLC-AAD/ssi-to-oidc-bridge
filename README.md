@@ -16,21 +16,24 @@ There are two main components to this project and some additional containers for
 
 ```mermaid
 graph LR
-    client[Client<br><i>at Service Provider</i>] -- OIDC via HTTP --> Hydra[Ory Hydra]
+    client[OIDC Client<br><i>Some Service<br>at Service Provider</i>] <-- OIDC via HTTP --> Hydra[Ory Hydra]
     subgraph bridge[Bridge <i>at Service Provider</i>]
     Hydra <-- REST HTTP API --> vclogin
-    Hydra -- TCP / IP --> postgres[(PostgreSQL)]
-    vclogin -- HTTP --> redis[(Redis)]
+    Hydra <-- TCP / IP --> postgres[(PostgreSQL)]
+    vclogin <-- HTTP --> redis[(Redis)]
     end
     vclogin <-- OID4VP + SIOPv2 via HTTP --> altme[Altme Wallet<br><i>on Smartphone</i>]
-    subgraph home[End User]
+    subgraph home[End User Devices]
     browser[Browser<br><i>on Desktop</i>]
     altme
     end
     browser <-- HTTP --> client
+    browser <-- HTTP --> Hydra
+    browser <-- HTTP --> vclogin
 ```
+*Note: In a deployment, external HTTP interfaces should be using HTTPS instead.*
+*Note: While we test with Altme Wallet, any SSI wallet supporting OID4VP + SIOPv2 works.*
 
-*Note: In a realistic deployment, external HTTP interfaces should be using HTTPS instead.*
 
 ### OIDC Provider: Ory Hydra
 
@@ -43,59 +46,60 @@ This custom Next.js web app provides a user frontend for the login process, as w
 
 ## Login Flow
 
-The user starts out on the service website. The flow is slightly simplified for improved readability. For example, the responses for Redis lookups are not shown. This is an authorization code flow:
+The user's browser starts out on the service website, which takes the role of an OIDC client here. The flow is slightly simplified for improved readability. For example, the responses for Redis lookups are not shown. Also, redirects are shown immediately going to the redirect target. This is an authorization code flow:
 
 ```mermaid
 sequenceDiagram
 	autonumber
 	actor User
-	participant Client as User Browser
-	participant Wallet as Smartphone Wallet (Altme)
-	participant VPLS as vclogin
-	participant Redis
-	participant OP as Ory Hydra
-	User->>Client: click "Login with SSI"
-	Client->>OP: redirect to /authorize
-	OP->>VPLS: redirect to /login?login_challenge=<challenge>
-	VPLS->>VPLS: generate random UUID to replace challenge
-	VPLS->>Redis: save (UUID,challenge) and (challenge,UUID)
-	VPLS->>Client: send login page
-	Client->>User: Show login page with QR Code
+	participant Browser
+	participant Client as OIDC Client Web Server
+    participant Wallet as Smartphone Wallet (Altme)
+    participant VPLS as vclogin
+    participant Redis
+    participant OP as Ory Hydra
+	User->>Browser: Click "Login with SSI"
+	Browser->>OP: Redirect to /authorize
+	OP->>VPLS: Redirect to /login?login_challenge=<challenge>
+	VPLS->>VPLS: Generate random UUID to replace challenge
+	VPLS->>Redis: Save (UUID,challenge) and (challenge,UUID)
+	VPLS->>Browser: Send login page
+	Browser->>User: Show login page with QR Code
 	User->>Wallet: Scan QR Code containing SIOP Provider Invocation
 	Wallet->>VPLS: GET /api/presentCredential?login_id=<UUID>
-	VPLS->>VPLS: generate and sign Auth Request JWT
+	VPLS->>VPLS: Generate and sign Auth Request JWT
 	VPLS->>Wallet: Auth Request with Presentation Definition
 	Wallet->>VPLS: GET /api/clientMetadata
 	VPLS->>Wallet: Static Client Metadata
 	Wallet->>User: Prompt for VC Selection & Consent
 	User->>Wallet: Choose VC(s) and confirm
 	Wallet->>Wallet: Create VP
-	Wallet->>VPLS: submit Auth Response via POST /api/presentCredential
-	VPLS->>VPLS: verify VP
-	VPLS->>VPLS: extract and map claims from VP
-	VPLS->>Redis: get challenge using UUID
-	VPLS->>OP: confirm authentication using challenge
-	OP->>VPLS: client redirect link
-	VPLS->>Redis: save (subjectDID, claims)
-	VPLS->>Redis: save ("redirect" + UUID, redirect)
+	Wallet->>VPLS: Submit Auth Response via POST /api/presentCredential
+	VPLS->>VPLS: Verify VP
+	VPLS->>VPLS: Extract and map claims from VP
+	VPLS->>Redis: Get challenge using UUID
+	VPLS->>OP: Confirm authentication using challenge
+	OP->>VPLS: Client redirect link
+	VPLS->>Redis: Save (subjectDID, claims)
+	VPLS->>Redis: Save ("redirect" + UUID, redirect)
 	loop Every few seconds
-		Client->>VPLS: try to retrieve redirect using challenge
+		Browser->>VPLS: Try to retrieve redirect using challenge
 		Note over Client,Redis: Failed lookups omitted
 	end
-	Client->>VPLS: get redirect using challenge
-	VPLS->>Redis: get UUID using challenge
-	VPLS->>Redis: get redirect using UUID
-	VPLS->>OP: redirect to OP
-	OP->>VPLS: redirect to /api/consent?consent_challenge=<challenge2>
-	VPLS->>OP: get consent metadata using challenge2
-	OP->>VPLS: metadata including subjectDID
-	VPLS->>Redis: get claims using subjectDID
-	VPLS->>OP: confirm consent and send user claims
-	OP->>Client: redirect to client callback with code
-	Client->>OP: get tokens using code
+	Browser->>VPLS: Get redirect using challenge
+	VPLS->>Redis: Get UUID using challenge
+	VPLS->>Redis: Get redirect using UUID
+	VPLS->>OP: Redirect to OP
+	OP->>VPLS: Redirect to /api/consent?consent_challenge=<challenge2>
+	VPLS->>OP: Get consent metadata using challenge2
+	OP->>VPLS: Metadata including subjectDID
+	VPLS->>Redis: Get claims using subjectDID
+	VPLS->>OP: Confirm consent and send user claims
+	OP->>Client: Redirect to client callback with code
+	Client->>OP: Get tokens using code
 	OP->>Client: id_token and access_token
+	Client->>Browser: Access to protected service
 ```
-
 
 ## Running a Local Deployment
 
@@ -205,3 +209,7 @@ Example result:
   "token_use": "access_token"
 }
 ```
+
+## Relevant Standards
+
+TODO
