@@ -34,58 +34,57 @@ This custom Next.js web app provides a user frontend for the login process, as w
 
 ## Flow
 
-> [!CAUTION]
-> Flow has slightly changed and needs updating.
-
-The user starts out on the service website. Redirects (mostly) omit the middle step of returning to the browser for readability. Wallet still uses Beacon Protocol, but should ultimately use OpenID4VP.
+The user starts out on the service website. The flow is slightly simplified for improved readability. For example, the responses for Redis lookups are not shown.
 
 ```mermaid
 sequenceDiagram
 	autonumber
 	actor User
-	participant Browser
-	participant Wallet
-	participant Site as Web Service
-	participant Login as Login Endpoint
-	participant OP as OpenID Connect Provider
-	User->>Browser: Click "Login"
-	Browser->>Site: Login Trigger?
-	Site->>OP: Start OAuth2 Flow
-	OP->>Login: Redirect to GET /login?login_challenge=<abc>
-	Login->>Browser: Render custom login page
-	Browser->>User: Ask for VP-based login
-	User->>Browser: Click "Connect Wallet"
-	Browser->>Browser: Generate Beacon QR Code
-	User->>Wallet: Scan QR Code with Wallet
-	Wallet->>Browser: Read QR Code and send basic info
-	Browser->>Login: Redirect to GET /presentCredential?login_challenge=<abc> via Beacon signing request
-	Login->>Wallet: Prompt Wallet for identity VP with challenge
-	Wallet->>User: Ask for consent and choice of VC for VP
-	User->>Wallet: Chooses one identity VC and confirms
-	Wallet->>Wallet: Build and signs VP with challenge
-	Wallet->>Login: Send identity VP to POST /presentCredential
-	Login->>Login: Verify VP and extract challenge and subject
-	Login->>OP: Get login request by challenge
-	OP->>Login: Return login request details
-	Login->>OP: Accept login request
-	OP->>Login: Return redirect url
-	Login->>Login: Save redirect url by challenge
-	Login->>Wallet: Confirm 200 OK
-	loop Success Check
-		Browser->>Site: Automatically ask for login by challenge
+	participant Client as User Browser
+	participant Wallet as Smartphone Wallet (Altme)
+	participant VPLS as vclogin
+	participant Redis
+	participant OP as Ory Hydra
+	User->>Client: click "Login with SSI"
+	Client->>OP: redirect to /authorize
+	OP->>VPLS: redirect to /login?login_challenge=<challenge>
+	VPLS->>VPLS: generate random UUID to replace challenge
+	VPLS->>Redis: save (UUID,challenge) and (challenge,UUID)
+	VPLS->>Client: send login page
+	Client->>User: Show login page with QR Code
+	User->>Wallet: Scan QR Code containing SIOP Provider Invocation
+	Wallet->>VPLS: GET /api/presentCredential?login_id=<UUID>
+	VPLS->>VPLS: generate and sign Auth Request JWT
+	VPLS->>Wallet: Auth Request with Presentation Definition
+	Wallet->>VPLS: GET /api/clientMetadata
+	VPLS->>Wallet: Static Client Metadata
+	Wallet->>User: Prompt for VC Selection & Consent
+	User->>Wallet: Choose VC(s) and confirm
+	Wallet->>Wallet: Create VP
+	Wallet->>VPLS: submit Auth Response via POST /api/presentCredential
+	VPLS->>VPLS: verify VP
+	VPLS->>VPLS: extract and map claims from VP
+	VPLS->>Redis: get challenge using UUID
+	VPLS->>OP: confirm authentication using challenge
+	OP->>VPLS: client redirect link
+	VPLS->>Redis: save (subjectDID, claims)
+	VPLS->>Redis: save ("redirect" + UUID, redirect)
+	loop Every few seconds
+		Client->>VPLS: try to retrieve redirect using challenge
+		Note over Client,Redis: Failed lookups omitted
 	end
-	Site->>OP: Redirect to saved redirect url
-	OP->>Login: Redirect to GET /consent?consent_challenge=<abc>
-	Login->>OP: Get consent request by challenge
-	OP->>Login: Send requested consent info (user, scopes, ...)
-	Login->>OP: Automatically give full consent
-	OP->>Login: Return redirect url
-	Login->>OP: Redirect to redirect url
-	OP->>Site: Redirect with authorization code
-	Site->>Browser: Render callback page
-	Browser->>OP: Request tokens with authorization code
-	OP->>Browser: Access Token (+maybe ID Token)
-	Browser->>Site: Get protected service page with access token
+	Client->>VPLS: get redirect using challenge
+	VPLS->>Redis: get UUID using challenge
+	VPLS->>Redis: get redirect using UUID
+	VPLS->>OP: redirect to OP
+	OP->>VPLS: redirect to /api/consent?consent_challenge=<challenge2>
+	VPLS->>OP: get consent metadata using challenge2
+	OP->>VPLS: metadata including subjectDID
+	VPLS->>Redis: get claims using subjectDID
+	VPLS->>OP: confirm consent and send user claims
+	OP->>Client: redirect to client callback with code
+	Client->>OP: get tokens using code
+	OP->>Client: id_token and access_token
 ```
 
 
