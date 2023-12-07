@@ -12,16 +12,25 @@ This bridge allows you to use established OIDC flows to authenticate and authori
 
 ## Architecture
 
-There are two main components to this project and a lot of additional containers for monitoring and databases. A company (or at least a small consortium) wanting to support SSI in their existing (or new) systems, is expected to run this full setup to avoid introducing a middle man.
+There are two main components to this project and some additional containers for monitoring and databases. A company (or at least a small consortium) wanting to support SSI in their existing (or new) systems, is expected to run this full setup to avoid introducing a middle man:
 
 ```mermaid
 graph LR
-	Client -- OIDC --> Hydra
-	subgraph gxc-bridge
-	Hydra <-- REST API --> vclogin
-	end
-	vclogin <-- Beacon --> Altme
+    client[Client<br><i>at Service Provider</i>] -- OIDC via HTTP --> Hydra[Ory Hydra]
+    subgraph bridge[Bridge <i>at Service Provider</i>]
+    Hydra <-- REST HTTP API --> vclogin
+    Hydra -- TCP / IP --> postgres[(PostgreSQL)]
+    vclogin -- HTTP --> redis[(Redis)]
+    end
+    vclogin <-- OID4VP + SIOPv2 via HTTP --> altme[Altme Wallet<br><i>on Smartphone</i>]
+    subgraph home[End User]
+    browser[Browser<br><i>on Desktop</i>]
+    altme
+    end
+    browser <-- HTTP --> client
 ```
+
+*Note: In a realistic deployment, external HTTP interfaces should be using HTTPS instead.*
 
 ### OIDC Provider: Ory Hydra
 
@@ -29,12 +38,12 @@ Hydra is a FOSS and OpenID certified implementation. It should allow any OIDC or
 
 ### VC Login Service
 
-This custom Next.js web app provides a user frontend for the login process, as well as necessary backend API routes. It handles the wallet connection, the Verifiable Presentaiton exchange, the verification
+This custom Next.js web app provides a user frontend for the login process, as well as necessary backend API routes. It handles the Verifiable Presentation exchange with the wallet, the verification of Verifiable Presentations and of the Verifiable Credentials inside, and the extraction and remapping of claims.
 
 
-## Flow
+## Login Flow
 
-The user starts out on the service website. The flow is slightly simplified for improved readability. For example, the responses for Redis lookups are not shown.
+The user starts out on the service website. The flow is slightly simplified for improved readability. For example, the responses for Redis lookups are not shown. This is an authorization code flow:
 
 ```mermaid
 sequenceDiagram
@@ -144,6 +153,11 @@ DID_KEY_JWK=<Ed25519 JWK>
 5. in `vclogin` directory: `$ npm run dev`
 
 Now you can develop and it will hot-reload.
+
+
+## Policy Configuration
+
+TODO
 
 
 ## Token Introspection

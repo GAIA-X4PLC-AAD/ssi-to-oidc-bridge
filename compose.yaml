@@ -15,7 +15,7 @@ services:
   hydra:
     depends_on:
       - postgresd
-      - jaeger
+      # - jaeger
     image: oryd/hydra:v2.2.0
     networks:
       - ory-hydra-network
@@ -24,7 +24,6 @@ services:
       - 5001:4445 # Admin port
     command: serve all --dev
     environment:
-      - LOG_LEAK_SENSITIVE_VALUES=true
       - URLS_SELF_ISSUER=http://localhost:5004/
       - URLS_CONSENT=http://localhost:5002/api/consent
       - URLS_LOGIN=http://localhost:5002/login
@@ -37,12 +36,13 @@ services:
       - SERVE_ADMIN_CORS_ENABLED=true
       - SERVE_ADMIN_CORS_ALLOWED_METHODS=POST,GET,PUT,DELETE
       - LOG_LEVEL=debug
+      - LOG_LEAK_SENSITIVE_VALUES=true
       - OAUTH2_EXPOSE_INTERNAL_ERRORS=1
-      - TRACING_PROVIDER=jaeger
-      - TRACING_PROVIDERS_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
-      - TRACING_PROVIDERS_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
-      - TRACING_PROVIDERS_JAEGER_SAMPLING_TYPE=const
-      - TRACING_PROVIDERS_JAEGER_SAMPLING_VALUE=1
+      # - TRACING_PROVIDER=jaeger
+      # - TRACING_PROVIDERS_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
+      # - TRACING_PROVIDERS_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
+      # - TRACING_PROVIDERS_JAEGER_SAMPLING_TYPE=const
+      # - TRACING_PROVIDERS_JAEGER_SAMPLING_VALUE=1
       - WEBFINGER_OIDC_DISCOVERY_USERINFO_URL=http://hydra:4444/userinfo
       - OIDC_DYNAMIC_CLIENT_REGISTRATION_ENABLED=true
     restart: on-failure
@@ -61,32 +61,21 @@ services:
       - ./pgdata:/var/lib/postgresql/data
     restart: on-failure
 
-  adminer:
-    image: adminer
-    networks:
-      - ory-hydra-network
-    ports:
-      - 9000:8080
-    restart: unless-stopped
-
-  jaeger:
-    image: jaegertracing/all-in-one:1.7.0
-    networks:
-      - ory-hydra-network
-    ports:
-      - 16686:16686
-    restart: on-failure
-
-  # consent:
+  # adminer:
+  #   image: adminer
   #   networks:
   #     - ory-hydra-network
-  #   environment:
-  #     - HYDRA_ADMIN_URL=http://hydra:4445
-  #     - NODE_TLS_REJECT_UNAUTHORIZED=0
-  #   image: oryd/hydra-login-consent-node:latest
   #   ports:
-  #     - 5002:3000
+  #     - 9000:8080
   #   restart: unless-stopped
+
+  # jaeger:
+  #   image: jaegertracing/all-in-one:1.7.0
+  #   networks:
+  #     - ory-hydra-network
+  #   ports:
+  #     - 16686:16686
+  #   restart: on-failure
 
   vclogin:
     env_file:
