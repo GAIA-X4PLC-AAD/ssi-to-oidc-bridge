@@ -95,7 +95,6 @@ services:
       - HYDRA_ADMIN_URL=http://hydra:4445
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - TRUST_POLICY=./__tests__/testdata/policies/acceptAnything.json
       - NODE_TLS_REJECT_UNAUTHORIZED=0
     networks:
       - ory-hydra-network

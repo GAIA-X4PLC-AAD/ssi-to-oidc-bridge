@@ -1,12 +1,14 @@
-# Gaia-X Credentials Bridge
+# Universal VC-to-OIDC Bridge
 
 > [!WARNING]
-> This repository is in early development and not feature complete.
+> This repository is intended for prototyping and as a reference implementation.
+
+> [!NOTE]
+> This software artifact was originally intended to support only Gaia-X Participant Credentials. It has since evolved to be fully configurable for almost any Verifiable Credential, almost any wallet application, and almost any current OIDC client.
 
 ## Overview
 
-This bridge allows you to use established OIDC flows to authenticate and authorize users that have W3C Verifiable Credentials. As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their GX Participant Credential to access systems while making integration simpler through using established SSO protocols.
-
+This bridge allows you to use established OIDC flows to authenticate and authorize users that have W3C Verifiable Credentials. As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems while making integration simpler through using established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
 
 ## Architecture
 
@@ -31,6 +33,9 @@ This custom Next.js web app provides a user frontend for the login process, as w
 
 
 ## Flow
+
+> [!CAUTION]
+> Flow has slightly changed and needs updating.
 
 The user starts out on the service website. Redirects (mostly) omit the middle step of returning to the browser for readability. Wallet still uses Beacon Protocol, but should ultimately use OpenID4VP.
 
@@ -84,26 +89,48 @@ sequenceDiagram
 ```
 
 
-## Development Roadmap
+## Running a Local Deployment
 
-While the repository already demonstrates a working front-to-back flow, here are some pointers to the main features still missing:
-- support for real GX Participant Credentials and their proper verification
-- a trusted issuer list and possibly access policies
-- OpenID4VP support
+> [!WARNING]
+> You need to use a tool like ngrok for testing so your smartphone wallet can access the vclogin backend. However, it can lead to issues with `application/x-www-form-urlencoded` request bodies used in the flow (https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22). But you can manually replay that request on ngrok interface, if you run into problems.
+
+1. `$ ngrok http 5002`, which will set up a randomly generated URL
+2. enter the domain for the vclogin service into the env file `/vclogin/.env` with key `EXTERNAL_URL`
+3. enter a JWK key (Ed25519) into the env file `./vclogin/.env` with key `EXTERNAL_URL` (example for quick testing: `{"kty":"OKP","crv":"Ed25519","x":"cwa3dufHNLg8aQb2eEUqTyoM1cKQW3XnOkMkj_AAl5M","d":"me03qhLByT-NKrfXDeji-lpADSpVOKWoaMUzv5EyzKY"}`)
+4. enter the path to a trust policy file into the env file `/vclogin/.env` with key `TRUST_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
+5. `$ docker compose up`
+
+To validate running bridge with a simple OIDC client:
+1. `$ ./test_client.sh`
+2. go to `http://localhost:9010` in browser
+3. download Altme Wallet (and set up new wallet)
+4. follow the login flow and present your Account Ownership VC generated on Altme startup
+5. end up at `http://localhost:9010/callback` with metadata about the login being displayed
 
 
-## Running it for testing
+## Running for Development
+The repository comes with a VSCode devcontainer configuration. We recommend using it. To develop the vclogin service, follow these steps:
 
-1. `$ ngrok http 5002` and enter the domain into the compose file for the vclogin
-2. `$ docker compose up`
-3. `$ ./test_client.sh`
-4. Go to `http://localhost:9010`
-5. Download Altme Wallet and setup new account
-6. Follow the login flow and present your Account Ownership VC generated on Altme startup
-7. End up at `http://localhost:9010/callback` with metadata about the login being displayed
+1. `$ ngrok http 3000`, which will set up a randomly generated URL
+2. create the file `./vclogin/env.local`
 
-ISSUE: https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22
-But you can manually replay that request on ngrok interface.
+```
+HYDRA_ADMIN_URL=http://localhost:5001
+REDIS_HOST=localhost
+REDIS_PORT=6379
+NODE_TLS_REJECT_UNAUTHORIZED=0
+TRUST_POLICY=./__tests__/testdata/policies/acceptAnything.json
+EXTERNAL_URL=<ngrok url>
+DID_KEY_JWK=<Ed25519 JWK>
+
+```
+
+3. `$ docker compose up`
+4. `$ docker compose stop vclogin`
+5. in `vclogin` directory: `$ npm run dev`
+
+Now you can develop and it will hot-reload.
+
 
 ## Token Introspection
 
