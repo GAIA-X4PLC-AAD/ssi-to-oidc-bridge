@@ -109,7 +109,23 @@ To validate running bridge with a simple OIDC client:
 
 
 ## Running for Development
-The repository comes with a VSCode devcontainer configuration. We recommend using it. To develop the vclogin service, follow these steps:
+The repository comes with a VSCode devcontainer configuration. We recommend using it. To prepare your VSCode setup, you need two settings files.
+
+`./.vscode/settings.json` contains:
+```
+{
+  "eslint.workingDirectories": ["./vclogin"]
+}
+```
+
+`./vclogin/.vscode/settings.json` contains:
+```
+{
+  "prettier.prettierPath": "./node_modules/prettier"
+}
+```
+
+To develop the vclogin service, follow these steps:
 
 1. `$ ngrok http 3000`, which will set up a randomly generated URL
 2. create the file `./vclogin/env.local`
@@ -122,7 +138,6 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 TRUST_POLICY=./__tests__/testdata/policies/acceptAnything.json
 EXTERNAL_URL=<ngrok url>
 DID_KEY_JWK=<Ed25519 JWK>
-
 ```
 
 3. `$ docker compose up`
