@@ -89,15 +89,14 @@ services:
   #   restart: unless-stopped
 
   vclogin:
+    env_file:
+      - ./vclogin/.env
     environment:
       - HYDRA_ADMIN_URL=http://hydra:4445
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - TRUST_POLICY=./__tests__/testdata/policies/acceptAnything.json
       - NODE_TLS_REJECT_UNAUTHORIZED=0
-      - NEXT_PUBLIC_TEZOS_RPC_URL=https://ghostnet.ecadinfra.com
-      - NEXT_PUBLIC_BASE_URL=http://localhost:5002
-      - NEXT_PUBLIC_INTERNET_URL=https://f1c2-2003-ee-af45-6c00-82c-4725-17ad-55b7.ngrok-free.app
     networks:
       - ory-hydra-network
     ports:
@@ -105,7 +104,7 @@ services:
     build:
       context: ./vclogin
     restart: unless-stopped
-  
+
   redis:
     image: redis:7.2.2
     networks:

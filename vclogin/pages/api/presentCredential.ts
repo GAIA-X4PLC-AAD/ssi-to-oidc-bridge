@@ -8,7 +8,6 @@ import { hydraAdmin } from "@/config/ory";
 import { Redis } from "ioredis";
 import { isTrustedPresentation } from "@/lib/evaluateTrustPolicy";
 import { extractClaims } from "@/lib/extractClaims";
-import { createSecretKey, generateKeyPairSync } from "crypto";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 
@@ -38,7 +37,7 @@ export default async function handler(
         client_id: did,
         client_id_scheme: "did",
         client_metadata_uri:
-          process.env.NEXT_PUBLIC_INTERNET_URL + "/api/clientMetadata",
+          process.env.EXTERNAL_URL + "/api/clientMetadata",
         nonce: challenge,
         presentation_definition: {
           format: {
@@ -83,7 +82,7 @@ export default async function handler(
         response_mode: "direct_post",
         response_type: "vp_token",
         response_uri:
-          process.env.NEXT_PUBLIC_INTERNET_URL + "/api/presentCredential",
+          process.env.EXTERNAL_URL + "/api/presentCredential",
         state: challenge,
       };
       const privateKey = await jose.importJWK(

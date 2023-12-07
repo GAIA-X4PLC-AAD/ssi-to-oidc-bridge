@@ -20,7 +20,7 @@ export default function Login(props: any) {
     return (
       "openid://?request_uri=" +
       encodeURIComponent(
-        process.env.NEXT_PUBLIC_INTERNET_URL +
+        props.external_url +
           "/api/presentCredential?login_id=" +
           props.login_id,
       )
@@ -126,13 +126,13 @@ export async function getServerSideProps(context: NextPageContext) {
     }
 
     return {
-      props: { login_id: login_id },
+      props: { login_id: login_id, external_url: process.env.EXTERNAL_URL },
     };
   } catch (error) {
     const env = process.env.NODE_ENV;
     if (env == "development") {
       return {
-        props: {},
+        props: { external_url: process.env.EXTERNAL_URL },
       };
     } else if (env == "production") {
       return {
