@@ -1,4 +1,7 @@
-import { isTrustedPresentation } from "@/lib/evaluateTrustPolicy";
+import {
+  isTrustedPresentation,
+  exportedForTesting,
+} from "@/lib/evaluateTrustPolicy";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
 import vpTezos from "@/testdata/presentations/VP_TezosAssociatedAddress.json";
@@ -45,5 +48,35 @@ describe("evaluateTrustPolicy", () => {
     expect(trusted).toBe(true);
     trusted = isTrustedPresentation(vpEmployee, policyFromAltme);
     expect(trusted).toBe(false);
+  });
+});
+
+describe("utility function for VP policy validation", () => {
+  let hasUniquePath = exportedForTesting.hasUniquePath;
+
+  it("should return true when there is a unique path", () => {
+    const patternFits = [
+      ["A", "B"],
+      ["C", "D"],
+      ["E", "F"],
+    ];
+    const usedCreds = ["A", "C", "E"];
+    expect(hasUniquePath(patternFits, usedCreds)).toBe(true);
+  });
+
+  it("should return false when there is no unique path", () => {
+    const patternFits = [
+      ["A", "B"],
+      ["C", "D"],
+      ["E", "F"],
+    ];
+    const usedCreds = ["A", "C", "E", "B"];
+    expect(hasUniquePath(patternFits, usedCreds)).toBe(false);
+  });
+
+  it("should return false when the patternFits array has only one subarray with no elements", () => {
+    const patternFits = [[]];
+    const usedCreds = [];
+    expect(hasUniquePath(patternFits, usedCreds)).toBe(false);
   });
 });

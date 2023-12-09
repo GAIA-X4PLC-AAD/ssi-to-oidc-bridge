@@ -1,6 +1,24 @@
 [
   {
-    "issuer": "*",
-    "types": ["EmployeeCredential"]
+    "credentialID": "one",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.hasLegallyBindingName",
+            "required": true
+          },
+          {
+            "claimPath": "$.credentialSubject.name",
+            "required": true
+          },
+          {
+            "claimPath": "$.credentialSubject.email",
+            "required": true
+          }
+        ]
+      }
+    ]
   }
 ]

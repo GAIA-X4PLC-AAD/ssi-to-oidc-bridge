@@ -86,7 +86,8 @@ export default function Login(props: any) {
 
 export async function getServerSideProps(context: NextPageContext) {
   try {
-    if (context.query["login_challenge"] == undefined) {
+    const loginChallenge = context.query["login_challenge"];
+    if (loginChallenge === undefined) {
       return {
         redirect: {
           destination: "/common/error",
@@ -100,21 +101,16 @@ export async function getServerSideProps(context: NextPageContext) {
       process.env.REDIS_HOST!,
     );
 
-    // needs to check if the login_challenge was already turned into a UUID
-    // if not, do it
-    const challenge = context.query["login_challenge"];
-    var login_id = await redis.get("" + challenge);
-    if (!login_id) {
-      login_id = crypto.randomUUID();
+    let loginId = await redis.get("" + loginChallenge);
+    if (!loginId) {
+      loginId = crypto.randomUUID();
       const MAX_AGE = 60 * 5; // 5 minutes
       const EXPIRY_MS = "EX"; // seconds
-      await redis.set("" + challenge, "" + login_id, EXPIRY_MS, MAX_AGE);
-      await redis.set("" + login_id, "" + challenge, EXPIRY_MS, MAX_AGE);
+      await redis.set("" + loginChallenge, "" + loginId, EXPIRY_MS, MAX_AGE);
+      await redis.set("" + loginId, "" + loginChallenge, EXPIRY_MS, MAX_AGE);
     }
 
-    // needs to check if the login already happened via phone
-    const redirect = await redis.get("redirect" + login_id);
-    console.log("Redirect: " + redirect + " for id " + login_id);
+    const redirect = await redis.get("redirect" + loginId);
 
     if (redirect) {
       return {
@@ -126,21 +122,14 @@ export async function getServerSideProps(context: NextPageContext) {
     }
 
     return {
-      props: { login_id: login_id, external_url: process.env.EXTERNAL_URL },
+      props: { loginId, externalUrl: process.env.EXTERNAL_URL },
     };
   } catch (error) {
-    const env = process.env.NODE_ENV;
-    if (env == "development") {
-      return {
-        props: { external_url: process.env.EXTERNAL_URL },
-      };
-    } else if (env == "production") {
-      return {
-        redirect: {
-          destination: "/common/error",
-          permanent: false,
-        },
-      };
-    }
+    return {
+      redirect: {
+        destination: "/common/error",
+        permanent: false,
+      },
+    };
   }
 }

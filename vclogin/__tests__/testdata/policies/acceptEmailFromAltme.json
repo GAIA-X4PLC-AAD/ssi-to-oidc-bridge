@@ -1,6 +1,18 @@
 [
   {
-    "issuer": "did:web:app.altme.io:issuer",
-    "types": ["EmailPass"]
+    "credentialID": "one",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email",
+            "newPath": "$.email_verified",
+            "token": "id_token",
+            "required": true
+          }
+        ]
+      }
+    ]
   }
 ]
