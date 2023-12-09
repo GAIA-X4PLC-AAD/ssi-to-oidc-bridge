@@ -139,7 +139,7 @@ The repository comes with a VSCode devcontainer configuration. We recommend usin
 
 To develop the vclogin service, follow these steps:
 
-1. `$ ngrok http 3000`, which will set up a randomly generated URL
+1. `$ ngrok http 5002`, which will set up a randomly generated URL
 2. create the file `./vclogin/env.local`
 
 ```

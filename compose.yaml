@@ -57,8 +57,6 @@ services:
       - POSTGRES_USER=hydra
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=hydra
-    volumes:
-      - ./pgdata:/var/lib/postgresql/data
     restart: on-failure
 
   # adminer:
@@ -99,8 +97,6 @@ services:
       - ory-hydra-network
     ports:
       - 6379:6379
-    volumes:
-      - ./redis-data:/usr/share/redis/data
     restart: unless-stopped
 
 networks:
