@@ -20,9 +20,9 @@ export default function Login(props: any) {
     return (
       "openid://?request_uri=" +
       encodeURIComponent(
-        props.external_url +
+        props.externalUrl +
           "/api/presentCredential?login_id=" +
-          props.login_id,
+          props.loginId,
       )
     );
   };
