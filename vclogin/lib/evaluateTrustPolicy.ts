@@ -1,28 +1,9 @@
-import { promises as fs } from "fs";
+import { CredentialPattern, LoginPolicy } from "@/types/LoginPolicy";
 import jp from "jsonpath";
-
-type ClaimEntry = {
-  claimPath: string;
-  newPath?: string;
-  token?: string;
-  required?: boolean;
-};
-type CredentialPattern = {
-  issuer: string;
-  claims: ClaimEntry[];
-};
-type ExpectedCredential = {
-  credentialID: string;
-  patterns: CredentialPattern[];
-};
-type LoginPolicy = ExpectedCredential[];
-
-var configuredPolicy: LoginPolicy | undefined = undefined;
-fs.readFile(process.env.TRUST_POLICY as string, "utf8").then((file) => {
-  configuredPolicy = JSON.parse(file);
-});
+import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 
 export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;

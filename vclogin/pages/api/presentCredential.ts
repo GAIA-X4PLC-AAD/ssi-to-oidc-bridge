@@ -10,6 +10,8 @@ import { isTrustedPresentation } from "@/lib/evaluateTrustPolicy";
 import { extractClaims } from "@/lib/extractClaims";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
+import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
+import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 
 var redis: Redis;
 try {
@@ -27,6 +29,9 @@ export default async function handler(
     if (method === "GET") {
       console.log("LOGIN API GET");
       console.log(req.query);
+      const presentation_definition = generatePresentationDefinition(
+        getConfiguredLoginPolicy()!,
+      );
       const did = await keyToDID("key", process.env.DID_KEY_JWK!);
       const verificationMethod = await keyToVerificationMethod(
         "key",
@@ -36,53 +41,12 @@ export default async function handler(
       const payload = {
         client_id: did,
         client_id_scheme: "did",
-        client_metadata_uri:
-          process.env.EXTERNAL_URL + "/api/clientMetadata",
+        client_metadata_uri: process.env.EXTERNAL_URL + "/api/clientMetadata",
         nonce: challenge,
-        presentation_definition: {
-          format: {
-            ldp_vc: {
-              proof_type: [
-                "JsonWebSignature2020",
-                "Ed25519Signature2018",
-                "EcdsaSecp256k1Signature2019",
-                "RsaSignature2018",
-              ],
-            },
-            ldp_vp: {
-              proof_type: [
-                "JsonWebSignature2020",
-                "Ed25519Signature2018",
-                "EcdsaSecp256k1Signature2019",
-                "RsaSignature2018",
-              ],
-            },
-          },
-          id: challenge,
-          input_descriptors: [
-            {
-              constraints: {
-                fields: [
-                  {
-                    path: ["$.credentialSubject.type"],
-                    filter: {
-                      type: "string",
-                      pattern: "EmailPass",
-                    },
-                  },
-                ],
-              },
-              id: "logincredential_1",
-              purpose: "Sign-in",
-            },
-          ],
-          name: "VP Login Service",
-          purpose: "Sign-in",
-        },
+        presentation_definition,
         response_mode: "direct_post",
         response_type: "vp_token",
-        response_uri:
-          process.env.EXTERNAL_URL + "/api/presentCredential",
+        response_uri: process.env.EXTERNAL_URL + "/api/presentCredential",
         state: challenge,
       };
       const privateKey = await jose.importJWK(

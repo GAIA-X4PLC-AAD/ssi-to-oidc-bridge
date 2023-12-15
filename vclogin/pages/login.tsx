@@ -18,7 +18,7 @@ export default function Login(props: any) {
 
   const getWalletUrl = () => {
     return (
-      "openid://?request_uri=" +
+      "openid-vc://?request_uri=" +
       encodeURIComponent(
         props.externalUrl +
           "/api/presentCredential?login_id=" +

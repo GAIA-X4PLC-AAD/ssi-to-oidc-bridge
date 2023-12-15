@@ -31,9 +31,9 @@ graph LR
     browser <-- HTTP --> Hydra
     browser <-- HTTP --> vclogin
 ```
-*Note: In a deployment, external HTTP interfaces should be using HTTPS instead.*
-*Note: While we test with Altme Wallet, any SSI wallet supporting OID4VP + SIOPv2 works.*
 
+_Note: In a deployment, external HTTP interfaces should be using HTTPS instead._
+_Note: While we test with Altme Wallet, any SSI wallet supporting OID4VP + SIOPv2 works._
 
 ### OIDC Provider: Ory Hydra
 
@@ -42,7 +42,6 @@ Hydra is a FOSS and OpenID certified implementation. It should allow any OIDC or
 ### VC Login Service
 
 This custom Next.js web app provides a user frontend for the login process, as well as necessary backend API routes. It handles the Verifiable Presentation exchange with the wallet, the verification of Verifiable Presentations and of the Verifiable Credentials inside, and the extraction and remapping of claims.
-
 
 ## Login Flow
 
@@ -110,20 +109,23 @@ sequenceDiagram
 2. enter the domain for the vclogin service into the env file `/vclogin/.env` with key `EXTERNAL_URL`
 3. enter a JWK key (Ed25519) into the env file `./vclogin/.env` with key `EXTERNAL_URL` (example for quick testing: `{"kty":"OKP","crv":"Ed25519","x":"cwa3dufHNLg8aQb2eEUqTyoM1cKQW3XnOkMkj_AAl5M","d":"me03qhLByT-NKrfXDeji-lpADSpVOKWoaMUzv5EyzKY"}`)
 4. enter the path to a trust policy file into the env file `/vclogin/.env` with key `TRUST_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
-5. `$ docker compose up`
+5. OPTIONAL: enter an override for a credential descriptor into the env file `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over what wallets are asked for is desired (example for quick testing: `./__tests__/pex/testdata/descriptorEmailFromAltme.json`)
+6. `$ docker compose up`
 
 To validate running bridge with a simple OIDC client:
+
 1. `$ ./test_client.sh`
 2. go to `http://localhost:9010` in browser
 3. download Altme Wallet (and set up new wallet)
 4. follow the login flow and present your Account Ownership VC generated on Altme startup
 5. end up at `http://localhost:9010/callback` with metadata about the login being displayed
 
-
 ## Running for Development
+
 The repository comes with a VSCode devcontainer configuration. We recommend using it. To prepare your VSCode setup, you need two settings files.
 
 `./.vscode/settings.json` contains:
+
 ```
 {
   "eslint.workingDirectories": ["./vclogin"]
@@ -131,6 +133,7 @@ The repository comes with a VSCode devcontainer configuration. We recommend usin
 ```
 
 `./vclogin/.vscode/settings.json` contains:
+
 ```
 {
   "prettier.prettierPath": "./node_modules/prettier"
@@ -148,9 +151,12 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 NODE_TLS_REJECT_UNAUTHORIZED=0
 TRUST_POLICY=./__tests__/testdata/policies/acceptAnything.json
+PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
 EXTERNAL_URL=<ngrok url>
 DID_KEY_JWK=<Ed25519 JWK>
 ```
+
+_Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override the automatic descriptor generation._
 
 3. `$ docker compose up`
 4. `$ docker compose stop vclogin`
@@ -158,11 +164,9 @@ DID_KEY_JWK=<Ed25519 JWK>
 
 Now you can develop and it will hot-reload.
 
-
 ## Policy Configuration
 
 TODO
-
 
 ## Token Introspection
 
