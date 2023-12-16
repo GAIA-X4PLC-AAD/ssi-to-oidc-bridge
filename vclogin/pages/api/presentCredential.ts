@@ -98,11 +98,10 @@ export default async function handler(
 
       // Get the user claims
       const userClaims = extractClaims(presentation);
+      const subject = presentation["holder"];
       const login_id = presentation["proof"]["challenge"];
       const challenge = (await redis.get("" + login_id))!;
-      console.log(
-        "Logging in: " + userClaims.id + " with challenge: " + challenge,
-      );
+      console.log("Logging in: " + subject + " with challenge: " + challenge);
 
       // hydra login
       await hydraAdmin
@@ -111,7 +110,7 @@ export default async function handler(
           hydraAdmin
             .adminAcceptOAuth2LoginRequest(challenge, {
               // Subject is an alias for user ID. A subject can be a random string, a UUID, an email address, ....
-              subject: userClaims.id,
+              subject,
               // This tells hydra to remember the browser and automatically authenticate the user in future requests. This will
               // set the "skip" parameter in the other route to true on subsequent requests!
               remember: Boolean(false),
@@ -135,7 +134,7 @@ export default async function handler(
 
               // save the user claims to redis
               redis.set(
-                "" + userClaims.id,
+                "" + subject,
                 JSON.stringify(userClaims),
                 EXPIRY_MS,
                 MAX_AGE,

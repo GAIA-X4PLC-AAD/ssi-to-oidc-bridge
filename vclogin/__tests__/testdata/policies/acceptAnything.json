@@ -6,7 +6,8 @@
         "issuer": "*",
         "claims": [
           {
-            "claimPath": "$.credentialSubject.*"
+            "claimPath": "$.credentialSubject.*",
+            "newPath": "$.employeeData"
           }
         ]
       }

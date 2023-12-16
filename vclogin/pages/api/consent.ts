@@ -34,7 +34,8 @@ export default async function handler(
           grant_scope: body.requested_scope,
 
           session: {
-            access_token: userClaims
+            access_token: userClaims.tokenAccess,
+            id_token: userClaims.tokenId,
           },
 
           // ORY Hydra checks if requested audiences are allowed by the client, so we can simply echo this.
