@@ -7,6 +7,7 @@ import { NextPageContext } from "next";
 import { useRouter } from "next/router";
 import { useQRCode } from "next-qrcode";
 import { useEffect } from "react";
+import { keyToDID } from "@spruceid/didkit-wasm-node";
 
 export default function Login(props: any) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function Login(props: any) {
 
   const getWalletUrl = () => {
     return (
-      "openid-vc://?request_uri=" +
+      "openid-vc://?client_id=" + props.clientId + "&request_uri=" +
       encodeURIComponent(
         props.externalUrl +
           "/api/presentCredential?login_id=" +
@@ -56,10 +57,10 @@ export default function Login(props: any) {
             id="gx-text"
             className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 pb-4"
           >
-            GX Credentials Bridge
+            SSI-to-OIDC Bridge
           </h1>
         </div>
-        <h2>Scan the code to login!</h2>
+        <h2>Scan the code to sign in!</h2>
         <div className="w-full flex align-center justify-center">
           <Canvas
             text={getWalletUrl()}
@@ -121,8 +122,10 @@ export async function getServerSideProps(context: NextPageContext) {
       };
     }
 
+    const did = await keyToDID("key", process.env.DID_KEY_JWK!);
+
     return {
-      props: { loginId, externalUrl: process.env.EXTERNAL_URL },
+      props: { loginId, externalUrl: process.env.EXTERNAL_URL, clientId: did },
     };
   } catch (error) {
     return {
