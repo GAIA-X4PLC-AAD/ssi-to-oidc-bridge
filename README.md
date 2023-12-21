@@ -107,8 +107,8 @@ sequenceDiagram
 
 1. `$ ngrok http 5002`, which will set up a randomly generated URL
 2. enter the domain for the vclogin service into the env file `/vclogin/.env` with key `EXTERNAL_URL`
-3. enter a JWK key (Ed25519) into the env file `./vclogin/.env` with key `EXTERNAL_URL` (example for quick testing: `{"kty":"OKP","crv":"Ed25519","x":"cwa3dufHNLg8aQb2eEUqTyoM1cKQW3XnOkMkj_AAl5M","d":"me03qhLByT-NKrfXDeji-lpADSpVOKWoaMUzv5EyzKY"}`)
-4. enter the path to a trust policy file into the env file `/vclogin/.env` with key `TRUST_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
+3. enter a JWK key (Ed25519) into the env file `./vclogin/.env` with key `DID_KEY_JWK` (example for quick testing: `{"kty":"OKP","crv":"Ed25519","x":"cwa3dufHNLg8aQb2eEUqTyoM1cKQW3XnOkMkj_AAl5M","d":"me03qhLByT-NKrfXDeji-lpADSpVOKWoaMUzv5EyzKY"}`)
+4. enter the path to a trust policy file into the env file `/vclogin/.env` with key `LOGIN_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
 5. OPTIONAL: enter an override for a credential descriptor into the env file `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over what wallets are asked for is desired (example for quick testing: `./__tests__/pex/testdata/descriptorEmailFromAltme.json`)
 6. `$ docker compose up`
 
@@ -150,7 +150,7 @@ HYDRA_ADMIN_URL=http://localhost:5001
 REDIS_HOST=localhost
 REDIS_PORT=6379
 NODE_TLS_REJECT_UNAUTHORIZED=0
-TRUST_POLICY=./__tests__/testdata/policies/acceptAnything.json
+LOGIN_POLICY=./__tests__/testdata/policies/acceptAnything.json
 PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
 EXTERNAL_URL=<ngrok url>
 DID_KEY_JWK=<Ed25519 JWK>

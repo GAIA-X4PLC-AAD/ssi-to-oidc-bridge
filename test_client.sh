@@ -5,7 +5,7 @@ client=$(docker run --rm -it \
     create client --skip-tls-verify \
     --name testclient \
     --secret some-secret \
-    --grant-type authorization_code,client_credentials,implicit \
+    --grant-type authorization_code \
     --response-type token,code,id_token \
     --scope openid \
     --redirect-uri http://localhost:9010/callback \

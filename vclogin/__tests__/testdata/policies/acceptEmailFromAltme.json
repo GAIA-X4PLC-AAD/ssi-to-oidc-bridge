@@ -7,7 +7,7 @@
         "claims": [
           {
             "claimPath": "$.credentialSubject.email",
-            "newPath": "$.email_verified",
+            "newPath": "$.email",
             "token": "id_token",
             "required": true
           }
