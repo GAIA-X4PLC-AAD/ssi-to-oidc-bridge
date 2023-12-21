@@ -6,7 +6,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { hydraAdmin } from "@/config/ory";
 import { Redis } from "ioredis";
-import { isTrustedPresentation } from "@/lib/evaluateTrustPolicy";
+import { isTrustedPresentation } from "@/lib/evaluateLoginPolicy";
 import { extractClaims } from "@/lib/extractClaims";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";

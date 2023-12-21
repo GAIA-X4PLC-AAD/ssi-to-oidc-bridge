@@ -1,7 +1,7 @@
 import {
   isTrustedPresentation,
   exportedForTesting,
-} from "@/lib/evaluateTrustPolicy";
+} from "@/lib/evaluateLoginPolicy";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
 import vpTezos from "@/testdata/presentations/VP_TezosAssociatedAddress.json";
@@ -10,7 +10,7 @@ import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyo
 import policyEmailFromAltme from "@/testdata/policies/acceptEmailFromAltme.json";
 import policyFromAltme from "@/testdata/policies/acceptFromAltme.json";
 
-describe("evaluateTrustPolicy", () => {
+describe("evaluateLoginPolicy", () => {
   it("defaults to false if no policy is available", () => {
     var trusted = isTrustedPresentation(vpEmployee, undefined);
     expect(trusted).toBe(false);

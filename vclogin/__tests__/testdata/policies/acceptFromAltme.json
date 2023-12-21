@@ -6,7 +6,8 @@
         "issuer": "did:web:app.altme.io:issuer",
         "claims": [
           {
-            "claimPath": "$.credentialSubject.*"
+            "claimPath": "$.credentialSubject.*",
+            "required": false
           }
         ]
       }

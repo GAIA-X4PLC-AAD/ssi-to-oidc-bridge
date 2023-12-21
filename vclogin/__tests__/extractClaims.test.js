@@ -3,13 +3,14 @@ import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
 import policyAcceptAnything from "@/testdata/policies/acceptAnything.json";
 import policyEmailFromAltme from "@/testdata/policies/acceptEmailFromAltme.json";
+import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyone.json";
 
 describe("extractClaims", () => {
   it("all subject claims from an EmployeeCredential are extracted", () => {
     var claims = extractClaims(vpEmployee, policyAcceptAnything);
     var expected = {
       tokenAccess: {
-        employeeData: {
+        subjectData: {
           id: "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
           hash: "9ecf754ffdad0c6de238f60728a90511780b2f7dbe2f0ea015115515f3f389cd",
           leiCode: "391200FJBNU0YW987L26",
@@ -34,9 +35,23 @@ describe("extractClaims", () => {
     var claims = extractClaims(vpEmail, policyEmailFromAltme);
     var expected = {
       tokenId: {
-        email_verified: "felix.hoops@tum.de",
+        email: "felix.hoops@tum.de",
       },
       tokenAccess: {},
+    };
+    expect(claims).toStrictEqual(expected);
+  });
+
+  it("all designated claims from an EmployeeCredential are extracted", () => {
+    var claims = extractClaims(vpEmployee, policyEmployeeFromAnyone);
+    var expected = {
+      tokenAccess: {
+        companyName: "deltaDAO AG",
+      },
+      tokenId: {
+        email: "test@test.com",
+        name: "Name Surname",
+      },
     };
     expect(claims).toStrictEqual(expected);
   });

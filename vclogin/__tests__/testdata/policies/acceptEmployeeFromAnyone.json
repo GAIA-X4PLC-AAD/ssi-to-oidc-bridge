@@ -7,15 +7,15 @@
         "claims": [
           {
             "claimPath": "$.credentialSubject.hasLegallyBindingName",
-            "required": true
+            "newPath": "$.companyName"
           },
           {
             "claimPath": "$.credentialSubject.name",
-            "required": true
+            "token": "id_token"
           },
           {
             "claimPath": "$.credentialSubject.email",
-            "required": true
+            "token": "id_token"
           }
         ]
       }

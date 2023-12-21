@@ -63,22 +63,19 @@ const isCredentialFittingPattern = (
   cred: any,
   pattern: CredentialPattern,
 ): boolean => {
-  console.log("cred:", cred);
-  console.log("pattern:", pattern);
-
   if (cred.issuer !== pattern.issuer && pattern.issuer !== "*") {
-    console.log("Issuer does not match pattern");
     return false;
   }
 
   for (const claim of pattern.claims) {
-    if (claim.required && jp.paths(cred, claim.claimPath).length === 0) {
-      console.log(`Required claim '${claim.claimPath}' not found in credential`);
+    if (
+      (!Object.hasOwn(claim, "required") || claim.required) &&
+      jp.paths(cred, claim.claimPath).length === 0
+    ) {
       return false;
     }
   }
 
-  console.log("Credential fits pattern");
   return true;
 };
 
