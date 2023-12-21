@@ -1,4 +1,4 @@
-# Universal VC-to-OIDC Bridge
+# Universal SSI-to-OIDC Bridge for VC-based Sign-ins
 
 > [!WARNING]
 > This repository is intended for prototyping and as a reference implementation.
@@ -8,7 +8,14 @@
 
 ## Overview
 
-This bridge allows you to use established OIDC flows to authenticate and authorize users that have W3C Verifiable Credentials. As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems while making integration simpler through using established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
+### The Problem Statement
+You operate a service and want to allow your users to sign-in using Verifiable Credentials from a mobile wallet. But building that takes considerable time and expertise.
+
+### The Solution
+A service provider can run this dockerized bridge software, that acts as a normal OIDC Provider towards the service. That means, any service supporting OIDC or OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with Verifiable Credentials. When setting up the bridge software, you can configure what Verifiable Credentials are Accepted and how the data within is put into `id_token` or `access_token`.
+
+As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems, while making integration simpler through using established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
+
 
 ## Architecture
 
@@ -52,34 +59,34 @@ sequenceDiagram
 	autonumber
 	actor User
 	participant Browser
-	participant Client as OIDC Client Web Server
-    participant Wallet as Smartphone Wallet (Altme)
+	participant Client as OIDC Client (Web Server)
+    participant Wallet as Smartphone Wallet
     participant VPLS as vclogin
     participant Redis
     participant OP as Ory Hydra
-	User->>Browser: Click "Login with SSI"
+	User->>Browser: Click "Sign-in"
 	Browser->>OP: Redirect to /authorize
 	OP->>VPLS: Redirect to /login?login_challenge=<challenge>
 	VPLS->>VPLS: Generate random UUID to replace challenge
 	VPLS->>Redis: Save (UUID,challenge) and (challenge,UUID)
 	VPLS->>Browser: Send login page
 	Browser->>User: Show login page with QR Code
-	User->>Wallet: Scan QR Code containing SIOP Provider Invocation
+	User->>Wallet: Scan QR code containing SIOP Provider Invocation
 	Wallet->>VPLS: GET /api/presentCredential?login_id=<UUID>
 	VPLS->>VPLS: Generate and sign Auth Request JWT
 	VPLS->>Wallet: Auth Request with Presentation Definition
 	Wallet->>VPLS: GET /api/clientMetadata
-	VPLS->>Wallet: Static Client Metadata
-	Wallet->>User: Prompt for VC Selection & Consent
+	VPLS->>Wallet: Return static Client Metadata
+	Wallet->>User: Prompt for VC selection and consent
 	User->>Wallet: Choose VC(s) and confirm
-	Wallet->>Wallet: Create VP
+	Wallet->>Wallet: Create and sign VP
 	Wallet->>VPLS: Submit Auth Response via POST /api/presentCredential
 	VPLS->>VPLS: Verify VP
-	VPLS->>VPLS: Extract and map claims from VP
+	VPLS->>VPLS: Process claims from VP
 	VPLS->>Redis: Get challenge using UUID
-	VPLS->>OP: Confirm authentication using challenge
+	VPLS->>OP: Confirm sign-in for subject DID using challenge
 	OP->>VPLS: Client redirect link
-	VPLS->>Redis: Save (subjectDID, claims)
+	VPLS->>Redis: Save (subject DID, claims)
 	VPLS->>Redis: Save ("redirect" + UUID, redirect)
 	loop Every few seconds
 		Browser->>VPLS: Try to retrieve redirect using challenge
@@ -88,16 +95,16 @@ sequenceDiagram
 	Browser->>VPLS: Get redirect using challenge
 	VPLS->>Redis: Get UUID using challenge
 	VPLS->>Redis: Get redirect using UUID
-	VPLS->>OP: Redirect to OP
+	VPLS->>OP: Redirect to Hydra
 	OP->>VPLS: Redirect to /api/consent?consent_challenge=<challenge2>
 	VPLS->>OP: Get consent metadata using challenge2
-	OP->>VPLS: Metadata including subjectDID
-	VPLS->>Redis: Get claims using subjectDID
+	OP->>VPLS: Metadata including subject DID
+	VPLS->>Redis: Get claims using subject DID
 	VPLS->>OP: Confirm consent and send user claims
 	OP->>Client: Redirect to client callback with code
 	Client->>OP: Get tokens using code
-	OP->>Client: id_token and access_token
-	Client->>Browser: Access to protected service
+	OP->>Client: Return id_token and access_token
+	Client->>Browser: Provide access to protected service
 ```
 
 ## Running a Local Deployment
@@ -126,7 +133,7 @@ The repository comes with a VSCode devcontainer configuration. We recommend usin
 
 `./.vscode/settings.json` contains:
 
-```
+```json
 {
   "eslint.workingDirectories": ["./vclogin"]
 }
@@ -134,7 +141,7 @@ The repository comes with a VSCode devcontainer configuration. We recommend usin
 
 `./vclogin/.vscode/settings.json` contains:
 
-```
+```json
 {
   "prettier.prettierPath": "./node_modules/prettier"
 }
@@ -145,7 +152,7 @@ To develop the vclogin service, follow these steps:
 1. `$ ngrok http 5002`, which will set up a randomly generated URL
 2. create the file `./vclogin/env.local`
 
-```
+```bash
 HYDRA_ADMIN_URL=http://localhost:5001
 REDIS_HOST=localhost
 REDIS_PORT=6379
@@ -166,13 +173,43 @@ Now you can develop and it will hot-reload.
 
 ## Policy Configuration
 
-TODO
+The login policy is the one configuration file that configures the bridges behavior. The most simple example of one looks like this and accepts any credential, while forwarding all subject fields to the `access_token`:
+
+```JSON
+[
+  {
+    "credentialID": "credential1",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.*",
+            "newPath": "$.subjectData",
+            "required": false
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+A login policy always is an array of objects that represent expected Verifiable Credentials. For each expected credential, we have to specify a unique ID used for internal tracking. We also need to provide an array of pattern objects, describing how the credential looks like and how its values are used.
+
+A pattern object has the following fields:
+
+- `claimPath` is a JSONPath that points to one or more values in the credential. If it points to multiple values, they will be aggregated in a new object and indexed by just their final JSONPath component. _This is generally convenient, but can lead to values being overwritten if not careful and working with a credential that uses the same path components in different depths._
+- `newPath` is the new path of the value relative to the root of the token it will be written into. This value is optional, as long as `claimPath` points to exactly one value. In that case, it defaults to `$.<final claimPath component>`.
+- `token` optionally defines if the claim value ends up either in `"id_token"` or `"access_token"`, with the latter being the default.
+- `required` is optional and defaults to `false`
+
 
 ## Token Introspection
 
 Look into the access token like this:
 
-```
+```bash
 $ docker run --rm -it \
     --network ory-hydra-net \
     oryd/hydra:v2.2.0 \
@@ -182,38 +219,10 @@ $ docker run --rm -it \
     TOKEN
 ```
 
-Example result:
-
-```
-{
-  "active": true,
-  "client_id": "10c75c26-423f-4b3e-9b2c-677d7337db9e",
-  "exp": 1701437721,
-  "ext": {
-    "email": "test@test.com",
-    "ethereumAddress": "0x4C84a36fCDb7Bc750294A7f3B5ad5CA8F74C4A52",
-    "hasCountry": "GER",
-    "hasJurisdiction": "GER",
-    "hasLegallyBindingName": "deltaDAO AG",
-    "hasRegistrationNumber": "DEK1101R.HRB170364",
-    "hash": "9ecf754ffdad0c6de238f60728a90511780b2f7dbe2f0ea015115515f3f389cd",
-    "id": "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
-    "leiCode": "391200FJBNU0YW987L26",
-    "name": "Name Surname",
-    "surname": "Surname",
-    "title": "CEO",
-    "type": "EmployeeCredential"
-  },
-  "iat": 1701434120,
-  "iss": "http://localhost:5004/",
-  "nbf": 1701434120,
-  "scope": "openid offline",
-  "sub": "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
-  "token_type": "Bearer",
-  "token_use": "access_token"
-}
-```
-
 ## Relevant Standards
 
-TODO
+- [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html)
+- [OpenID for Verifiable Presentations](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID2.html)
+- [Self-Issued OpenID Provider v2](https://openid.net/specs/openid-connect-self-issued-v2-1_0.html)
+- [Verifiable Credentials Data Model v1.1](https://www.w3.org/TR/vc-data-model/)
+- [DIF Presentation Definition](https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-definition)
