@@ -1,25 +1,46 @@
-# Gaia-X Credentials Bridge
+# Universal SSI-to-OIDC Bridge for VC-based Sign-ins
 
 > [!WARNING]
-> This repository is in early development and not feature complete.
+> This repository is intended for prototyping and as a reference implementation.
+
+> [!NOTE]
+> This software artifact was originally intended to support only Gaia-X Participant Credentials. It has since evolved to be fully configurable for almost any Verifiable Credential, almost any wallet application, and almost any current OIDC client.
 
 ## Overview
 
-This bridge allows you to use established OIDC flows to authenticate and authorize users that have W3C Verifiable Credentials. As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their GX Participant Credential to access systems while making integration simpler through using established SSO protocols.
+### The Problem Statement
+You operate a service and want to allow your users to sign-in using Verifiable Credentials from a mobile wallet. But building that takes considerable time and expertise.
+
+### The Solution
+A service provider can run this dockerized bridge software, that acts as a normal OIDC Provider towards the service. That means, any service supporting OIDC or OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with Verifiable Credentials. When setting up the bridge software, you can configure what Verifiable Credentials are accepted and how the data within is put into `id_token` or `access_token`.
+
+As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems, while making integration simpler through using established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
 
 
 ## Architecture
 
-There are two main components to this project and a lot of additional containers for monitoring and databases. A company (or at least a small consortium) wanting to support SSI in their existing (or new) systems, is expected to run this full setup to avoid introducing a middle man.
+There are two main components to this project and some additional containers for monitoring and databases. A company (or at least a small consortium) wanting to support SSI in their existing (or new) systems, is expected to run this full setup to avoid introducing a middle man:
 
 ```mermaid
 graph LR
-	Client -- OIDC --> Hydra
-	subgraph gxc-bridge
-	Hydra <-- REST API --> vclogin
-	end
-	vclogin <-- Beacon --> Altme
+    client[OIDC Client<br><i>Some Service<br>at Service Provider</i>] <-- OIDC via HTTP --> Hydra[Ory Hydra]
+    subgraph bridge[Bridge <i>at Service Provider</i>]
+    Hydra <-- REST HTTP API --> vclogin
+    Hydra <-- TCP / IP --> postgres[(PostgreSQL)]
+    vclogin <-- HTTP --> redis[(Redis)]
+    end
+    vclogin <-- OID4VP + SIOPv2 via HTTP --> altme[Altme Wallet<br><i>on Smartphone</i>]
+    subgraph home[End User Devices]
+    browser[Browser<br><i>on Desktop</i>]
+    altme
+    end
+    browser <-- HTTP --> client
+    browser <-- HTTP --> Hydra
+    browser <-- HTTP --> vclogin
 ```
+
+_Note: In a deployment, external HTTP interfaces should be using HTTPS instead._
+_Note: While we test with Altme Wallet, any SSI wallet supporting OID4VP + SIOPv2 works._
 
 ### OIDC Provider: Ory Hydra
 
@@ -27,87 +48,168 @@ Hydra is a FOSS and OpenID certified implementation. It should allow any OIDC or
 
 ### VC Login Service
 
-This custom Next.js web app provides a user frontend for the login process, as well as necessary backend API routes. It handles the wallet connection, the Verifiable Presentaiton exchange, the verification
+This custom Next.js web app provides a user frontend for the login process, as well as necessary backend API routes. It handles the Verifiable Presentation exchange with the wallet, the verification of Verifiable Presentations and of the Verifiable Credentials inside, and the extraction and remapping of claims.
 
+## Login Flow
 
-## Flow
-
-The user starts out on the service website. Redirects (mostly) omit the middle step of returning to the browser for readability. Wallet still uses Beacon Protocol, but should ultimately use OpenID4VP.
+The user's browser starts out on the service website, which takes the role of an OIDC client here. The flow is slightly simplified for improved readability. For example, the responses for Redis lookups are not shown. Also, redirects are shown immediately going to the redirect target. This is an authorization code flow:
 
 ```mermaid
 sequenceDiagram
 	autonumber
 	actor User
 	participant Browser
-	participant Wallet
-	participant Site as Web Service
-	participant Login as Login Endpoint
-	participant OP as OpenID Connect Provider
-	User->>Browser: Click "Login"
-	Browser->>Site: Login Trigger?
-	Site->>OP: Start OAuth2 Flow
-	OP->>Login: Redirect to GET /login?login_challenge=<abc>
-	Login->>Browser: Render custom login page
-	Browser->>User: Ask for VP-based login
-	User->>Browser: Click "Connect Wallet"
-	Browser->>Browser: Generate Beacon QR Code
-	User->>Wallet: Scan QR Code with Wallet
-	Wallet->>Browser: Read QR Code and send basic info
-	Browser->>Login: Redirect to GET /presentCredential?login_challenge=<abc> via Beacon signing request
-	Login->>Wallet: Prompt Wallet for identity VP with challenge
-	Wallet->>User: Ask for consent and choice of VC for VP
-	User->>Wallet: Chooses one identity VC and confirms
-	Wallet->>Wallet: Build and signs VP with challenge
-	Wallet->>Login: Send identity VP to POST /presentCredential
-	Login->>Login: Verify VP and extract challenge and subject
-	Login->>OP: Get login request by challenge
-	OP->>Login: Return login request details
-	Login->>OP: Accept login request
-	OP->>Login: Return redirect url
-	Login->>Login: Save redirect url by challenge
-	Login->>Wallet: Confirm 200 OK
-	loop Success Check
-		Browser->>Site: Automatically ask for login by challenge
+	participant Client as OIDC Client (Web Server)
+    participant Wallet as Smartphone Wallet
+    participant VPLS as vclogin
+    participant Redis
+    participant OP as Ory Hydra
+	User->>Browser: Click "Sign-in"
+	Browser->>OP: Redirect to /authorize
+	OP->>VPLS: Redirect to /login?login_challenge=<challenge>
+	VPLS->>VPLS: Generate random UUID to replace challenge
+	VPLS->>Redis: Save (UUID,challenge) and (challenge,UUID)
+	VPLS->>Browser: Send login page
+	Browser->>User: Show login page with QR Code
+	User->>Wallet: Scan QR code containing SIOP Provider Invocation
+	Wallet->>VPLS: GET /api/presentCredential?login_id=<UUID>
+	VPLS->>VPLS: Generate and sign Auth Request JWT
+	VPLS->>Wallet: Auth Request with Presentation Definition
+	Wallet->>VPLS: GET /api/clientMetadata
+	VPLS->>Wallet: Return static Client Metadata
+	Wallet->>User: Prompt for VC selection and consent
+	User->>Wallet: Choose VC(s) and confirm
+	Wallet->>Wallet: Create and sign VP
+	Wallet->>VPLS: Submit Auth Response via POST /api/presentCredential
+	VPLS->>VPLS: Verify VP
+	VPLS->>VPLS: Process claims from VP
+	VPLS->>Redis: Get challenge using UUID
+	VPLS->>OP: Confirm sign-in for subject DID using challenge
+	OP->>VPLS: Client redirect link
+	VPLS->>Redis: Save (subject DID, claims)
+	VPLS->>Redis: Save ("redirect" + UUID, redirect)
+	loop Every few seconds
+		Browser->>VPLS: Try to retrieve redirect using challenge
+		Note over Client,Redis: Failed lookups omitted
 	end
-	Site->>OP: Redirect to saved redirect url
-	OP->>Login: Redirect to GET /consent?consent_challenge=<abc>
-	Login->>OP: Get consent request by challenge
-	OP->>Login: Send requested consent info (user, scopes, ...)
-	Login->>OP: Automatically give full consent
-	OP->>Login: Return redirect url
-	Login->>OP: Redirect to redirect url
-	OP->>Site: Redirect with authorization code
-	Site->>Browser: Render callback page
-	Browser->>OP: Request tokens with authorization code
-	OP->>Browser: Access Token (+maybe ID Token)
-	Browser->>Site: Get protected service page with access token
+	Browser->>VPLS: Get redirect using challenge
+	VPLS->>Redis: Get UUID using challenge
+	VPLS->>Redis: Get redirect using UUID
+	VPLS->>OP: Redirect to Hydra
+	OP->>VPLS: Redirect to /api/consent?consent_challenge=<challenge2>
+	VPLS->>OP: Get consent metadata using challenge2
+	OP->>VPLS: Metadata including subject DID
+	VPLS->>Redis: Get claims using subject DID
+	VPLS->>OP: Confirm consent and send user claims
+	OP->>Client: Redirect to client callback with code
+	Client->>OP: Get tokens using code
+	OP->>Client: Return id_token and access_token
+	Client->>Browser: Provide access to protected service
 ```
 
+## Running a Local Deployment
 
-## Development Roadmap
+> [!WARNING]
+> You need to use a tool like ngrok for testing so your smartphone wallet can access the vclogin backend. However, it can lead to issues with `application/x-www-form-urlencoded` request bodies used in the flow (https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22). But you can manually replay that request on ngrok interface, if you run into problems.
 
-While the repository already demonstrates a working front-to-back flow, here are some pointers to the main features still missing:
-- support for real GX Participant Credentials and their proper verification
-- a trusted issuer list and possibly access policies
-- OpenID4VP support
+1. `$ ngrok http 5002`, which will set up a randomly generated URL
+2. enter the domain for the vclogin service into the env file `/vclogin/.env` with key `EXTERNAL_URL`
+3. enter a JWK key (Ed25519) into the env file `./vclogin/.env` with key `DID_KEY_JWK` (example for quick testing: `{"kty":"OKP","crv":"Ed25519","x":"cwa3dufHNLg8aQb2eEUqTyoM1cKQW3XnOkMkj_AAl5M","d":"me03qhLByT-NKrfXDeji-lpADSpVOKWoaMUzv5EyzKY"}`)
+4. enter the path to a trust policy file into the env file `/vclogin/.env` with key `LOGIN_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
+5. OPTIONAL: enter an override for a credential descriptor into the env file `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over what wallets are asked for is desired (example for quick testing: `./__tests__/pex/testdata/descriptorEmailFromAltme.json`)
+6. `$ docker compose up`
 
+To validate running bridge with a simple OIDC client:
 
-## Running it for testing
+1. `$ ./test_client.sh`
+2. go to `http://localhost:9010` in browser
+3. download Altme Wallet (and set up new wallet)
+4. follow the login flow and present your Account Ownership VC generated on Altme startup
+5. end up at `http://localhost:9010/callback` with metadata about the login being displayed
 
-1. `$ ngrok http 5002` and enter the domain into the compose file for the vclogin
-2. `$ docker compose up`
-3. `$ ./test_client.sh`
-4. Go to `http://localhost:9010`
-5. Download Altme Wallet and setup new account
-6. Follow the login flow and present your Account Ownership VC generated on Altme startup
-7. End up at `http://localhost:9010/callback` with metadata about the login being displayed
+## Running for Development
+
+The repository comes with a VSCode devcontainer configuration. We recommend using it. To prepare your VSCode setup, you need two settings files.
+
+`./.vscode/settings.json` contains:
+
+```json
+{
+  "eslint.workingDirectories": ["./vclogin"]
+}
+```
+
+`./vclogin/.vscode/settings.json` contains:
+
+```json
+{
+  "prettier.prettierPath": "./node_modules/prettier"
+}
+```
+
+To develop the vclogin service, follow these steps:
+
+1. `$ ngrok http 5002`, which will set up a randomly generated URL
+2. create the file `./vclogin/env.local`
+
+```bash
+HYDRA_ADMIN_URL=http://localhost:5001
+REDIS_HOST=localhost
+REDIS_PORT=6379
+NODE_TLS_REJECT_UNAUTHORIZED=0
+LOGIN_POLICY=./__tests__/testdata/policies/acceptAnything.json
+PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
+EXTERNAL_URL=<ngrok url>
+DID_KEY_JWK=<Ed25519 JWK>
+```
+
+_Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override the automatic descriptor generation._
+
+3. `$ docker compose up`
+4. `$ docker compose stop vclogin`
+5. in `vclogin` directory: `$ npm run dev`
+
+Now you can develop and it will hot-reload.
+
+## Policy Configuration
+
+The login policy is the one configuration file that configures the bridge's behavior. The most simple example of one looks like this and accepts any credential, while forwarding all subject fields to the `access_token`:
+
+```JSON
+[
+  {
+    "credentialID": "credential1",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.*",
+            "newPath": "$.subjectData",
+            "required": false
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+A login policy is always an array of objects that represent expected Verifiable Credentials. For each expected credential, we have to specify a unique ID used for internal tracking. We also need to provide an array of pattern objects, describing how the credential looks like and how its values are used.
+
+A pattern object has the following fields:
+
+- `claimPath` is a JSONPath that points to one or more values in the credential. If it points to multiple values, they will be aggregated in a new object and indexed by just their final JSONPath component. _This is generally convenient, but can lead to values being overwritten if not careful and working with a credential that uses the same path components in different depths._
+- `newPath` is the new path of the value relative to the root of the token it will be written into. This value is optional, as long as `claimPath` points to exactly one value. In that case, it defaults to `$.<final claimPath component>`.
+- `token` optionally defines if the claim value ends up either in `"id_token"` or `"access_token"`, with the latter being the default.
+- `required` is optional and defaults to `false`
 
 
 ## Token Introspection
 
 Look into the access token like this:
 
-```
+```bash
 $ docker run --rm -it \
     --network ory-hydra-net \
     oryd/hydra:v2.2.0 \
@@ -117,18 +219,10 @@ $ docker run --rm -it \
     TOKEN
 ```
 
-Example result:
+## Relevant Standards
 
-```
-{
-  "active": true,
-  "client_id": "92cb2457-a125-4b41-af31-39a739ccdf19",
-  "exp": 1699045032,
-  "iat": 1699041432,
-  "iss": "http://localhost:5004/",
-  "nbf": 1699041432,
-  "sub": "did:pkh:tz:tz1Nm5krcMJA899MVKDUUJU5N2torXj3UsPQ",
-  "token_type": "Bearer",
-  "token_use": "access_token"
-}
-```
+- [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html)
+- [OpenID for Verifiable Presentations](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID2.html)
+- [Self-Issued OpenID Provider v2](https://openid.net/specs/openid-connect-self-issued-v2-1_0.html)
+- [Verifiable Credentials Data Model v1.1](https://www.w3.org/TR/vc-data-model/)
+- [DIF Presentation Definition](https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-definition)

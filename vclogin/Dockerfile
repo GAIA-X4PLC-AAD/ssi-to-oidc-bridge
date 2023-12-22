@@ -1,14 +1,16 @@
-FROM node:20-alpine3.18
+FROM node:21-alpine3.18
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 COPY package.json package.json
 COPY package-lock.json package-lock.json
-RUN npm i --silent
+RUN npm ci
 
 COPY . /usr/src/app
 
-ENTRYPOINT npm run dev
+RUN npm run build
+
+ENTRYPOINT npm run start
 
 EXPOSE 3000
