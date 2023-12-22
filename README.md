@@ -12,7 +12,7 @@
 You operate a service and want to allow your users to sign-in using Verifiable Credentials from a mobile wallet. But building that takes considerable time and expertise.
 
 ### The Solution
-A service provider can run this dockerized bridge software, that acts as a normal OIDC Provider towards the service. That means, any service supporting OIDC or OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with Verifiable Credentials. When setting up the bridge software, you can configure what Verifiable Credentials are Accepted and how the data within is put into `id_token` or `access_token`.
+A service provider can run this dockerized bridge software, that acts as a normal OIDC Provider towards the service. That means, any service supporting OIDC or OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with Verifiable Credentials. When setting up the bridge software, you can configure what Verifiable Credentials are accepted and how the data within is put into `id_token` or `access_token`.
 
 As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems, while making integration simpler through using established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
 
@@ -173,7 +173,7 @@ Now you can develop and it will hot-reload.
 
 ## Policy Configuration
 
-The login policy is the one configuration file that configures the bridges behavior. The most simple example of one looks like this and accepts any credential, while forwarding all subject fields to the `access_token`:
+The login policy is the one configuration file that configures the bridge's behavior. The most simple example of one looks like this and accepts any credential, while forwarding all subject fields to the `access_token`:
 
 ```JSON
 [
@@ -195,7 +195,7 @@ The login policy is the one configuration file that configures the bridges behav
 ]
 ```
 
-A login policy always is an array of objects that represent expected Verifiable Credentials. For each expected credential, we have to specify a unique ID used for internal tracking. We also need to provide an array of pattern objects, describing how the credential looks like and how its values are used.
+A login policy is always an array of objects that represent expected Verifiable Credentials. For each expected credential, we have to specify a unique ID used for internal tracking. We also need to provide an array of pattern objects, describing how the credential looks like and how its values are used.
 
 A pattern object has the following fields:
 
