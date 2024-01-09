@@ -2,61 +2,34 @@
  * Copyright (C) 2023, Software Engineering for Business Information Systems (sebis) <matthes@tum.de>
  * SPDX-License-Identifier: Apache-2.0
  */
-import { useSearchParams } from "next/navigation";
-import { requestRequiredPermissions, dAppClient } from "../config/wallet";
-import { SigningType } from "@airgap/beacon-sdk";
 import { Redis } from "ioredis";
 import { NextPageContext } from "next";
 import { useRouter } from "next/router";
+import { useQRCode } from "next-qrcode";
+import { useEffect } from "react";
 
-export default function Login() {
-  const searchParams = useSearchParams();
+export default function Login(props: any) {
   const router = useRouter();
+  const { Canvas } = useQRCode();
 
   const refreshData = () => {
     return router.replace(router.asPath);
-  }
-
-  const requestCredentialFromWallet = async () => {
-    const signature = await dAppClient!.requestSignPayload({
-      signingType: SigningType.RAW,
-      payload:
-        "Show your GX Credential! #" +
-        process.env.NEXT_PUBLIC_INTERNET_URL +
-        "/api/presentCredential?login_challenge=" +
-        searchParams.get("login_challenge"),
-    });
   };
 
-  const handleLogin = async () => {
-    try {
-      const activeAccount = await dAppClient?.getActiveAccount();
-      let activeAddress;
-      let activePk;
-      if (activeAccount) {
-        console.log("Already connected:", activeAccount.address);
-        activeAddress = activeAccount.address;
-        activePk = activeAccount.publicKey;
-      } else {
-        const permissions = await requestRequiredPermissions();
-        console.log("New connection:", permissions.address);
-        activeAddress = permissions.address;
-        activePk = permissions.publicKey;
-      }
-
-      requestCredentialFromWallet();
-
-      const timer = setInterval(() => {
-        refreshData();
-      }, 4000);
-    } catch (error) {
-      window.alert(error);
-    }
+  const getWalletUrl = () => {
+    return (
+      process.env.NEXT_PUBLIC_INTERNET_URL +
+      "/api/presentCredential?login_id=" +
+      props.login_id
+    );
   };
 
-  const clearWalletConnection = () => {
-    dAppClient!.clearActiveAccount();
-  };
+  useEffect(() => {
+    const id = setInterval(() => {
+      refreshData();
+    }, 3000);
+    return () => clearInterval(id);
+  });
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -78,30 +51,30 @@ export default function Login() {
         <div>
           <h1
             id="gx-text"
-            className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 transition duration-500 ease-in-out transform -translate-y-full"
+            className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 pb-4"
           >
             GX Credentials Bridge
           </h1>
         </div>
+        <h2>Scan the code to login!</h2>
         <div className="w-full flex align-center justify-center">
-          <button
-            id="login-button"
-            className="text-lg w-2/4 hover:bg-gray-100 font-semibold py-2 px-2 border border-gray-500 hover:border-transparent rounded"
-            onClick={handleLogin}
-          >
-            Connect Wallet and Login
-          </button>
+          <Canvas
+            text={getWalletUrl()}
+            options={{
+              errorCorrectionLevel: "M",
+              margin: 3,
+              scale: 4,
+              width: 300,
+              color: {
+                dark: "#000000FF",
+                light: "#FFFFFFFF",
+              },
+            }}
+          />
         </div>
       </div>
 
       <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <button
-            id="login-button"
-            className="text-sm w-2/4 hover:bg-gray-100 font-semibold py-2 px-2 border border-gray-500 hover:border-transparent rounded"
-            onClick={clearWalletConnection}
-          >
-            Disconnect Wallet
-          </button>
         &nbsp;
       </div>
     </main>
@@ -110,16 +83,37 @@ export default function Login() {
 
 export async function getServerSideProps(context: NextPageContext) {
   try {
-    console.log("Connecting to redis at: "+process.env.REDIS_HOST+":" +process.env.REDIS_PORT)
-    const redis = new Redis(parseInt(process.env.REDIS_PORT!),process.env.REDIS_HOST!);
+    if (context.query["login_challenge"] == undefined) {
+      return {
+        redirect: {
+          destination: "/common/error",
+          permanent: false,
+        },
+      };
+    }
 
+    const redis = new Redis(
+      parseInt(process.env.REDIS_PORT!),
+      process.env.REDIS_HOST!,
+    );
+
+    // needs to check if the login_challenge was already turned into a UUID
+    // if not, do it
     const challenge = context.query["login_challenge"];
-    console.log("Challenge: "+context.query["login_challenge"]);
+    var login_id = await redis.get("" + challenge);
+    if (!login_id) {
+      login_id = crypto.randomUUID();
+      const MAX_AGE = 60 * 5; // 5 minutes
+      const EXPIRY_MS = "EX"; // seconds
+      await redis.set("" + challenge, "" + login_id, EXPIRY_MS, MAX_AGE);
+      await redis.set("" + login_id, "" + challenge, EXPIRY_MS, MAX_AGE);
+    }
 
-    const redirect = await redis.get(""+challenge);
-    console.log("Redirect: "+redirect);
+    // needs to check if the login already happened via phone
+    const redirect = await redis.get("redirect" + login_id);
+    console.log("Redirect: " + redirect + " for id " + login_id);
 
-    if(redirect){
+    if (redirect) {
       return {
         redirect: {
           destination: redirect,
@@ -129,14 +123,21 @@ export async function getServerSideProps(context: NextPageContext) {
     }
 
     return {
-      props: {},
+      props: { login_id: login_id },
     };
   } catch (error) {
-    return {
-      redirect: {
-        destination: "/common/error",
-        permanent: false,
-      },
-    };
+    const env = process.env.NODE_ENV;
+    if (env == "development") {
+      return {
+        props: {},
+      };
+    } else if (env == "production") {
+      return {
+        redirect: {
+          destination: "/common/error",
+          permanent: false,
+        },
+      };
+    }
   }
 }
