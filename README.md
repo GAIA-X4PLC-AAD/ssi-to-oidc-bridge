@@ -7,7 +7,6 @@
 
 This bridge allows you to use established OIDC flows to authenticate and authorize users that have W3C Verifiable Credentials. As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their GX Participant Credential to access systems while making integration simpler through using established SSO protocols.
 
-
 ## Architecture
 
 There are two main components to this project and a lot of additional containers for monitoring and databases. A company (or at least a small consortium) wanting to support SSI in their existing (or new) systems, is expected to run this full setup to avoid introducing a middle man.
@@ -28,7 +27,6 @@ Hydra is a FOSS and OpenID certified implementation. It should allow any OIDC or
 ### VC Login Service
 
 This custom Next.js web app provides a user frontend for the login process, as well as necessary backend API routes. It handles the wallet connection, the Verifiable Presentaiton exchange, the verification
-
 
 ## Flow
 
@@ -83,14 +81,13 @@ sequenceDiagram
 	Browser->>Site: Get protected service page with access token
 ```
 
-
 ## Development Roadmap
 
 While the repository already demonstrates a working front-to-back flow, here are some pointers to the main features still missing:
+
 - support for real GX Participant Credentials and their proper verification
 - a trusted issuer list and possibly access policies
 - OpenID4VP support
-
 
 ## Running it for testing
 
@@ -101,7 +98,6 @@ While the repository already demonstrates a working front-to-back flow, here are
 5. Download Altme Wallet and setup new account
 6. Follow the login flow and present your Account Ownership VC generated on Altme startup
 7. End up at `http://localhost:9010/callback` with metadata about the login being displayed
-
 
 ## Token Introspection
 
