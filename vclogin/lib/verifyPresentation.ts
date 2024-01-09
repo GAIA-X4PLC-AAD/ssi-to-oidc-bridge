@@ -32,7 +32,11 @@ export const verifyAuthenticationPresentation = async (VP: any) => {
 };
 
 const verifyPresentationHelper = async (VC: any, VP: any): Promise<boolean> => {
-  if (VP?.holder && VP?.holder === VC?.credentialSubject?.id) {
+  if (
+    VP.holder &&
+    VP.holder === VC.credentialSubject.id &&
+    VP.proof.verificationMethod.split("#")[0] === VP.holder
+  ) {
     // Verify the signature on the VC
     const verifyOptionsString = "{}";
     const verifyResult = JSON.parse(

@@ -1,6 +1,17 @@
 [
   {
-    "issuer": "*",
-    "types": ["*"]
+    "credentialID": "credential1",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.*",
+            "newPath": "$.subjectData",
+            "required": false
+          }
+        ]
+      }
+    ]
   }
 ]

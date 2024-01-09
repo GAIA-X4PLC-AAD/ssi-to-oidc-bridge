@@ -11,7 +11,7 @@ const config = {
   // Add more setup options before each test is run
   // setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
 
-  setupFiles: ["./__tests__/testSetupFile.js"],
+  setupFiles: ["./__tests__/testSetupFile.js", "jest-canvas-mock"],
   testMatch: ["**/__tests__/**/*.test.js"],
   testEnvironment: "jest-environment-jsdom",
 };

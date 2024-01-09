@@ -1,6 +1,16 @@
 [
   {
-    "issuer": "did:web:app.altme.io:issuer",
-    "types": ["*"]
+    "credentialID": "one",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.*",
+            "required": false
+          }
+        ]
+      }
+    ]
   }
 ]

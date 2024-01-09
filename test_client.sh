@@ -5,9 +5,9 @@ client=$(docker run --rm -it \
     create client --skip-tls-verify \
     --name testclient \
     --secret some-secret \
-    --grant-type authorization_code,refresh_token,client_credentials,implicit \
+    --grant-type authorization_code \
     --response-type token,code,id_token \
-    --scope openid,offline \
+    --scope openid \
     --redirect-uri http://localhost:9010/callback \
     -e http://hydra:4445 \
     --format json )
@@ -25,7 +25,7 @@ docker run --rm -it \
     --client-id $client_id \
     --client-secret some-secret \
     --redirect http://localhost:9010/callback \
-    --scope openid,offline \
+    --scope openid \
     --auth-url http://localhost:5004/oauth2/auth \
     --token-url http://hydra:4444/oauth2/token \
     -e http://hydra:4444

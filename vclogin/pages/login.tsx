@@ -7,6 +7,7 @@ import { NextPageContext } from "next";
 import { useRouter } from "next/router";
 import { useQRCode } from "next-qrcode";
 import { useEffect } from "react";
+import { keyToDID } from "@spruceid/didkit-wasm-node";
 
 export default function Login(props: any) {
   const router = useRouter();
@@ -18,9 +19,12 @@ export default function Login(props: any) {
 
   const getWalletUrl = () => {
     return (
-      process.env.NEXT_PUBLIC_INTERNET_URL +
-      "/api/presentCredential?login_id=" +
-      props.login_id
+      "openid-vc://?client_id=" + props.clientId + "&request_uri=" +
+      encodeURIComponent(
+        props.externalUrl +
+          "/api/presentCredential?login_id=" +
+          props.loginId,
+      )
     );
   };
 
@@ -53,10 +57,10 @@ export default function Login(props: any) {
             id="gx-text"
             className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 pb-4"
           >
-            GX Credentials Bridge
+            SSI-to-OIDC Bridge
           </h1>
         </div>
-        <h2>Scan the code to login!</h2>
+        <h2>Scan the code to sign in!</h2>
         <div className="w-full flex align-center justify-center">
           <Canvas
             text={getWalletUrl()}
@@ -83,7 +87,8 @@ export default function Login(props: any) {
 
 export async function getServerSideProps(context: NextPageContext) {
   try {
-    if (context.query["login_challenge"] == undefined) {
+    const loginChallenge = context.query["login_challenge"];
+    if (loginChallenge === undefined) {
       return {
         redirect: {
           destination: "/common/error",
@@ -97,21 +102,16 @@ export async function getServerSideProps(context: NextPageContext) {
       process.env.REDIS_HOST!,
     );
 
-    // needs to check if the login_challenge was already turned into a UUID
-    // if not, do it
-    const challenge = context.query["login_challenge"];
-    var login_id = await redis.get("" + challenge);
-    if (!login_id) {
-      login_id = crypto.randomUUID();
+    let loginId = await redis.get("" + loginChallenge);
+    if (!loginId) {
+      loginId = crypto.randomUUID();
       const MAX_AGE = 60 * 5; // 5 minutes
       const EXPIRY_MS = "EX"; // seconds
-      await redis.set("" + challenge, "" + login_id, EXPIRY_MS, MAX_AGE);
-      await redis.set("" + login_id, "" + challenge, EXPIRY_MS, MAX_AGE);
+      await redis.set("" + loginChallenge, "" + loginId, EXPIRY_MS, MAX_AGE);
+      await redis.set("" + loginId, "" + loginChallenge, EXPIRY_MS, MAX_AGE);
     }
 
-    // needs to check if the login already happened via phone
-    const redirect = await redis.get("redirect" + login_id);
-    console.log("Redirect: " + redirect + " for id " + login_id);
+    const redirect = await redis.get("redirect" + loginId);
 
     if (redirect) {
       return {
@@ -122,22 +122,17 @@ export async function getServerSideProps(context: NextPageContext) {
       };
     }
 
+    const did = await keyToDID("key", process.env.DID_KEY_JWK!);
+
     return {
-      props: { login_id: login_id },
+      props: { loginId, externalUrl: process.env.EXTERNAL_URL, clientId: did },
     };
   } catch (error) {
-    const env = process.env.NODE_ENV;
-    if (env == "development") {
-      return {
-        props: {},
-      };
-    } else if (env == "production") {
-      return {
-        redirect: {
-          destination: "/common/error",
-          permanent: false,
-        },
-      };
-    }
+    return {
+      redirect: {
+        destination: "/common/error",
+        permanent: false,
+      },
+    };
   }
 }

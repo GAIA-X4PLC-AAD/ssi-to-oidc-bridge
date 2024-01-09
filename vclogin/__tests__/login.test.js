@@ -15,7 +15,7 @@ describe("Login", () => {
   it("renders a heading", () => {
     render(<Login />);
     const heading = screen.getByRole("heading", {
-      name: /GX\sCredentials\sBridge/i,
+      name: /Bridge/i,
     });
     expect(heading).toBeInTheDocument();
   });
@@ -23,7 +23,7 @@ describe("Login", () => {
   it("renders a CTA", () => {
     render(<Login />);
     const heading = screen.getByRole("heading", {
-      name: /Scan\sthe\scode\sto\slogin!/i,
+      name: /Scan/i,
     });
 
     expect(heading).toBeInTheDocument();

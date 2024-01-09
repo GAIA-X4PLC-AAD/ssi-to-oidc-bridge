@@ -20,8 +20,9 @@ export default async function handler(
 
       const challenge = req.query["consent_challenge"] as string;
 
-      const { data: body } =
-        await hydraAdmin.adminGetOAuth2ConsentRequest(challenge);
+      const { data: body } = await hydraAdmin.adminGetOAuth2ConsentRequest(
+        challenge,
+      );
 
       // get user identity and fetch user claims from redis
       const userClaims = JSON.parse((await redis.get("" + body.subject))!);
@@ -33,7 +34,8 @@ export default async function handler(
           grant_scope: body.requested_scope,
 
           session: {
-            access_token: userClaims,
+            access_token: userClaims.tokenAccess,
+            id_token: userClaims.tokenId,
           },
 
           // ORY Hydra checks if requested audiences are allowed by the client, so we can simply echo this.
