@@ -18,10 +18,8 @@ describe("verifyPresentation", () => {
   });
 
   it("verifies a valid VP with Employee VC", () => {
-    return verifyAuthenticationPresentation(vpEmployee).then(
-      (result) => {
-        expect(result).toBe(true);
-      },
-    );
+    return verifyAuthenticationPresentation(vpEmployee).then((result) => {
+      expect(result).toBe(true);
+    });
   });
 });

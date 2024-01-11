@@ -14,9 +14,15 @@ Object.defineProperty(global, "crypto", {
 
 describe("generatePresentationDefinition", () => {
   it("runs without error", () => {
-    expect(generatePresentationDefinition(policyAcceptAnything)).not.toBe(undefined);
-    expect(generatePresentationDefinition(policyEmployeeFromAnyone)).not.toBe(undefined);
-    expect(generatePresentationDefinition(policyEmailFromAltme)).not.toBe(undefined);
+    expect(generatePresentationDefinition(policyAcceptAnything)).not.toBe(
+      undefined,
+    );
+    expect(generatePresentationDefinition(policyEmployeeFromAnyone)).not.toBe(
+      undefined,
+    );
+    expect(generatePresentationDefinition(policyEmailFromAltme)).not.toBe(
+      undefined,
+    );
     expect(generatePresentationDefinition(policyFromAltme)).not.toBe(undefined);
   });
 });

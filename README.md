@@ -9,13 +9,14 @@
 ## Overview
 
 ### The Problem Statement
+
 You operate a service and want to allow your users to sign-in using Verifiable Credentials from a mobile wallet. But building that takes considerable time and expertise.
 
 ### The Solution
+
 A service provider can run this dockerized bridge software, that acts as a normal OIDC Provider towards the service. That means, any service supporting OIDC or OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with Verifiable Credentials. When setting up the bridge software, you can configure what Verifiable Credentials are accepted and how the data within is put into `id_token` or `access_token`.
 
 As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems, while making integration simpler through using established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
-
 
 ## Architecture
 
@@ -121,7 +122,7 @@ sequenceDiagram
 
 To validate running bridge with a simple OIDC client:
 
-1. `$ ./test_client.sh`
+1. `$ ./test_client.sh` (if you get error /bin/bash: bad interpreter: Permisson denied, run `chmod +x ./test_client.sh` before running the script)
 2. go to `http://localhost:9010` in browser
 3. download Altme Wallet (and set up new wallet)
 4. follow the login flow and present your Account Ownership VC generated on Altme startup
@@ -150,7 +151,7 @@ The repository comes with a VSCode devcontainer configuration. We recommend usin
 To develop the vclogin service, follow these steps:
 
 1. `$ ngrok http 5002`, which will set up a randomly generated URL
-2. create the file `./vclogin/env.local`
+2. create the file `./vclogin/.env`
 
 ```bash
 HYDRA_ADMIN_URL=http://localhost:5001
@@ -167,7 +168,8 @@ _Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override th
 
 3. `$ docker compose up`
 4. `$ docker compose stop vclogin`
-5. in `vclogin` directory: `$ npm run dev`
+5. `$ npm i`
+6. in `vclogin` directory: `$ npm run dev`
 
 Now you can develop and it will hot-reload.
 
@@ -203,7 +205,6 @@ A pattern object has the following fields:
 - `newPath` is the new path of the value relative to the root of the token it will be written into. This value is optional, as long as `claimPath` points to exactly one value. In that case, it defaults to `$.<final claimPath component>`.
 - `token` optionally defines if the claim value ends up either in `"id_token"` or `"access_token"`, with the latter being the default.
 - `required` is optional and defaults to `false`
-
 
 ## Token Introspection
 

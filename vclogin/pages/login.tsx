@@ -19,11 +19,11 @@ export default function Login(props: any) {
 
   const getWalletUrl = () => {
     return (
-      "openid-vc://?client_id=" + props.clientId + "&request_uri=" +
+      "openid-vc://?client_id=" +
+      props.clientId +
+      "&request_uri=" +
       encodeURIComponent(
-        props.externalUrl +
-          "/api/presentCredential?login_id=" +
-          props.loginId,
+        props.externalUrl + "/api/presentCredential?login_id=" + props.loginId,
       )
     );
   };
