@@ -1,3 +1,8 @@
+/**
+ * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
+ * SPDX-License-Identifier: MIT
+ */
+
 import { verifyCredential } from "@spruceid/didkit-wasm-node";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
@@ -18,10 +23,8 @@ describe("verifyPresentation", () => {
   });
 
   it("verifies a valid VP with Employee VC", () => {
-    return verifyAuthenticationPresentation(vpEmployee).then(
-      (result) => {
-        expect(result).toBe(true);
-      },
-    );
+    return verifyAuthenticationPresentation(vpEmployee).then((result) => {
+      expect(result).toBe(true);
+    });
   });
 });

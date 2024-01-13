@@ -1,7 +1,8 @@
-/*
- * Copyright (C) 2023, Software Engineering for Business Information Systems (sebis) <matthes@tum.de>
- * SPDX-License-Identifier: Apache-2.0
+/**
+ * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
+ * SPDX-License-Identifier: MIT
  */
+
 import { Redis } from "ioredis";
 import { NextPageContext } from "next";
 import { useRouter } from "next/router";
@@ -19,11 +20,11 @@ export default function Login(props: any) {
 
   const getWalletUrl = () => {
     return (
-      "openid-vc://?client_id=" + props.clientId + "&request_uri=" +
+      "openid-vc://?client_id=" +
+      props.clientId +
+      "&request_uri=" +
       encodeURIComponent(
-        props.externalUrl +
-          "/api/presentCredential?login_id=" +
-          props.loginId,
+        props.externalUrl + "/api/presentCredential?login_id=" + props.loginId,
       )
     );
   };
