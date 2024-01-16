@@ -1,3 +1,8 @@
+/**
+ * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
+ * SPDX-License-Identifier: MIT
+ */
+
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
 import policyAcceptAnything from "@/testdata/policies/acceptAnything.json";
 import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyone.json";
