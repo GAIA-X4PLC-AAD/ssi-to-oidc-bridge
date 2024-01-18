@@ -9,13 +9,14 @@
 ## Overview
 
 ### The Problem Statement
+
 You operate a service and want to allow your users to sign-in using Verifiable Credentials from a mobile wallet. But building that takes considerable time and expertise.
 
 ### The Solution
+
 A service provider can run this dockerized bridge software, that acts as a normal OIDC Provider towards the service. That means, any service supporting OIDC or OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with Verifiable Credentials. When setting up the bridge software, you can configure what Verifiable Credentials are accepted and how the data within is put into `id_token` or `access_token`.
 
 As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems, while making integration simpler through using established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
-
 
 ## Architecture
 
@@ -109,25 +110,40 @@ sequenceDiagram
 
 ## Running a Local Deployment
 
-> [!WARNING]
-> You need to use a tool like ngrok for testing so your smartphone wallet can access the vclogin backend. However, it can lead to issues with `application/x-www-form-urlencoded` request bodies used in the flow (https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22). But you can manually replay that request on ngrok interface, if you run into problems.
+A local deployment is a great way to test the bridge and to use it for prototyping an OIDC client service you are developing.
+
+> [!IMPORTANT]
+> You need to use a tool like ngrok for testing so your smartphone wallet can access the vclogin backend. However, it can lead to issues with `application/x-www-form-urlencoded` request bodies used in the flow (https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22). But you can manually replay that request on the ngrok interface, if you run into problems.
 
 1. `$ ngrok http 5002`, which will set up a randomly generated URL
 2. enter the domain for the vclogin service into the env file `/vclogin/.env` with key `EXTERNAL_URL`
 3. enter a JWK key (Ed25519) into the env file `./vclogin/.env` with key `DID_KEY_JWK` (example for quick testing: `{"kty":"OKP","crv":"Ed25519","x":"cwa3dufHNLg8aQb2eEUqTyoM1cKQW3XnOkMkj_AAl5M","d":"me03qhLByT-NKrfXDeji-lpADSpVOKWoaMUzv5EyzKY"}`)
-4. enter the path to a trust policy file into the env file `/vclogin/.env` with key `LOGIN_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
+4. enter the path to a login policy file into the env file `/vclogin/.env` with key `LOGIN_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
 5. OPTIONAL: enter an override for a credential descriptor into the env file `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over what wallets are asked for is desired (example for quick testing: `./__tests__/pex/testdata/descriptorEmailFromAltme.json`)
-6. `$ docker compose up`
+6. at this point it needs to be ensured that the container for the vclogin service is freshly built with the new env file: `docker compose down && docker compose build`
+7. `$ docker compose up`
 
-To validate running bridge with a simple OIDC client:
+To validate the running bridge with a simple OIDC client:
+
+> [!NOTE]
+> You might run into a "Permisson denied" issue when running the shell script `./test_client.sh`. You need to mark the file as executable using `chmod +x ./test_client.sh`.
 
 1. `$ ./test_client.sh`
 2. go to `http://localhost:9010` in browser
-3. download Altme Wallet (and set up new wallet)
-4. follow the login flow and present your Account Ownership VC generated on Altme startup
-5. end up at `http://localhost:9010/callback` with metadata about the login being displayed
+3. download Altme Wallet and set up the (new) wallet
+4. to make sure you have a credential for testing, click on the "Discover" tab at the bottom and get a "Proof of email" credential
+5. in your browser, click on "Authorize" and scan the QR code with Altme wallet
+6. the wallet will prompt you with a list of possible credentials to present, from which you choose one and confirm
+7. the wallet will show a success message
+8. within seconds, the browser should redirect
+9. end up at `http://localhost:9010/callback` with metadata about the login being displayed
+
+> [!TIP]
+> If you want to understand what the wallet is doing in the exchange, go to settings and toggle on "Developer Mode". After scanning a QR code, the wallet will now give you the option to see or save the interaction data. If you just want to continue the sign-in, tap "skip".
 
 ## Running for Development
+
+Running for development means that all components apart from the vclogin service will run containerized. The vclogin service can be edited and run with hot-reload for fast testing and iteration.
 
 The repository comes with a VSCode devcontainer configuration. We recommend using it. To prepare your VSCode setup, you need two settings files.
 
@@ -150,7 +166,7 @@ The repository comes with a VSCode devcontainer configuration. We recommend usin
 To develop the vclogin service, follow these steps:
 
 1. `$ ngrok http 5002`, which will set up a randomly generated URL
-2. create the file `./vclogin/env.local`
+2. create the file `./vclogin/.env.local`
 
 ```bash
 HYDRA_ADMIN_URL=http://localhost:5001
@@ -167,7 +183,8 @@ _Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override th
 
 3. `$ docker compose up`
 4. `$ docker compose stop vclogin`
-5. in `vclogin` directory: `$ npm run dev`
+5. in `vclogin` directory upon first checkout: `$ npm i`
+6. in `vclogin` directory: `$ npm run dev`
 
 Now you can develop and it will hot-reload.
 
@@ -203,7 +220,6 @@ A pattern object has the following fields:
 - `newPath` is the new path of the value relative to the root of the token it will be written into. This value is optional, as long as `claimPath` points to exactly one value. In that case, it defaults to `$.<final claimPath component>`.
 - `token` optionally defines if the claim value ends up either in `"id_token"` or `"access_token"`, with the latter being the default.
 - `required` is optional and defaults to `false`
-
 
 ## Token Introspection
 
