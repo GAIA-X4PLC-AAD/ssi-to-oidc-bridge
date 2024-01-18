@@ -1,5 +1,7 @@
 # Universal SSI-to-OIDC Bridge for VC-based Sign-ins
 
+![build workflow](https://github.com/GAIA-X4PLC-AAD/ssi-to-oidc-bridge/actions/workflows/node.js.yml/badge.svg)
+
 > [!WARNING]
 > This repository is intended for prototyping and as a reference implementation.
 
