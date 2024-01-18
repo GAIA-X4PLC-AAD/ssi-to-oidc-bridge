@@ -120,7 +120,8 @@ A local deployment is a great way to test the bridge and to use it for prototypi
 3. enter a JWK key (Ed25519) into the env file `./vclogin/.env` with key `DID_KEY_JWK` (example for quick testing: `{"kty":"OKP","crv":"Ed25519","x":"cwa3dufHNLg8aQb2eEUqTyoM1cKQW3XnOkMkj_AAl5M","d":"me03qhLByT-NKrfXDeji-lpADSpVOKWoaMUzv5EyzKY"}`)
 4. enter the path to a login policy file into the env file `/vclogin/.env` with key `LOGIN_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
 5. OPTIONAL: enter an override for a credential descriptor into the env file `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over what wallets are asked for is desired (example for quick testing: `./__tests__/pex/testdata/descriptorEmailFromAltme.json`)
-6. `$ docker compose up`
+6. at this point it needs to be ensured that the container for the vclogin service is freshly built with the new env file: `docker compose down && docker compose build`
+7. `$ docker compose up`
 
 To validate the running bridge with a simple OIDC client:
 
@@ -129,9 +130,16 @@ To validate the running bridge with a simple OIDC client:
 
 1. `$ ./test_client.sh`
 2. go to `http://localhost:9010` in browser
-3. download Altme Wallet (and set up new wallet)
-4. follow the login flow and present your Account Ownership VC generated on Altme startup
-5. end up at `http://localhost:9010/callback` with metadata about the login being displayed
+3. download Altme Wallet and set up the (new) wallet
+4. to make sure you have a credential for testing, click on the "Discover" tab at the bottom and get a "Proof of email" credential
+5. in your browser, click on "Authorize" and scan the QR code with Altme wallet
+6. the wallet will prompt you with a list of possible credentials to present, from which you choose one and confirm
+7. the wallet will show a success message
+8. within seconds, the browser should redirect
+9. end up at `http://localhost:9010/callback` with metadata about the login being displayed
+
+> [!TIP]
+> If you want to understand what the wallet is doing in the exchange, go to settings and toggle on "Developer Mode". After scanning a QR code, the wallet will now give you the option to see or save the interaction data. If you just want to continue the sign-in, tap "skip".
 
 ## Running for Development
 
