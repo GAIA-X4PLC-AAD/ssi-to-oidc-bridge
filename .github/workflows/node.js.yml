@@ -9,14 +9,14 @@ on:
   pull_request:
     branches: [ "main" ]
 
-defaults:
-  run:
-    working-directory: vclogin
-
 jobs:
   build:
     name: Build, test, and lint
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: vclogin
 
     strategy:
       matrix:
@@ -30,7 +30,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        working-directory: vclogin
+        cache-dependency-path: '**/package-lock.json'
     - name: Install dependencies
       run: npm ci
     - name: Build vclogin
