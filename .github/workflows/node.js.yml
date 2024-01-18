@@ -9,9 +9,13 @@ on:
   pull_request:
     branches: [ "main" ]
 
+defaults:
+  run:
+    working-directory: vclogin
+
 jobs:
   build:
-    name: Build and test
+    name: Build, test, and lint
     runs-on: ubuntu-latest
 
     strategy:
@@ -28,13 +32,9 @@ jobs:
         cache: 'npm'
     - name: Install dependencies
       run: npm ci
-      working-directory: vclogin
     - name: Build vclogin
       run: npm run build --if-present
-      working-directory: vclogin
     - name: Test vclogin
       run: npm test
-      working-directory: vclogin
     - name: Lint vclogin
       run: npm run lint
-      working-directory: vclogin
