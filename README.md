@@ -6,7 +6,7 @@
 > This repository is intended for prototyping and as a reference implementation.
 
 > [!NOTE]
-> A preprint of a paper providing more bacckground information is available [on arXiv](https://arxiv.org/abs/2401.09488).
+> A preprint of our paper providing more bacckground information is available [on arXiv](https://arxiv.org/abs/2401.09488).
 
 > [!NOTE]
 > This software artifact was originally intended to support only Gaia-X Participant Credentials. It has since evolved to be fully configurable for almost any Verifiable Credential, almost any wallet application, and almost any current OIDC client.
