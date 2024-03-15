@@ -3,10 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {
-  isTrustedPresentation,
-  exportedForTesting,
-} from "@/lib/evaluateLoginPolicy";
+import { isTrustedPresentation } from "@/lib/extractClaims";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
 import vpTezos from "@/testdata/presentations/VP_TezosAssociatedAddress.json";
@@ -14,6 +11,8 @@ import policyAcceptAnything from "@/testdata/policies/acceptAnything.json";
 import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyone.json";
 import policyEmailFromAltme from "@/testdata/policies/acceptEmailFromAltme.json";
 import policyFromAltme from "@/testdata/policies/acceptFromAltme.json";
+import policyEmailFromAltmeConstr from "@/testdata/policies/acceptEmailFromAltmeConstr.json";
+import policyEmployeeFromAnyoneConstr from "@/testdata/policies/acceptEmployeeFromAnyoneConstr.json";
 
 describe("evaluateLoginPolicy", () => {
   it("defaults to false if no policy is available", () => {
@@ -54,34 +53,25 @@ describe("evaluateLoginPolicy", () => {
     trusted = isTrustedPresentation(vpEmployee, policyFromAltme);
     expect(trusted).toBe(false);
   });
-});
 
-describe("utility function for VP policy validation", () => {
-  let hasUniquePath = exportedForTesting.hasUniquePath;
-
-  it("should return true when there is a unique path", () => {
-    const patternFits = [
-      ["A", "B"],
-      ["C", "D"],
-      ["E", "F"],
-    ];
-    const usedCreds = ["A", "C", "E"];
-    expect(hasUniquePath(patternFits, usedCreds)).toBe(true);
+  it("accepts only VP with credential(s) with simple constraint", () => {
+    var trusted = isTrustedPresentation(vpEmail, policyEmailFromAltmeConstr);
+    expect(trusted).toBe(true);
+    trusted = isTrustedPresentation(vpEmployee, policyEmailFromAltmeConstr);
+    expect(trusted).toBe(false);
+    trusted = isTrustedPresentation(vpTezos, policyEmailFromAltmeConstr);
+    expect(trusted).toBe(false);
   });
 
-  it("should return false when there is no unique path", () => {
-    const patternFits = [
-      ["A", "B"],
-      ["C", "D"],
-      ["E", "F"],
-    ];
-    const usedCreds = ["A", "C", "E", "B"];
-    expect(hasUniquePath(patternFits, usedCreds)).toBe(false);
-  });
-
-  it("should return false when the patternFits array has only one subarray with no elements", () => {
-    const patternFits = [[]];
-    const usedCreds = [];
-    expect(hasUniquePath(patternFits, usedCreds)).toBe(false);
+  it("accepts only VP with credential(s) with complicated constraint", () => {
+    var trusted = isTrustedPresentation(
+      vpEmployee,
+      policyEmployeeFromAnyoneConstr,
+    );
+    expect(trusted).toBe(true);
+    trusted = isTrustedPresentation(vpEmail, policyEmployeeFromAnyoneConstr);
+    expect(trusted).toBe(false);
+    trusted = isTrustedPresentation(vpTezos, policyEmployeeFromAnyoneConstr);
+    expect(trusted).toBe(false);
   });
 });
