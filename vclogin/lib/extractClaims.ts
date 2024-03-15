@@ -43,7 +43,11 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
   return claims;
 };
 
-const getConstraintFit = (creds: any[], policy: LoginPolicy, VP: any): any[] => {
+const getConstraintFit = (
+  creds: any[],
+  policy: LoginPolicy,
+  VP: any,
+): any[] => {
   const patternFits = getPatternClaimFits(creds, policy);
   const uniqueFits = getAllUniqueDraws(patternFits);
   if (uniqueFits.length === 0) {
