@@ -9,7 +9,12 @@
             "claimPath": "$.credentialSubject.email",
             "token": "id_token"
           }
-        ]
+        ],
+        "constraint": {
+          "op": "equalsDID",
+          "a": "$VP.proof.verificationMethod",
+          "b": "$.credentialSubject.id"
+        }
       }
     ]
   }

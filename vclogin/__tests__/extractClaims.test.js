@@ -8,6 +8,7 @@ import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
 import policyAcceptAnything from "@/testdata/policies/acceptAnything.json";
 import policyEmailFromAltme from "@/testdata/policies/acceptEmailFromAltme.json";
+import policyEmailFromAltmeConstr from "@/testdata/policies/acceptEmailFromAltmeConstr.json";
 import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyone.json";
 
 describe("extractClaims", () => {
@@ -38,6 +39,17 @@ describe("extractClaims", () => {
 
   it("all designated claims from an EmailPass Credential are mapped", () => {
     var claims = extractClaims(vpEmail, policyEmailFromAltme);
+    var expected = {
+      tokenId: {
+        email: "felix.hoops@tum.de",
+      },
+      tokenAccess: {},
+    };
+    expect(claims).toStrictEqual(expected);
+  });
+
+  it("all designated claims from an EmailPass Credential are mapped (constrained)", () => {
+    var claims = extractClaims(vpEmail, policyEmailFromAltmeConstr);
     var expected = {
       tokenId: {
         email: "felix.hoops@tum.de",

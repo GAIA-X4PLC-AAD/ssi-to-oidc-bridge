@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
+export type VcConstraint = {
+  op: string;
+  a: VcConstraint | string;
+  b: VcConstraint | string;
+};
+
 export type ClaimEntry = {
   claimPath: string;
   newPath?: string;
@@ -12,9 +18,12 @@ export type ClaimEntry = {
 export type CredentialPattern = {
   issuer: string;
   claims: ClaimEntry[];
+  constraint?: VcConstraint;
 };
+
 export type ExpectedCredential = {
-  credentialID: string;
+  credentialId: string;
   patterns: CredentialPattern[];
 };
+
 export type LoginPolicy = ExpectedCredential[];
