@@ -7,7 +7,7 @@ client=$(docker run --rm -it \
     --secret some-secret \
     --grant-type authorization_code \
     --response-type token,code,id_token \
-    --scope openid \
+    --scope openid,student \
     --redirect-uri http://localhost:9010/callback \
     -e http://hydra:4445 \
     --format json )
@@ -15,6 +15,22 @@ client=$(docker run --rm -it \
 echo $client
 
 client_id=$(echo $client | jq -r '.client_id')
+scope=$(echo $client | jq -r '.scope')
+generated_policies="./vclogin/__generated__"
+
+mkdir -p "$generated_policies"
+
+for value in $scope; do
+    if [ "$value" == "openid" ]; then
+        filename="${generated_policies}/main.json"
+        echo "This is your main policy for initial login. $filename"
+    else
+        filename="${generated_policies}/${value}.json"
+        echo "This is your policy for $value scope. $filename"
+    fi
+    echo "Generating file: $filename"
+    touch "$filename"
+done
 
 docker run --rm -it \
     --network ory-hydra-net \
