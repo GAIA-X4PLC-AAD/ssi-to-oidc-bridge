@@ -79,7 +79,6 @@ const getPatternClaimFits = (creds: any[], policy: LoginPolicy): any[][] => {
 
 const isCredentialFittingPatternList = (
   cred: any,
-
   patterns: CredentialPattern[],
 ): boolean => {
   for (let pattern of patterns) {
@@ -93,7 +92,6 @@ const isCredentialFittingPatternList = (
 
 const isCredentialFittingPattern = (
   cred: any,
-
   pattern: CredentialPattern,
 ): boolean => {
   if (cred.issuer !== pattern.issuer && pattern.issuer !== "*") {
@@ -113,8 +111,32 @@ const isCredentialFittingPattern = (
 };
 
 const getAllUniqueDraws = (patternFits: any[][]): any[][] => {
+  // get all unique draws of credentials that fit the expected credential claims
   const draws = getAllUniqueDrawsHelper(patternFits, []);
-  return draws.filter((draw) => draw.length == patternFits.length);
+  const filteredPatterns = removeDuplicates(patternFits);
+  return draws.filter((draw) => draw.length == filteredPatterns.length);
+};
+
+const removeDuplicates = (array: any) => {
+  const uniqueElements: any = [];
+  return array.filter((subArray: any) => {
+    const found = uniqueElements.some((uniqueSubArray: any) => {
+      if (uniqueSubArray.length === subArray.length) {
+        return subArray.every((element: any, index: any) => {
+          const uniqueElement = uniqueSubArray[index];
+          return Object.keys(element).every(
+            (key) => element[key] === uniqueElement[key],
+          );
+        });
+      }
+      return false;
+    });
+    if (!found) {
+      uniqueElements.push(subArray);
+      return true;
+    }
+    return false;
+  });
 };
 
 const getAllUniqueDrawsHelper = (
@@ -124,7 +146,6 @@ const getAllUniqueDrawsHelper = (
   if (patternFits.length === 0) {
     return [];
   }
-
   let uniqueDraws: any[][] = [];
   for (let cred of patternFits[0]) {
     if (!usedIds.includes(cred.id)) {
@@ -143,33 +164,42 @@ const isValidConstraintFit = (
   VP: any,
 ): boolean => {
   const credDict: any = {};
+  credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
+  // check if all constraints are fulfilled
+  var fittingArr = [];
 
   for (let i = 0; i < policy.length; i++) {
     const cred = credFit[i];
     const expectation = policy[i];
-    var oneFittingPattern = false;
     for (let pattern of expectation.patterns) {
       if (isCredentialFittingPattern(cred, pattern)) {
         if (pattern.constraint) {
+          console.log("pattern", pattern);
           const res = evaluateConstraint(
             pattern.constraint,
             cred,
             credDict,
             VP,
           );
+          console.log("res", res);
           if (res) {
-            oneFittingPattern = true;
-            break;
+            // if one pattern fits, the credential is fitting
+            fittingArr.push(true);
+          } else {
+            // if one pattern does not fit, the credential is not fitting
+            fittingArr.push(false);
           }
         }
       }
     }
-    if (!oneFittingPattern) {
-      return true;
-    }
+  }
+  console.log("fittingArr", fittingArr);
+  // if all patterns fit, the credential is fitting
+  if (!fittingArr.includes(false)) {
+    return true;
   }
   return false;
 };
@@ -191,6 +221,9 @@ const evaluateConstraint = (
       a = resolveValue(constraint.a as string, cred, credDict, VP);
       b = resolveValue(constraint.b as string, cred, credDict, VP);
   }
+
+  console.log("a", a);
+  console.log("b", b);
 
   switch (constraint.op) {
     case "equals":
@@ -227,31 +260,63 @@ const evaluateConstraint = (
   throw Error("Unknown constraint operator: " + constraint.op);
 };
 
+const resolveSingleNodeValue = (
+  expression: string,
+  cred: any,
+  VP: any,
+): string => {
+  var nodes: any;
+  if (expression.startsWith("$")) {
+    if (expression.startsWith("$1.")) {
+      nodes = jp.nodes(cred, "$" + expression.slice(2));
+    } else if (expression.startsWith("$VP.")) {
+      nodes = jp.nodes(VP, "$" + expression.slice(3));
+    }
+    if (nodes === undefined) {
+      return expression;
+    } else if (nodes.length > 1 || nodes.length <= 0) {
+      throw Error("JSON Paths in constraints must be single-valued");
+    }
+    return nodes[0].value;
+  }
+  return expression;
+};
+
 const resolveValue = (
   expression: string,
   cred: any,
   credDict: any,
   VP: any,
 ): string => {
-  if (expression.startsWith("$")) {
-    var nodes: any;
-    if (expression.startsWith("$.")) {
-      nodes = jp.nodes(cred, expression);
-    } else if (expression.startsWith("$VP.")) {
-      nodes = jp.nodes(VP, "$" + expression.slice(3));
-    } else {
-      nodes = jp.nodes(
-        credDict[expression.slice(1).split(".")[0]],
-        expression.slice(1).split(".").slice(1).join("."),
-      );
+  var nodes: any;
+  if (Object.entries(credDict).length > 0) {
+    // store object key's value in array to prevent querying wrong key
+    let keyValues = [];
+    for (const [key, value] of Object.entries(credDict)) {
+      keyValues.push(key);
     }
-    if (nodes.length > 1 || nodes.length <= 0) {
-      throw Error("JSON Paths in constraints must be single-valued");
-    }
-    return nodes[0].value;
-  }
 
-  return expression;
+    for (const [key, value] of Object.entries(credDict)) {
+      if (expression.startsWith("$" + key + ".")) {
+        for (const [key2, value2] of Object.entries(credDict)) {
+          // check if both keys are in credDict
+          if (keyValues.includes(key2) && keyValues.includes(key)) {
+            if (key !== key2) {
+              nodes = jp.nodes(value2, expression.slice(2 + key.length));
+              if (nodes.length <= 1 && nodes.length > 0) {
+                return nodes[0].value;
+              }
+            }
+          } else {
+            // if key is not found in credDict
+            throw Error("Key not found in credDict");
+          }
+        }
+      }
+    }
+    resolveSingleNodeValue(expression, cred, VP);
+  }
+  return resolveSingleNodeValue(expression, cred, VP);
 };
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
