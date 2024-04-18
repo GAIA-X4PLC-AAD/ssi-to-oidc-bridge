@@ -33,7 +33,6 @@ export const mergePolicyFiles = async (scopes: string[]) => {
   return mergedPolicy;
 };
 
-var configuredPolicyByScope: LoginPolicy | undefined = undefined;
 const readPolicy = async (scope: string) => {
   try {
     const path = getPolicyPath(scope);
