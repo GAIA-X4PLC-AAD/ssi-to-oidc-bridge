@@ -110,6 +110,10 @@ export default async function handler(
       const uuid = presentation["proof"]["challenge"];
       console.log(userClaims);
 
+      const MAX_AGE = 20 * 60;
+      const EXPIRY_MS = "EX";
+
+      await redis.set("auth_res", uuid, EXPIRY_MS, MAX_AGE);
       res.status(200).end();
       // This will handle any error that happens when making HTTP calls to hydra
     } else {
