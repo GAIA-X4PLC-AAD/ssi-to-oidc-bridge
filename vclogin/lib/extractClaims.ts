@@ -110,33 +110,17 @@ const isCredentialFittingPattern = (
   return true;
 };
 
+const removeDuplicates = (patternFits: any[][]) => {
+  return Array.from(new Set(patternFits.map((obj) => JSON.stringify(obj)))).map(
+    (str) => JSON.parse(str),
+  );
+};
+
 const getAllUniqueDraws = (patternFits: any[][]): any[][] => {
   // get all unique draws of credentials that fit the expected credential claims
   const draws = getAllUniqueDrawsHelper(patternFits, []);
   const filteredPatterns = removeDuplicates(patternFits);
   return draws.filter((draw) => draw.length == filteredPatterns.length);
-};
-
-const removeDuplicates = (array: any) => {
-  const uniqueElements: any = [];
-  return array.filter((subArray: any) => {
-    const found = uniqueElements.some((uniqueSubArray: any) => {
-      if (uniqueSubArray.length === subArray.length) {
-        return subArray.every((element: any, index: any) => {
-          const uniqueElement = uniqueSubArray[index];
-          return Object.keys(element).every(
-            (key) => element[key] === uniqueElement[key],
-          );
-        });
-      }
-      return false;
-    });
-    if (!found) {
-      uniqueElements.push(subArray);
-      return true;
-    }
-    return false;
-  });
 };
 
 const getAllUniqueDrawsHelper = (
