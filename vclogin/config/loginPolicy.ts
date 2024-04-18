@@ -14,3 +14,33 @@ fs?.readFile(process.env.LOGIN_POLICY as string, "utf8").then((file) => {
 export const getConfiguredLoginPolicy = () => {
   return configuredPolicy;
 };
+
+export const getPolicyPath = (scope: string) => {
+  let mainPath = "./__generated__";
+  return scope === "openid"
+    ? `${mainPath}/main.json`
+    : `${mainPath}/${scope}.json`;
+};
+
+export const mergePolicyFiles = async (scopes: string[]) => {
+  let mergedPolicy: LoginPolicy | undefined = [];
+  await Promise.all(
+    scopes.map(async (scope) => {
+      const x = await readPolicy(scope);
+      mergedPolicy.push(x); // Assuming each policy is an object and you want to merge them into an array
+    }),
+  );
+  return mergedPolicy;
+};
+
+var configuredPolicyByScope: LoginPolicy | undefined = undefined;
+const readPolicy = async (scope: string) => {
+  try {
+    const path = getPolicyPath(scope);
+    const file = await fs?.readFile(path, "utf8");
+    return JSON.parse(file);
+  } catch (error) {
+    console.error("Error reading policy:", error);
+    throw error;
+  }
+};
