@@ -11,7 +11,10 @@ import { isTrustedPresentation, extractClaims } from "@/lib/extractClaims";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
-import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
+import {
+  getConfiguredLoginPolicy,
+  mergePolicyFiles,
+} from "@/config/loginPolicy";
 
 var redis: Redis;
 try {
@@ -29,15 +32,22 @@ export default async function handler(
     if (method === "GET") {
       console.log("LOGIN API GET");
       console.log(req.query);
+
+      const challenge = req.query["login_id"];
+      const loginChallenge = (await redis.get("" + challenge))!;
+
+      const policyGenerated = await getPolicyGenerated(loginChallenge);
+      console.log("Presentation Definition Generated: \n", policyGenerated);
+
       const presentation_definition = generatePresentationDefinition(
-        getConfiguredLoginPolicy()!,
+        policyGenerated!,
       );
+
       const did = await keyToDID("key", process.env.DID_KEY_JWK!);
       const verificationMethod = await keyToVerificationMethod(
         "key",
         process.env.DID_KEY_JWK!,
       );
-      const challenge = req.query["login_id"];
       const payload = {
         client_id: did,
         client_id_scheme: "did",
@@ -97,12 +107,14 @@ export default async function handler(
       }
 
       // Get the user claims
-      const userClaims = extractClaims(presentation);
       const subject = presentation["holder"];
       const login_id = presentation["proof"]["challenge"];
       const challenge = (await redis.get("" + login_id))!;
-      console.log("Logging in: " + subject + " with challenge: " + challenge);
+      const policyGenerated = await getPolicyGenerated(challenge);
+      const userClaims = extractClaims(presentation, policyGenerated);
 
+      console.log("Logging in: " + subject + " with challenge: " + challenge);
+      console.log("User Claims: \n", userClaims);
       // hydra login
       await hydraAdmin
         .adminGetOAuth2LoginRequest(challenge)
@@ -160,5 +172,17 @@ export default async function handler(
     res.status(500).end();
   }
 }
+
+const getPolicyGenerated = async (loginChallenge: string) => {
+  let policyGenerated;
+  await hydraAdmin
+    .adminGetOAuth2LoginRequest(loginChallenge)
+    .then(async ({ data: loginRequest }) => {
+      console.log("Login Request: \n", loginRequest);
+      const requestedScopes = loginRequest.requested_scope;
+      policyGenerated = await mergePolicyFiles(requestedScopes);
+    });
+  return policyGenerated;
+};
 
 export const config = { api: { bodyParser: true } };
