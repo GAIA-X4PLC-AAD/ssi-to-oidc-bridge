@@ -1,0 +1,20 @@
+[
+  {
+    "credentialId": "1",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.firstName",
+            "token": "id_token"
+          },
+          {
+            "claimPath": "$.credentialSubject.familyName",
+            "token": "id_token"
+          }
+        ]
+      }
+    ]
+  }
+]

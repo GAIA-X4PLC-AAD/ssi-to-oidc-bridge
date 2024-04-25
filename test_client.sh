@@ -8,8 +8,9 @@ client=$(docker run --rm -it \
     --grant-type authorization_code \
     --response-type token,code,id_token \
     --scope openid,student \
-    --redirect-uri http://localhost:9010/callback \
+    --redirect-uri http://localhost:3000/welcome \
     -e http://hydra:4445 \
+    --token-endpoint-auth-method client_secret_post \
     --format json )
 
 echo $client
@@ -40,8 +41,8 @@ docker run --rm -it \
     --port 9010 \
     --client-id $client_id \
     --client-secret some-secret \
-    --redirect http://localhost:9010/callback \
+    --redirect http://localhost:3000/welcome \
     --scope openid \
     --auth-url http://localhost:5004/oauth2/auth \
-    --token-url http://hydra:4444/oauth2/token \
+    --token-url http://localhost:5004/oauth2/token \
     -e http://hydra:4444

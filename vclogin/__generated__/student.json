@@ -1,0 +1,21 @@
+[
+  {
+    "credentialId": "2",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email",
+            "token": "id_token"
+          }
+        ],
+        "constraint": {
+          "op": "equals",
+          "a": "$2.credentialSubject.issuer",
+          "b": "$1.credentialSubject.issuer"
+        }
+      }
+    ]
+  }
+]
