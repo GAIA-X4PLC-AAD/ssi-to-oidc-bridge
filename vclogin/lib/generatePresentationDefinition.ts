@@ -8,7 +8,7 @@ import { promises as fs } from "fs";
 
 var inputDescriptorOverride: any = undefined;
 if (process.env.PEX_DESCRIPTOR_OVERRIDE) {
-  fs.readFile(process.env.PEX_DESCRIPTOR_OVERRIDE as string, "utf8").then(
+  fs?.readFile(process.env.PEX_DESCRIPTOR_OVERRIDE as string, "utf8").then(
     (file) => {
       inputDescriptorOverride = JSON.parse(file);
     },
@@ -81,6 +81,7 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
       if (fields.length > 0) {
         descr.constraints.fields = fields;
       }
+      console.log(descr);
       pd.input_descriptors.push(descr);
     }
   }

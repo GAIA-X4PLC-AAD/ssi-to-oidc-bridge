@@ -56,7 +56,8 @@ export default async function handler(
         request_uri_parameter_supported: true,
         request_parameter_supported: false,
         redirect_uris: [
-          process.env.NEXT_PUBLIC_INTERNET_URL + "/api/presentCredentialById",
+          process.env.NEXT_PUBLIC_INTERNET_URL +
+            "/api/dynamic/presentCredentialById",
         ],
       };
       res.status(200).json(metadata);

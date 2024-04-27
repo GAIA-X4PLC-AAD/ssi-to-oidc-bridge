@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Redis } from "ioredis";
+import crypto from "crypto";
 
 var redis: Redis;
 try {
@@ -15,12 +16,33 @@ export default async function handler(
   //Get Policy from request body
   const policy = req.body;
 
-  //Store Policy in Redis with key UUID and value as Policy with an expiry of 5 minutes
-  const uuid = crypto.randomUUID();
   try {
-    await redis.set(uuid, JSON.stringify(policy), "EX", 300);
+    // store policy in redis with uuid as key
+    const uuid = crypto.randomUUID();
+    await redis.set(uuid, policy, "EX", 300);
     return res.status(200).json({ uuid });
   } catch (error) {
-    return res.status(500).json({ error });
+    return res.status(500).json({ redirect: "/error" });
   }
 }
+
+/*
+  //read credential id from policy
+  const hash = crypto.createHash("sha256").update(policy).digest("hex");
+
+  try {
+    //check if policy already exists
+    const existingPolicy = await redis.get(hash);
+    if (existingPolicy) {
+      return res.status(200).json({ uuid: hash });
+    } else {
+      try {
+        const hash = crypto.createHash("sha256").update(policy).digest("hex");
+
+        await redis.set(hash, JSON.stringify(policy), "EX", 300);
+
+        return res.status(200).json({ uuid: hash });
+      } catch (error) {
+        return res.status(500).json({ error });
+      }
+    } */

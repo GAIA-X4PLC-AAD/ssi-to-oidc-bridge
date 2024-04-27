@@ -31,15 +31,18 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
 
   var usedPolicy = policy ? policy : configuredPolicy!;
 
+  console.log("Used Policy", usedPolicy);
   const creds = Array.isArray(VP.verifiableCredential)
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
-
+  console.log("Credentials", creds);
   const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
+  console.log("Extracted VC Claims", vcClaims);
   const claims = vcClaims.reduce(
     (acc: any, vc: any) => Object.assign(acc, vc),
     {},
   );
+  console.log("Extracted Claims", claims);
   return claims;
 };
 
@@ -256,6 +259,7 @@ const resolveValue = (
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
   for (let expectation of policy) {
+    console.log("Expectation", expectation);
     for (let pattern of expectation.patterns) {
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
         const containsAllRequired =
@@ -309,7 +313,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
               : extractedClaims.tokenAccess;
           jp.value(claimTarget, newPath, value);
         }
-
+        console.log("Extracted Claims", extractedClaims);
         return extractedClaims;
       }
     }

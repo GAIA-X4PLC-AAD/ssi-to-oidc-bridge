@@ -12,8 +12,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<any>,
 ) {
-  //Get Policy from request body
-  const { uuid, userId } = req.body;
+  const { userId, uuid } = JSON.parse(req.body);
 
   //Generate QR Code String from UUID
   const qrCodeString =
@@ -21,7 +20,9 @@ export default async function handler(
     userId +
     "&request_uri=" +
     encodeURIComponent(
-      process.env.EXTERNAL_URL + "/api/presentCredentialById?login_id=" + uuid,
+      process.env.EXTERNAL_URL +
+        "/api/dynamic/presentCredentialById?login_id=" +
+        uuid,
     );
 
   return res.status(200).json({ qrCodeString });
