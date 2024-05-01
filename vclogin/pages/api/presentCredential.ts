@@ -142,7 +142,7 @@ export default async function handler(
     const { method } = req;
     if (method) {
       const execute = handlers[method.toUpperCase()];
-      return execute(req, res);
+      return await execute(req, res);
     }
   } catch (e) {
     res.status(500).end();
