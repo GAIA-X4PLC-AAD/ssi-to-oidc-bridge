@@ -12,6 +12,7 @@ import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
+import { getToken } from "@/lib/getToken";
 
 var redis: Redis;
 try {
@@ -32,47 +33,24 @@ export default async function handler(
       const presentation_definition = generatePresentationDefinition(
         getConfiguredLoginPolicy()!,
       );
-      const did = await keyToDID("key", process.env.DID_KEY_JWK!);
-      const verificationMethod = await keyToVerificationMethod(
-        "key",
-        process.env.DID_KEY_JWK!,
-      );
+
       const challenge = req.query["login_id"];
-      const payload = {
-        client_id: did,
-        client_id_scheme: "did",
-        client_metadata_uri: process.env.EXTERNAL_URL + "/api/clientMetadata",
-        nonce: challenge,
-        presentation_definition,
-        response_mode: "direct_post",
-        response_type: "vp_token",
-        response_uri: process.env.EXTERNAL_URL + "/api/presentCredential",
-        state: challenge,
-      };
-      const privateKey = await jose.importJWK(
-        JSON.parse(process.env.DID_KEY_JWK!),
-        "EdDSA",
-      );
-      const token = await new jose.SignJWT(payload)
-        .setProtectedHeader({
-          alg: "EdDSA",
-          kid: verificationMethod,
-          typ: "JWT",
-        })
-        .setIssuedAt()
-        .setIssuer(did)
-        .setAudience("https://self-issued.me/v2") // by definition
-        .setExpirationTime("1 hour")
-        .sign(privateKey)
-        .catch((err) => {
-          console.log(err);
-          res.status(500).end();
-        });
-      console.log("TOKEN: " + token);
-      res
-        .status(200)
-        .appendHeader("Content-Type", "application/oauth-authz-req+jwt")
-        .send(token);
+
+      if (challenge) {
+        const token = await getToken(
+          challenge as string,
+          process.env.EXTERNAL_URL + "/api/clientMetadata",
+          process.env.EXTERNAL_URL + "/api/presentCredential",
+          presentation_definition,
+          res,
+        );
+        console.log("Token: \n", token);
+
+        res
+          .status(200)
+          .appendHeader("Content-Type", "application/oauth-authz-req+jwt")
+          .send(token);
+      }
     } else if (method === "POST") {
       console.log("LOGIN API POST");
 

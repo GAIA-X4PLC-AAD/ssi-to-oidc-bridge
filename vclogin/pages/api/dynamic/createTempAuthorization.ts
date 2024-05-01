@@ -14,9 +14,7 @@ export default async function handler(
   res: NextApiResponse<any>,
 ) {
   //Get Policy from request body
-  const body = JSON.parse(req.body);
-  const policy = body.policy;
-  const inputDescriptor = body.inputDescriptor;
+  const { policy, inputDescriptor } = JSON.parse(req.body);
 
   try {
     // store policy in redis with uuid as key

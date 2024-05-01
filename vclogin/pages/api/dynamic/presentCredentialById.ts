@@ -8,6 +8,7 @@ import { hydraAdmin } from "@/config/ory";
 import { extractClaims, isTrustedPresentation } from "@/lib/extractClaims";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { promises as fs } from "fs";
+import { getToken } from "@/lib/getToken";
 
 var redis: Redis;
 try {
@@ -25,7 +26,7 @@ export default async function handler(
 
     if (method === "GET") {
       console.log("LOGIN API GET BY ID");
-      console.log(req.query);
+
       // Get login_id from query
       const uuid = req.query["login_id"];
 
@@ -41,58 +42,31 @@ export default async function handler(
         const policyObject = JSON.parse(policy) as LoginPolicy;
 
         // generate presentation definition using policy
+        // and inputDescriptor if it exists
         const presentation_definition = generatePresentationDefinition(
           policyObject,
           inputDescriptor ? JSON.parse(inputDescriptor) : undefined,
         );
 
-        const did = await keyToDID("key", process.env.DID_KEY_JWK!);
-        const verificationMethod = await keyToVerificationMethod(
-          "key",
-          process.env.DID_KEY_JWK!,
-        );
         const challenge = req.query["login_id"];
-        const payload = {
-          client_id: did,
-          client_id_scheme: "did",
-          client_metadata_uri:
+
+        if (challenge) {
+          const token = await getToken(
+            challenge as string,
             process.env.EXTERNAL_URL + "/api/dynamic/clientMetadataById",
-          nonce: challenge,
-          presentation_definition,
-          response_mode: "direct_post",
-          response_type: "vp_token",
-          response_uri:
             process.env.EXTERNAL_URL + "/api/dynamic/presentCredentialById",
-          state: challenge,
-        };
-        const privateKey = await jose.importJWK(
-          JSON.parse(process.env.DID_KEY_JWK!),
-          "EdDSA",
-        );
-        const token = await new jose.SignJWT(payload)
-          .setProtectedHeader({
-            alg: "EdDSA",
-            kid: verificationMethod,
-            typ: "JWT",
-          })
-          .setIssuedAt()
-          .setIssuer(did)
-          .setAudience("https://self-issued.me/v2") // by definition
-          .setExpirationTime("1 hour")
-          .sign(privateKey)
-          .catch((err) => {
-            console.log(err);
-            res.status(500).end();
-          });
-        console.log("TOKEN: " + token);
-        res
-          .status(200)
-          .appendHeader("Content-Type", "application/oauth-authz-req+jwt")
-          .send(token);
-        console.log("presentation_definition: " + presentation_definition);
-        res.send({ status: "success" });
+            presentation_definition,
+            res,
+          );
+
+          res
+            .status(200)
+            .appendHeader("Content-Type", "application/oauth-authz-req+jwt")
+            .send(token);
+        }
       } else {
-        res.status(500).end({ error: "No policy found" });
+        res.status(500).end();
+        return;
       }
     } else if (method === "POST") {
       console.log("LOGIN API POST BY ID");
@@ -101,14 +75,11 @@ export default async function handler(
       const presentation = JSON.parse(req.body.vp_token);
       console.log("Presentation: \n", req.body.vp_token);
 
-      const subject = presentation["holder"];
       const uuid = presentation["proof"]["challenge"];
       const policy = await redis.get(uuid + "_policy");
-      console.log("Policy: \n", JSON.parse(policy!));
 
       if (policy) {
         const policyObject = JSON.parse(policy) as LoginPolicy;
-        console.log("here", policyObject);
 
         // Constants for Redis to store the authentication result
         const MAX_AGE = 20 * 60;

@@ -94,7 +94,7 @@ export const generatePresentationDefinition = (
       if (fields.length > 0) {
         descr.constraints.fields = fields;
       }
-      console.log(descr);
+
       pd.input_descriptors.push(descr);
     }
   }
