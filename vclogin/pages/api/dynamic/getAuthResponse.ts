@@ -19,11 +19,11 @@ export default async function handler(
   // Read auth_res from redis and check if it matches the uuid
 
   //auth_res kept in redis like auth_res:uuid, read auth_res using uuid
-  const auth_res = await redis.get("auth_res:" + uuid);
+  const auth_res = await redis.get(uuid + "_auth-res");
 
   if (auth_res) {
     //if auth_res found, return it along claims
-    const claims = await redis.get("claims");
+    const claims = await redis.get(uuid + "_claims");
     res.status(200).json({ auth_res, claims });
   } else {
     //if auth_res not found, return error

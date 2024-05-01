@@ -18,7 +18,7 @@ try {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<any>,
+  res: NextApiResponse<any>, //todo look for separate handles
 ) {
   try {
     const { method } = req;
@@ -30,15 +30,21 @@ export default async function handler(
       const uuid = req.query["login_id"];
 
       // fetch policy from redis using uuid
-      const policy = await redis.get("" + uuid);
+      const policy = await redis.get(uuid + "_policy");
+
+      // fetch inputDescriptor from redis using uuid
+      const inputDescriptor = await redis.get(uuid + "_inputDescriptor");
+      console.log("inputDescriptor: ", JSON.parse(inputDescriptor!));
 
       //if policy is found
       if (policy) {
         const policyObject = JSON.parse(policy) as LoginPolicy;
 
         // generate presentation definition using policy
-        const presentation_definition =
-          generatePresentationDefinition(policyObject);
+        const presentation_definition = generatePresentationDefinition(
+          policyObject,
+          inputDescriptor ? JSON.parse(inputDescriptor) : undefined,
+        );
 
         const did = await keyToDID("key", process.env.DID_KEY_JWK!);
         const verificationMethod = await keyToVerificationMethod(
@@ -97,11 +103,12 @@ export default async function handler(
 
       const subject = presentation["holder"];
       const uuid = presentation["proof"]["challenge"];
-      const policy = await redis.get("" + uuid);
+      const policy = await redis.get(uuid + "_policy");
       console.log("Policy: \n", JSON.parse(policy!));
 
       if (policy) {
         const policyObject = JSON.parse(policy) as LoginPolicy;
+        console.log("here", policyObject);
 
         // Constants for Redis to store the authentication result
         const MAX_AGE = 20 * 60;
@@ -109,6 +116,7 @@ export default async function handler(
 
         // Verify the presentation and the status of the credential
         if (await verifyAuthenticationPresentation(presentation)) {
+          console.log("Presentation valid");
           // Evaluate if the VP should be trusted
           if (isTrustedPresentation(presentation, policyObject)) {
             console.log("Presentation verified");
@@ -118,10 +126,11 @@ export default async function handler(
             console.log(userClaims);
 
             // Store the authentication result in Redis
-            await redis.set("auth_res:" + uuid, "success", EXPIRY_MS, MAX_AGE);
+            await redis.set(uuid + "_auth-res", "success", EXPIRY_MS, MAX_AGE);
+
             // Store the user claims in Redis
             await redis.set(
-              "claims",
+              uuid + "_claims",
               JSON.stringify(userClaims.tokenId),
               EXPIRY_MS,
               MAX_AGE,
