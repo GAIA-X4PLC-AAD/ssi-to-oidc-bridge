@@ -8,7 +8,7 @@ client=$(docker run --rm -it \
     --grant-type authorization_code \
     --response-type token,code,id_token \
     --scope openid \
-    --redirect-uri http://localhost:3001 \
+    --redirect-uri "http://localhost:3000/api/auth/callback/oidc" \
     -e http://hydra:4445 \
     --token-endpoint-auth-method client_secret_post \
     --format json )
@@ -25,7 +25,7 @@ docker run --rm -it \
     --port 9010 \
     --client-id $client_id \
     --client-secret some-secret \
-    --redirect http://localhost:3001 \
+    --redirect "http://localhost:3000/api/auth/callback/oidc" \
     --scope openid \
     --auth-url http://localhost:5004/oauth2/auth \
     --token-url http://localhost:5004/oauth2/token \
