@@ -1,6 +1,7 @@
 [
   {
     "credentialId": "1",
+    "type": "VerifiableId",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "student",
+    "name": "Input descriptor for login credential",
+    "purpose": "EmailPass",
+    "constraints": {
+      "fields": [
+        {
+          "path": ["$.credentialSubject.type"],
+          "filter": {
+            "type": "string",
+            "pattern": "EmailPass"
+          }
+        }
+      ]
+    }
+  }
+]

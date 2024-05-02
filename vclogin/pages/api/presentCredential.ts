@@ -11,10 +11,8 @@ import { isTrustedPresentation, extractClaims } from "@/lib/extractClaims";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
-import {
-  getConfiguredLoginPolicy,
-  mergePolicyFiles,
-} from "@/config/loginPolicy";
+import { mergePolicyFiles } from "@/config/incrAuthPolicy";
+import { mergeInputDescriptors } from "@/config/incrAuthDescriptor";
 
 var redis: Redis;
 try {
@@ -36,12 +34,21 @@ export default async function handler(
       const challenge = req.query["login_id"];
       const loginChallenge = (await redis.get("" + challenge))!;
 
-      const policyGenerated = await getPolicyGenerated(loginChallenge);
-      console.log("Presentation Definition Generated: \n", policyGenerated);
+      const scopesRequested = await getScopesRequested(loginChallenge);
+
+      const policyGenerated = await getPolicyGenerated(scopesRequested!);
+      const descriptorGenerated = await getDescriptorGenerated(
+        scopesRequested!,
+      );
+
+      console.log("Descriptor Generated: \n", descriptorGenerated);
 
       const presentation_definition = generatePresentationDefinition(
         policyGenerated!,
+        descriptorGenerated,
       );
+
+      console.log("Presentation Definition: \n", presentation_definition);
 
       const did = await keyToDID("key", process.env.DID_KEY_JWK!);
       const verificationMethod = await keyToVerificationMethod(
@@ -90,10 +97,18 @@ export default async function handler(
       const presentation = JSON.parse(req.body.vp_token);
       console.log("Presentation: \n", req.body.vp_token);
 
+      // Get the user claims
+      const subject = presentation["holder"];
+      const login_id = presentation["proof"]["challenge"];
+      const challenge = (await redis.get("" + login_id))!;
+      const requestedScopes = await getScopesRequested(challenge);
+      const policyGenerated = await getPolicyGenerated(requestedScopes!);
+      console.log("Policy Generated: \n", policyGenerated);
+
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {
         // Evaluate if the VP should be trusted
-        if (isTrustedPresentation(presentation)) {
+        if (isTrustedPresentation(presentation, policyGenerated)) {
           console.log("Presentation verified");
         } else {
           console.log("Presentation not trusted");
@@ -106,11 +121,6 @@ export default async function handler(
         return;
       }
 
-      // Get the user claims
-      const subject = presentation["holder"];
-      const login_id = presentation["proof"]["challenge"];
-      const challenge = (await redis.get("" + login_id))!;
-      const policyGenerated = await getPolicyGenerated(challenge);
       const userClaims = extractClaims(presentation, policyGenerated);
 
       console.log("Logging in: " + subject + " with challenge: " + challenge);
@@ -173,16 +183,22 @@ export default async function handler(
   }
 }
 
-const getPolicyGenerated = async (loginChallenge: string) => {
-  let policyGenerated;
+const getScopesRequested = async (loginChallenge: string) => {
+  let scopesRequested;
   await hydraAdmin
     .adminGetOAuth2LoginRequest(loginChallenge)
     .then(async ({ data: loginRequest }) => {
       console.log("Login Request: \n", loginRequest);
-      const requestedScopes = loginRequest.requested_scope;
-      policyGenerated = await mergePolicyFiles(requestedScopes);
+      scopesRequested = loginRequest.requested_scope;
     });
-  return policyGenerated;
+  return scopesRequested;
+};
+
+const getDescriptorGenerated = async (requestedScopes: string[]) => {
+  return await mergeInputDescriptors(requestedScopes);
+};
+const getPolicyGenerated = async (requestedScopes: string[]) => {
+  return await mergePolicyFiles(requestedScopes);
 };
 
 export const config = { api: { bodyParser: true } };

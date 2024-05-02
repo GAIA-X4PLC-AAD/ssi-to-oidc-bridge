@@ -1,6 +1,7 @@
 [
   {
     "credentialId": "2",
+    "type": "EmailPass",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -12,8 +13,8 @@
         ],
         "constraint": {
           "op": "equals",
-          "a": "$2.credentialSubject.issuer",
-          "b": "$1.credentialSubject.issuer"
+          "a": "$2.credentialSubject.id",
+          "b": "$1.credentialSubject.id"
         }
       }
     ]

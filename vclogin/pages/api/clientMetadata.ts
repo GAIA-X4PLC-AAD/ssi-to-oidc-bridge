@@ -14,7 +14,7 @@ export default async function handler(
     if (method === "GET") {
       console.log("METADATA API GET");
       const metadata = {
-        scopes_supported: ["openid"],
+        scopes_supported: ["openid", "student"],
         response_types_supported: ["id_token", "vp_token"],
         response_modes_supported: ["query"],
         subject_types_supported: ["public"],

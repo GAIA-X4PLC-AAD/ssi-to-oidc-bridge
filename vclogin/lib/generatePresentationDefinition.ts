@@ -3,24 +3,30 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { InputDescriptor, InputDescriptors } from "@/types/InputDescriptor";
 import { LoginPolicy } from "@/types/LoginPolicy";
+import { PresentationDefinition } from "@/types/PresentationDefinition";
 import { promises as fs } from "fs";
 
 var inputDescriptorOverride: any = undefined;
 if (process.env.PEX_DESCRIPTOR_OVERRIDE) {
-  fs.readFile(process.env.PEX_DESCRIPTOR_OVERRIDE as string, "utf8").then(
+  fs?.readFile(process.env.PEX_DESCRIPTOR_OVERRIDE as string, "utf8").then(
     (file) => {
       inputDescriptorOverride = JSON.parse(file);
     },
   );
 }
 
-export const generatePresentationDefinition = (policy: LoginPolicy) => {
+export const generatePresentationDefinition = (
+  policy: LoginPolicy,
+  incrAuthInputDescriptor?: InputDescriptors,
+) => {
   if (policy === undefined)
     throw Error(
       "A policy must be specified to generate a presentation definition",
     );
-  var pd: any = {
+
+  var pd: PresentationDefinition = {
     format: {
       ldp_vc: {
         proof_type: [
@@ -42,11 +48,19 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
     id: crypto.randomUUID(),
     name: "VC Login Service",
     purpose: "Sign-in",
-    input_descriptors: [] as any[],
+    input_descriptors: [] as InputDescriptors,
   };
 
-  if (inputDescriptorOverride) {
+  if (inputDescriptorOverride && !incrAuthInputDescriptor) {
+    console.log("Using input descriptor override", inputDescriptorOverride);
     pd.input_descriptors = inputDescriptorOverride;
+    return pd;
+  } else if (incrAuthInputDescriptor) {
+    pd.input_descriptors = incrAuthInputDescriptor;
+    console.log(
+      "Using input descriptor override for incremental authorization",
+      pd,
+    );
     return pd;
   }
 
@@ -57,11 +71,11 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
         count: 1,
         from: "group_" + expectation.credentialId,
       };
-      pd.submission_requirements.push(req);
+      pd.submission_requirements!.push(req);
     }
 
     for (let pattern of expectation.patterns) {
-      let descr: any = {
+      let descr: InputDescriptor = {
         id: expectation.credentialId,
         purpose: "Sign-in",
         name: "Input descriptor for " + expectation.credentialId,
@@ -81,6 +95,7 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
       if (fields.length > 0) {
         descr.constraints.fields = fields;
       }
+
       pd.input_descriptors.push(descr);
     }
   }

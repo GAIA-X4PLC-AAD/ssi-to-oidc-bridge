@@ -22,7 +22,22 @@ export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  return getConstraintFit(creds, usedPolicy, VP).length > 0;
+  let credsOrdered = creds;
+  if (usedPolicy.length > 1) {
+    const orderedCreds: any = [];
+    usedPolicy.map((policy) => {
+      const policyType = policy.type;
+      creds.map((cred: any) => {
+        if (cred.type.includes(policyType)) {
+          orderedCreds.push(cred);
+        }
+      });
+    });
+    credsOrdered = orderedCreds;
+  }
+  console.log("credsOrdered", credsOrdered);
+  console.log("usedPolicy", usedPolicy);
+  return getConstraintFit(credsOrdered, usedPolicy, VP).length > 0;
 };
 
 export const extractClaims = (VP: any, policy?: LoginPolicy) => {
@@ -35,11 +50,43 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
-  const claims = vcClaims.reduce(
-    (acc: any, vc: any) => Object.assign(acc, vc),
-    {},
+  let credsOrdered = creds;
+  console.log("usedPolicy", usedPolicy.length);
+  if (usedPolicy.length > 1) {
+    const orderedCreds: any = [];
+    usedPolicy.map((policy) => {
+      const policyType = policy.type;
+      creds.map((cred: any) => {
+        if (cred.type.includes(policyType)) {
+          orderedCreds.push(cred);
+        }
+      });
+    });
+    credsOrdered = orderedCreds;
+  }
+
+  const vcClaims = credsOrdered.map((vc: any) =>
+    extractClaimsFromVC(
+      vc,
+      usedPolicy.length > 1
+        ? usedPolicy.filter((policy) => vc.type.includes(policy.type))
+        : usedPolicy,
+    ),
   );
+
+  const claims: any = {};
+
+  vcClaims.forEach((claim: any) => {
+    // Merge tokenId properties
+    claims.tokenId = Object.assign({}, claims.tokenId, claim.tokenId);
+
+    // Merge tokenAccess properties
+    claims.tokenAccess = Object.assign(
+      {},
+      claims.tokenAccess,
+      claim.tokenAccess,
+    );
+  });
   return claims;
 };
 
@@ -161,14 +208,12 @@ const isValidConstraintFit = (
     for (let pattern of expectation.patterns) {
       if (isCredentialFittingPattern(cred, pattern)) {
         if (pattern.constraint) {
-          console.log("pattern", pattern);
           const res = evaluateConstraint(
             pattern.constraint,
             cred,
             credDict,
             VP,
           );
-          console.log("res", res);
           if (res) {
             // if one pattern fits, the credential is fitting
             fittingArr.push(true);
@@ -180,7 +225,6 @@ const isValidConstraintFit = (
       }
     }
   }
-  console.log("fittingArr", fittingArr);
   // if all patterns fit, the credential is fitting
   if (!fittingArr.includes(false)) {
     return true;
@@ -304,6 +348,7 @@ const resolveValue = (
 };
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
+  console.log("VC", "policy", VC, policy);
   for (let expectation of policy) {
     for (let pattern of expectation.patterns) {
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
@@ -325,6 +370,8 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
         };
 
         for (let claim of pattern.claims) {
+          console.log("claim", claim);
+          console.log("VC", VC);
           const nodes = jp.nodes(VC, claim.claimPath);
           let newPath = claim.newPath;
           let value: any;
@@ -346,6 +393,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
               .reduce((acc: any, vals: any) => Object.assign(acc, vals), {});
           } else {
             if (!newPath) {
+              console.log("nodes", nodes);
               newPath = "$." + nodes[0].path[nodes[0].path.length - 1];
             }
 
