@@ -50,7 +50,6 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
       claim.tokenAccess,
     );
   });
-
   return claims;
 };
 
@@ -159,7 +158,6 @@ const isValidConstraintFit = (
   VP: any,
 ): boolean => {
   const credDict: any = {};
-  credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
@@ -312,7 +310,8 @@ const resolveValue = (
 };
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
-  console.log("VC", "policy", VC, policy);
+  let reiterateOuterLoop = false;
+
   for (let expectation of policy) {
     for (let pattern of expectation.patterns) {
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
@@ -338,10 +337,6 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
           console.log("VC", VC);
           const nodes = jp.nodes(VC, claim.claimPath);
 
-          if (nodes.length === 0 || nodes === undefined) {
-            break;
-          }
-
           let newPath = claim.newPath;
           let value: any;
 
@@ -362,7 +357,10 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
               .reduce((acc: any, vals: any) => Object.assign(acc, vals), {});
           } else {
             if (!newPath) {
-              console.log("nodes", nodes);
+              if (nodes.length === 0 || nodes === undefined) {
+                reiterateOuterLoop = true;
+                break;
+              }
               newPath = "$." + nodes[0].path[nodes[0].path.length - 1];
             }
 
@@ -377,6 +375,10 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
           jp.value(claimTarget, newPath, value);
         }
 
+        if (reiterateOuterLoop) {
+          reiterateOuterLoop = false;
+          break; // Break inner loop
+        }
         return extractedClaims;
       }
     }
