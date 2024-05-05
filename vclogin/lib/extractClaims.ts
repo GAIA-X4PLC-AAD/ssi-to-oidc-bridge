@@ -22,22 +22,7 @@ export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  let credsOrdered = creds;
-  if (usedPolicy.length > 1) {
-    const orderedCreds: any = [];
-    usedPolicy.map((policy) => {
-      const policyType = policy.type;
-      creds.map((cred: any) => {
-        if (cred.type.includes(policyType)) {
-          orderedCreds.push(cred);
-        }
-      });
-    });
-    credsOrdered = orderedCreds;
-  }
-  console.log("credsOrdered", credsOrdered);
-  console.log("usedPolicy", usedPolicy);
-  return getConstraintFit(credsOrdered, usedPolicy, VP).length > 0;
+  return getConstraintFit(creds, usedPolicy, VP).length > 0;
 };
 
 export const extractClaims = (VP: any, policy?: LoginPolicy) => {
@@ -50,29 +35,7 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  let credsOrdered = creds;
-  console.log("usedPolicy", usedPolicy.length);
-  if (usedPolicy.length > 1) {
-    const orderedCreds: any = [];
-    usedPolicy.map((policy) => {
-      const policyType = policy.type;
-      creds.map((cred: any) => {
-        if (cred.type.includes(policyType)) {
-          orderedCreds.push(cred);
-        }
-      });
-    });
-    credsOrdered = orderedCreds;
-  }
-
-  const vcClaims = credsOrdered.map((vc: any) =>
-    extractClaimsFromVC(
-      vc,
-      usedPolicy.length > 1
-        ? usedPolicy.filter((policy) => vc.type.includes(policy.type))
-        : usedPolicy,
-    ),
-  );
+  const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
 
   const claims: any = {};
 
@@ -87,6 +50,7 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
       claim.tokenAccess,
     );
   });
+
   return claims;
 };
 
@@ -373,6 +337,11 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
           console.log("claim", claim);
           console.log("VC", VC);
           const nodes = jp.nodes(VC, claim.claimPath);
+
+          if (nodes.length === 0 || nodes === undefined) {
+            break;
+          }
+
           let newPath = claim.newPath;
           let value: any;
 
@@ -404,6 +373,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
             claim.token === "id_token"
               ? extractedClaims.tokenId
               : extractedClaims.tokenAccess;
+
           jp.value(claimTarget, newPath, value);
         }
 
