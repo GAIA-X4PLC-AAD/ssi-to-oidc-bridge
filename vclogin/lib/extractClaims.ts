@@ -50,6 +50,7 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
       claim.tokenAccess,
     );
   });
+
   return claims;
 };
 
@@ -120,17 +121,10 @@ const isCredentialFittingPattern = (
   return true;
 };
 
-const removeDuplicates = (patternFits: any[][]) => {
-  return Array.from(new Set(patternFits.map((obj) => JSON.stringify(obj)))).map(
-    (str) => JSON.parse(str),
-  );
-};
-
 const getAllUniqueDraws = (patternFits: any[][]): any[][] => {
   // get all unique draws of credentials that fit the expected credential claims
   const draws = getAllUniqueDrawsHelper(patternFits, []);
-  const filteredPatterns = removeDuplicates(patternFits);
-  return draws.filter((draw) => draw.length == filteredPatterns.length);
+  return draws.filter((draw) => draw.length == patternFits.length);
 };
 
 const getAllUniqueDrawsHelper = (
