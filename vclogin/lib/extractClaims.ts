@@ -152,6 +152,7 @@ const isValidConstraintFit = (
   VP: any,
 ): boolean => {
   const credDict: any = {};
+  credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
@@ -373,6 +374,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
           reiterateOuterLoop = false;
           break; // Break inner loop
         }
+        console.log("extractedClaims", extractedClaims);
         return extractedClaims;
       }
     }
