@@ -108,7 +108,7 @@ export default async function handler(
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {
         // Evaluate if the VP should be trusted
-        if (isTrustedPresentation(presentation, policyGenerated)) {
+        if (await isTrustedPresentation(presentation, policyGenerated)) {
           console.log("Presentation verified");
         } else {
           console.log("Presentation not trusted");
@@ -121,7 +121,7 @@ export default async function handler(
         return;
       }
 
-      const userClaims = extractClaims(presentation, policyGenerated);
+      const userClaims = await extractClaims(presentation, policyGenerated);
 
       console.log("Logging in: " + subject + " with challenge: " + challenge);
       console.log("User Claims: \n", userClaims);

@@ -12,8 +12,8 @@ import {
 import jp from "jsonpath";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 
-export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
-  var configuredPolicy = getConfiguredLoginPolicy();
+export const isTrustedPresentation = async (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = await getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
@@ -25,8 +25,8 @@ export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
   return getConstraintFit(creds, usedPolicy, VP).length > 0;
 };
 
-export const extractClaims = (VP: any, policy?: LoginPolicy) => {
-  var configuredPolicy = getConfiguredLoginPolicy();
+export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = await getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
