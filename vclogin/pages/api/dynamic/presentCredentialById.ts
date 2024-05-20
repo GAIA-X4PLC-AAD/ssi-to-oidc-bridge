@@ -1,13 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Redis } from "ioredis";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
-import { ExpectedCredential, LoginPolicy } from "@/types/LoginPolicy";
-import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
-import * as jose from "jose";
-import { hydraAdmin } from "@/config/ory";
+import { LoginPolicy } from "@/types/LoginPolicy";
 import { extractClaims, isTrustedPresentation } from "@/lib/extractClaims";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
-import { promises as fs } from "fs";
 import { getToken } from "@/lib/getToken";
 
 var redis: Redis;
@@ -84,11 +80,11 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (await verifyAuthenticationPresentation(presentation)) {
       console.log("Presentation valid");
       // Evaluate if the VP should be trusted
-      if (isTrustedPresentation(presentation, policyObject)) {
+      if (await isTrustedPresentation(presentation, policyObject)) {
         console.log("Presentation verified");
 
         // Get the user claims when the presentation is trusted
-        const userClaims = extractClaims(presentation, policyObject);
+        const userClaims = await extractClaims(presentation, policyObject);
         console.log(userClaims);
 
         // Store the authentication result in Redis

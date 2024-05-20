@@ -8,8 +8,6 @@ import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { hydraAdmin } from "@/config/ory";
 import { Redis } from "ioredis";
 import { isTrustedPresentation, extractClaims } from "@/lib/extractClaims";
-import * as jose from "jose";
-import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 import { getToken } from "@/lib/getToken";
@@ -25,7 +23,7 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   console.log("LOGIN API GET");
   console.log(req.query);
   const presentation_definition = generatePresentationDefinition(
-    getConfiguredLoginPolicy()!,
+    await getConfiguredLoginPolicy()!,
   );
 
   const challenge = req.query["login_id"];
@@ -57,7 +55,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Verify the presentation and the status of the credential
   if (await verifyAuthenticationPresentation(presentation)) {
     // Evaluate if the VP should be trusted
-    if (isTrustedPresentation(presentation)) {
+    if (await isTrustedPresentation(presentation)) {
       console.log("Presentation verified");
     } else {
       console.log("Presentation not trusted");
@@ -71,7 +69,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   // Get the user claims
-  const userClaims = extractClaims(presentation);
+  const userClaims = await extractClaims(presentation);
   const subject = presentation["holder"];
   const login_id = presentation["proof"]["challenge"];
   const challenge = (await redis.get("" + login_id))!;
