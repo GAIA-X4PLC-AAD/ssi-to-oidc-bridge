@@ -14,7 +14,7 @@ export default async function handler(
   res: NextApiResponse<any>,
 ) {
   //Get Policy from request body
-  const { policy, inputDescriptor } = JSON.parse(req.body);
+  const { policy, inputDescriptor } = req.body;
 
   try {
     // store policy in redis with uuid as key
@@ -36,24 +36,3 @@ export default async function handler(
     return res.status(500).json({ redirect: "/error" });
   }
 }
-
-/*
-  //read credential id from policy
-  const hash = crypto.createHash("sha256").update(policy).digest("hex");
-
-  try {
-    //check if policy already exists
-    const existingPolicy = await redis.get(hash);
-    if (existingPolicy) {
-      return res.status(200).json({ uuid: hash });
-    } else {
-      try {
-        const hash = crypto.createHash("sha256").update(policy).digest("hex");
-
-        await redis.set(hash, JSON.stringify(policy), "EX", 300);
-
-        return res.status(200).json({ uuid: hash });
-      } catch (error) {
-        return res.status(500).json({ error });
-      }
-    } */

@@ -12,7 +12,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<any>,
 ) {
-  const { userId, uuid } = JSON.parse(req.body);
+  const { userId, uuid } = req.body;
 
   //Generate QR Code String from UUID
   const qrCodeString =

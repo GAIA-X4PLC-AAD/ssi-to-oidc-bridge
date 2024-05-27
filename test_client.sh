@@ -17,6 +17,15 @@ echo $client
 
 client_id=$(echo $client | jq -r '.client_id')
 
+
+env_file="./vclogin/.env"
+
+if grep -q "OIDC_CLIENT_ID=" "$env_file"; then
+    sed -i "s/^OIDC_CLIENT_ID=.*/OIDC_CLIENT_ID=$client_id/" "$env_file"
+else
+    echo "OIDC_CLIENT_ID=$client_id" >> "$env_file"
+fi
+
 docker run --rm -it \
     --network ory-hydra-net \
     -p 9010:9010 \

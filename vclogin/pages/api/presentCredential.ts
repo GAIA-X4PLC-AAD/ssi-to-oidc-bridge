@@ -21,7 +21,6 @@ try {
 
 const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   console.log("LOGIN API GET");
-  console.log(req.query);
   const presentation_definition = generatePresentationDefinition(
     await getConfiguredLoginPolicy()!,
   );
@@ -42,6 +41,8 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
       .status(200)
       .appendHeader("Content-Type", "application/oauth-authz-req+jwt")
       .send(token);
+  } else {
+    res.status(500).end();
   }
 };
 
