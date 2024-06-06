@@ -1,0 +1,18 @@
+{
+  "purpose": "Sign-in",
+  "constraints": {
+    "fields": [
+      {
+        "path": [
+          "$.type"
+        ],
+        "filter": {
+          "type": "string",
+          "pattern": "VerifiableCredential"
+        }
+      }
+    ]
+  },
+  "id": "1",
+  "name": "Input descriptor for 1"
+}

@@ -3,10 +3,8 @@ import { LoginPolicy } from "@/types/LoginPolicy";
 import { promises as fs } from "fs";
 
 export const getInputDescriptorPath = (scope: string) => {
-  let mainPath = "./__generated__/inputDescriptors";
-  return scope === "openid"
-    ? `${mainPath}/main.json`
-    : `${mainPath}/${scope}.json`;
+  let mainPath = "./init_config/input_descriptors";
+  return `${mainPath}/${scope}.json`;
 };
 
 export const mergeInputDescriptors = async (scopes: string[]) => {

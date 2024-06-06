@@ -35,8 +35,9 @@ export default async function handler(
       const loginChallenge = (await redis.get("" + challenge))!;
 
       const scopesRequested = await getScopesRequested(loginChallenge);
-
+      console.log("Scopes Requested: \n", scopesRequested);
       const policyGenerated = await getPolicyGenerated(scopesRequested!);
+      console.log("Policy Generated: \n", policyGenerated);
       const descriptorGenerated = await getDescriptorGenerated(
         scopesRequested!,
       );
@@ -188,7 +189,6 @@ const getScopesRequested = async (loginChallenge: string) => {
   await hydraAdmin
     .adminGetOAuth2LoginRequest(loginChallenge)
     .then(async ({ data: loginRequest }) => {
-      console.log("Login Request: \n", loginRequest);
       scopesRequested = loginRequest.requested_scope;
     });
   return scopesRequested;

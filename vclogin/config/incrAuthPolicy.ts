@@ -2,10 +2,8 @@ import { LoginPolicy } from "@/types/LoginPolicy";
 import { promises as fs } from "fs";
 
 export const getPolicyPath = (scope: string) => {
-  let mainPath = "./__generated__/policies";
-  return scope === "openid"
-    ? `${mainPath}/main.json`
-    : `${mainPath}/${scope}.json`;
+  let mainPath = "./init_config/policies";
+  return `${mainPath}/${scope}.json`;
 };
 
 export const mergePolicyFiles = async (scopes: string[]) => {
