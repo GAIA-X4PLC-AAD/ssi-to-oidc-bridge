@@ -10,21 +10,9 @@ client=$(docker run --rm -it \
     --scope openid \
     --redirect-uri "http://localhost:3000/api/auth/callback/oidc" \
     -e http://hydra:4445 \
-    --token-endpoint-auth-method client_secret_post \
     --format json )
 
 echo $client
-
-client_id=$(echo $client | jq -r '.client_id')
-
-
-env_file="./vclogin/.env"
-
-if grep -q "OIDC_CLIENT_ID=" "$env_file"; then
-    sed -i "s/^OIDC_CLIENT_ID=.*/OIDC_CLIENT_ID=$client_id/" "$env_file"
-else
-    echo "OIDC_CLIENT_ID=$client_id" >> "$env_file"
-fi
 
 docker run --rm -it \
     --network ory-hydra-net \
