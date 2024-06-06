@@ -1,18 +1,18 @@
-{
-  "purpose": "Sign-in",
-  "constraints": {
-    "fields": [
-      {
-        "path": [
-          "$.type"
-        ],
-        "filter": {
-          "type": "string",
-          "pattern": "VerifiableCredential"
+[
+  {
+    "purpose": "Sign-in",
+    "constraints": {
+      "fields": [
+        {
+          "path": ["$.type"],
+          "filter": {
+            "type": "string",
+            "pattern": "EmailPass"
+          }
         }
-      }
-    ]
-  },
-  "id": "2",
-  "name": "Input descriptor for 2"
-}
+      ]
+    },
+    "id": "2",
+    "name": "Input descriptor for 2"
+  }
+]

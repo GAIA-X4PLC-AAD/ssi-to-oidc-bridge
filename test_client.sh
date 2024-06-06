@@ -10,42 +10,9 @@ client=$(docker run --rm -it \
     --scope openid,student \
     --redirect-uri http://localhost:3000/api/auth/callback/oidc \
     -e http://hydra:4445 \
-    --token-endpoint-auth-method client_secret_post \
     --format json )
 
 echo $client
-
-client_id=$(echo $client | jq -r '.client_id')
-scope=$(echo $client | jq -r '.scope')
-generated_policies="./vclogin/__generated__/policies"
-generated_inputDescriptors="./vclogin/__generated__/inputDescriptors"
-
-mkdir -p "$generated_policies"
-mkdir -p "$generated_inputDescriptors"
-
-for value in $scope; do
-    if [ "$value" == "openid" ]; then
-        filename="${generated_policies}/main.json"
-        echo "This is your main policy for initial login. $filename"
-    else
-        filename="${generated_policies}/${value}.json"
-        echo "This is your policy for $value scope. $filename"
-    fi
-    echo "Generating file: $filename"
-    touch "$filename"
-done
-
-for value in $scope; do
-    if [ "$value" == "openid" ]; then
-        filename="${generated_inputDescriptors}/main.json"
-        echo "This is your main input descriptor for initial login. $filename"
-    else
-        filename="${generated_inputDescriptors}/${value}.json"
-        echo "This is your input descriptor for $value scope. $filename"
-    fi
-    echo "Generating file: $filename"
-    touch "$filename"
-done
 
 docker run --rm -it \
     --network ory-hydra-net \
