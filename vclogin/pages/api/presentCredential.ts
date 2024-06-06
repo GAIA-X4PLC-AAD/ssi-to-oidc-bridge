@@ -36,17 +36,13 @@ export default async function handler(
 
       const scopesRequested = await getScopesRequested(loginChallenge);
       console.log("Scopes Requested: \n", scopesRequested);
-      const policyGenerated = await getPolicyGenerated(scopesRequested!);
-      console.log("Policy Generated: \n", policyGenerated);
-      const descriptorGenerated = await getDescriptorGenerated(
+      const policyInitialized = await getPolicyInitialized(scopesRequested!);
+      const descriptorInitialized = await getDescriptorInitialized(
         scopesRequested!,
       );
-
-      console.log("Descriptor Generated: \n", descriptorGenerated);
-
       const presentation_definition = generatePresentationDefinition(
-        policyGenerated!,
-        descriptorGenerated,
+        policyInitialized!,
+        descriptorInitialized,
       );
 
       console.log("Presentation Definition: \n", presentation_definition);
@@ -103,13 +99,12 @@ export default async function handler(
       const login_id = presentation["proof"]["challenge"];
       const challenge = (await redis.get("" + login_id))!;
       const requestedScopes = await getScopesRequested(challenge);
-      const policyGenerated = await getPolicyGenerated(requestedScopes!);
-      console.log("Policy Generated: \n", policyGenerated);
+      const policyInitialized = await getPolicyInitialized(requestedScopes!);
 
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {
         // Evaluate if the VP should be trusted
-        if (await isTrustedPresentation(presentation, policyGenerated)) {
+        if (await isTrustedPresentation(presentation, policyInitialized)) {
           console.log("Presentation verified");
         } else {
           console.log("Presentation not trusted");
@@ -122,7 +117,7 @@ export default async function handler(
         return;
       }
 
-      const userClaims = await extractClaims(presentation, policyGenerated);
+      const userClaims = await extractClaims(presentation, policyInitialized);
 
       console.log("Logging in: " + subject + " with challenge: " + challenge);
       console.log("User Claims: \n", userClaims);
@@ -194,10 +189,10 @@ const getScopesRequested = async (loginChallenge: string) => {
   return scopesRequested;
 };
 
-const getDescriptorGenerated = async (requestedScopes: string[]) => {
+const getDescriptorInitialized = async (requestedScopes: string[]) => {
   return await mergeInputDescriptors(requestedScopes);
 };
-const getPolicyGenerated = async (requestedScopes: string[]) => {
+const getPolicyInitialized = async (requestedScopes: string[]) => {
   return await mergePolicyFiles(requestedScopes);
 };
 
