@@ -1,24 +1,20 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const excludePath = [
-  "/api/dynamic/presentCredentialById",
-  "/api/dynamic/clientMetadataById",
-  "/api/presentCredential",
-  "/api/clientMetadata",
+const protectedPaths = [
+  "/api/dynamic/createTempAuthorization",
+  "/api/dynamic/getAuthResponse",
+  "/api/dynamic/getQRCodeString",
 ];
 
-export function middleware(req: NextRequest, res: NextResponse) {
+export function middleware(req: NextRequest) {
   const authHeader = req.headers.get("Authorization");
-  const oidcClientId = authHeader?.split(" ")[1];
-
-  if (excludePath.includes(req.nextUrl.pathname)) {
+  const path = req.nextUrl.pathname;
+  const apiKey = authHeader?.split(" ")[1];
+  if (protectedPaths.includes(path) && apiKey === process.env.API_KEY) {
     return NextResponse.next();
-  }
-
-  if (oidcClientId && oidcClientId === process.env.OIDC_CLIENT_ID) {
-    return NextResponse.next();
-  } else {
+  } else if (protectedPaths.includes(path) && apiKey !== process.env.API_KEY) {
     return new Response("Unauthorized", { status: 401 });
   }
+  return NextResponse.next();
 }
