@@ -1,5 +1,4 @@
 import { InputDescriptor } from "@/types/InputDescriptor";
-import { LoginPolicy } from "@/types/LoginPolicy";
 import { promises as fs } from "fs";
 
 export const getInputDescriptorPath = (scope: string) => {
@@ -8,6 +7,7 @@ export const getInputDescriptorPath = (scope: string) => {
 };
 
 export const mergeInputDescriptors = async (scopes: string[]) => {
+  //ideally we have only one input descriptor and only merge constraints fields of other descriptors
   let mergedDescriptor: InputDescriptor[] = [
     {
       id: "",
@@ -22,17 +22,22 @@ export const mergeInputDescriptors = async (scopes: string[]) => {
   if (scopes.length === 1 && scopes[0] === "openid")
     return await readDescriptor(scopes[0]);
 
-  mergedDescriptor[0].id = scopes.join("_");
   mergedDescriptor[0].name =
-    "Input Descriptor for" + scopes.join(", ") + " scopes";
+    "Input Descriptor for " + scopes.join(", ") + " scopes";
   mergedDescriptor[0].purpose = getPurpose(scopes);
 
   await Promise.all(
     scopes.map(async (scope) => {
       const descriptor = await readDescriptor(scope);
-      const constraints = descriptor[0].constraints.fields;
-      mergedDescriptor[0].constraints.fields =
-        mergedDescriptor[0].constraints.fields?.concat(constraints);
+      for (const d of descriptor) {
+        if (mergedDescriptor[0].id === d.id) {
+          continue;
+        }
+        mergedDescriptor[0].id = d.id; // set id here so that we can skip the same descriptor
+        const constraints = d.constraints.fields;
+        mergedDescriptor[0].constraints.fields =
+          mergedDescriptor[0].constraints.fields?.concat(constraints);
+      }
     }),
   );
   return mergedDescriptor;
@@ -50,20 +55,21 @@ const readDescriptor = async (scope: string) => {
 };
 
 const getPurpose = (scopes: string[]) => {
-  let purpose = "We require ";
+  // map scopes to human readable credential types, e.g. "openid" -> "Verifiable ID"
+  let vcTypesArr: string[] = [];
   scopes.map((scope) => {
     switch (scope) {
       case "openid":
-        purpose += "Verifiable ID ";
+        vcTypesArr.push("Verifiable ID");
         return;
       case "email":
-        purpose += "Email ";
+        vcTypesArr.push("Email");
         return;
       case "student":
-        purpose += "Enrollment Certificate ";
+        vcTypesArr.push("Enrollment Certificate");
         return;
     }
   });
-  purpose += "credentials for you to authorize.";
-  return purpose;
+
+  return `We require ${vcTypesArr.join(", ")} for authentication.`;
 };

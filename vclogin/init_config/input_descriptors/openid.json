@@ -1,5 +1,7 @@
 [
   {
+    "id": "1",
+    "name": "Input descriptor for 1",
     "purpose": "Sign-in",
     "constraints": {
       "fields": [
@@ -11,8 +13,6 @@
           }
         }
       ]
-    },
-    "id": "1",
-    "name": "Input descriptor for 1"
+    }
   }
 ]

@@ -1,6 +1,48 @@
 import { LoginPolicy } from "@/types/LoginPolicy";
 import { promises as fs } from "fs";
 
+const policyObj = [
+  {
+    credentialId: "1",
+    type: "VerifiableId",
+    patterns: [
+      {
+        issuer: "did:web:app.altme.io:issuer",
+        claims: [
+          {
+            claimPath: "$.credentialSubject.firstName",
+            token: "id_token",
+          },
+          {
+            claimPath: "$.credentialSubject.familyName",
+            token: "id_token",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    credentialId: "2",
+    type: "EmailPass",
+    patterns: [
+      {
+        issuer: "did:web:app.altme.io:issuer",
+        claims: [
+          {
+            claimPath: "$.credentialSubject.email",
+            token: "id_token",
+          },
+        ],
+        constraint: {
+          op: "equals",
+          a: "$2.credentialSubject.id",
+          b: "$1.credentialSubject.id",
+        },
+      },
+    ],
+  },
+];
+
 export const getPolicyPath = (scope: string) => {
   let mainPath = "./init_config/policies";
   return `${mainPath}/${scope}.json`;
@@ -13,7 +55,11 @@ export const mergePolicyFiles = async (scopes: string[]) => {
   await Promise.all(
     scopes.map(async (scope) => {
       const policy = await readPolicy(scope);
-      mergedPolicy?.push(policy[0]); // Assuming each policy is an object and you want to merge them into an array
+      for (const p of policy) {
+        if (mergedPolicy?.find((mp) => mp.credentialId === p.credentialId))
+          continue;
+        mergedPolicy?.push(p);
+      }
     }),
   );
   return mergedPolicy;
