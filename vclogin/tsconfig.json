@@ -15,14 +15,13 @@
     "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
+    "baseUrl": ".",
     "paths": {
       "@/testdata/*": ["__tests__/testdata/*"],
       "@/lib/*": ["lib/*"],
       "@/config/*": ["config/*"],
       "@/types/*": ["types/*"],
-      "@/pages/*": ["pages/*"],
-      "@/styles/*": ["styles/*"],
-      "@/middleware/*": ["middleware/*"]
+      "@/pages/*": ["pages/*"]
     },
     "typeRoots": ["./types"]
   },
