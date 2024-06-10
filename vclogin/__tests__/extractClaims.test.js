@@ -15,8 +15,7 @@ describe("extractClaims", () => {
   it("all subject claims from an EmployeeCredential are extracted", () => {
     var claims = extractClaims(vpEmployee, policyAcceptAnything);
     var expected = {
-      tokenAccess: {
-      },
+      tokenAccess: {},
       tokenId: {
         subjectData: {
           id: "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
@@ -33,7 +32,6 @@ describe("extractClaims", () => {
           hasJurisdiction: "GER",
           surname: "Surname",
         },
-
       },
     };
     expect(claims).toStrictEqual(expected);
@@ -64,8 +62,7 @@ describe("extractClaims", () => {
   it("all designated claims from an EmployeeCredential are extracted", () => {
     var claims = extractClaims(vpEmployee, policyEmployeeFromAnyone);
     var expected = {
-      tokenAccess: {
-      },
+      tokenAccess: {},
       tokenId: {
         email: "test@test.com",
         name: "Name Surname",
