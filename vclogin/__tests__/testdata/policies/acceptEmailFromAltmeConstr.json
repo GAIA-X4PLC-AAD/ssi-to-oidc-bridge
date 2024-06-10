@@ -6,8 +6,7 @@
         "issuer": "did:web:app.altme.io:issuer",
         "claims": [
           {
-            "claimPath": "$.credentialSubject.email",
-            "token": "id_token"
+            "claimPath": "$.credentialSubject.email"
           }
         ],
         "constraint": {
