@@ -363,10 +363,9 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
           }
 
           const claimTarget =
-            claim.token === "id_token"
-              ? extractedClaims.tokenId
-              : extractedClaims.tokenAccess;
-
+            claim.token === "access_token"
+              ? extractedClaims.tokenAccess
+              : extractedClaims.tokenId;
           jp.value(claimTarget, newPath, value);
         }
 
