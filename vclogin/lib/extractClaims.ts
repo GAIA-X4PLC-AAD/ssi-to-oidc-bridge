@@ -339,7 +339,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
             if (!newPath) {
               throw Error(
                 "New path not defined for multi-valued claim: " +
-                  claim.claimPath,
+                claim.claimPath,
               );
             }
 
