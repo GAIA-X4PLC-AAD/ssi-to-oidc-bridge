@@ -3,7 +3,7 @@
 ![build workflow](https://github.com/GAIA-X4PLC-AAD/ssi-to-oidc-bridge/actions/workflows/node.js.yml/badge.svg)
 
 > [!WARNING]
-> This repository is intended for prototyping and as a reference implementation.
+> This repository is intended for prototyping and as a reference implementation. At this time, no security guarantees can be given.
 
 > [!NOTE]
 > A preprint of our paper providing more background information is available [on arXiv](https://arxiv.org/abs/2401.09488).
@@ -195,7 +195,7 @@ Now you can develop and it will hot-reload.
 
 ## Policy Configuration
 
-The login policy is the one configuration file that configures the bridge's behavior. The most simple example of one looks like this and accepts any credential, while forwarding all subject fields to the `access_token`:
+The login policy is the one configuration file that configures the bridge's behavior. The most simple example of one looks like this and accepts any credential, while forwarding all subject fields to the `id_token`:
 
 ```JSON
 [
@@ -223,7 +223,7 @@ A pattern object has the following fields:
 
 - `claimPath` is a JSONPath that points to one or more values in the credential. If it points to multiple values, they will be aggregated in a new object and indexed by just their final JSONPath component. _This is generally convenient, but can lead to values being overwritten if not careful and working with a credential that uses the same path components in different depths._
 - `newPath` is the new path of the value relative to the root of the token it will be written into. This value is optional, as long as `claimPath` points to exactly one value. In that case, it defaults to `$.<final claimPath component>`.
-- `token` optionally defines if the claim value ends up either in `"id_token"` or `"access_token"`, with the latter being the default.
+- `token` optionally defines if the claim value ends up either in `"id_token"` or `"access_token"`, with the former being the default.
 - `required` is optional and defaults to `false`
 
 ## Token Introspection
