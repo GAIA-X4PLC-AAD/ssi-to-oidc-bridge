@@ -17,6 +17,8 @@ describe("extractClaims", () => {
     var expected = {
       tokenAccess: {},
       tokenId: {
+      tokenAccess: {},
+      tokenId: {
         subjectData: {
           id: "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
           hash: "9ecf754ffdad0c6de238f60728a90511780b2f7dbe2f0ea015115515f3f389cd",
@@ -63,10 +65,10 @@ describe("extractClaims", () => {
     var claims = extractClaims(vpEmployee, policyEmployeeFromAnyone);
     var expected = {
       tokenAccess: {},
+      tokenAccess: {},
       tokenId: {
         email: "test@test.com",
         name: "Name Surname",
-        companyName: "deltaDAO AG",
         companyName: "deltaDAO AG",
       },
     };
