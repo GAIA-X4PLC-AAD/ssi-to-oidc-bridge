@@ -67,6 +67,7 @@ describe("extractClaims", () => {
         email: "test@test.com",
         name: "Name Surname",
         companyName: "deltaDAO AG",
+        companyName: "deltaDAO AG",
       },
     };
     expect(claims).toStrictEqual(expected);
