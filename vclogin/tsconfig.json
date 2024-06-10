@@ -15,7 +15,6 @@
     "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
-    "baseUrl": ".",
     "paths": {
       "@/testdata/*": ["__tests__/testdata/*"],
       "@/lib/*": ["lib/*"],
