@@ -21,7 +21,8 @@
       "@/config/*": ["config/*"],
       "@/types/*": ["types/*"],
       "@/pages/*": ["pages/*"],
-      "@/styles/*": ["styles/*"]
+      "@/styles/*": ["styles/*"],
+      "@/middleware/*": ["middleware/*"]
     },
     "typeRoots": ["./types"]
   },

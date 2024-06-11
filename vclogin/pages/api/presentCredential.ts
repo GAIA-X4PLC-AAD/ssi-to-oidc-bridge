@@ -12,7 +12,6 @@ import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 import { withLogging } from "@/middleware/logging";
 import { logger } from "@/config/logger";
 import { redisSet, redisGet } from "@/config/redis";
-import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import * as jose from "jose";
 import { getToken } from "@/lib/getToken";
 
