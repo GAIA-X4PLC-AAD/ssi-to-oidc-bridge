@@ -9,6 +9,7 @@ import { useRouter } from "next/router";
 import { useQRCode } from "next-qrcode";
 import { useEffect } from "react";
 import { keyToDID } from "@spruceid/didkit-wasm-node";
+import { logger } from "@/config/logger";
 
 export default function Login(props: any) {
   const router = useRouter();
@@ -110,7 +111,7 @@ export async function getServerSideProps(context: NextPageContext) {
     }
 
     const did = await keyToDID("key", process.env.DID_KEY_JWK!);
-    console.log("DID: " + did);
+    logger.debug("DID: " + did);
 
     return {
       props: { loginId, externalUrl: process.env.EXTERNAL_URL, clientId: did },

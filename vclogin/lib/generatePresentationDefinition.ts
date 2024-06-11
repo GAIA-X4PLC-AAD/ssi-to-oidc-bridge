@@ -7,14 +7,15 @@ import { InputDescriptor, InputDescriptors } from "@/types/InputDescriptor";
 import { LoginPolicy } from "@/types/LoginPolicy";
 import { PresentationDefinition } from "@/types/PresentationDefinition";
 import { promises as fs } from "fs";
+import { logger } from "@/config/logger";
 
 var inputDescriptorOverride: any = undefined;
 if (process.env.PEX_DESCRIPTOR_OVERRIDE) {
-  fs
-    ?.readFile(process.env.PEX_DESCRIPTOR_OVERRIDE as string, "utf8")
-    .then((file) => {
+  fs?.readFile(process.env.PEX_DESCRIPTOR_OVERRIDE as string, "utf8").then(
+    (file) => {
       inputDescriptorOverride = JSON.parse(file);
-    });
+    },
+  );
 }
 
 export const generatePresentationDefinition = (
@@ -52,12 +53,12 @@ export const generatePresentationDefinition = (
   };
 
   if (inputDescriptorOverride && !incrAuthInputDescriptor) {
-    console.log("Using input descriptor override", inputDescriptorOverride);
+    logger.debug("Using input descriptor override", inputDescriptorOverride);
     pd.input_descriptors = inputDescriptorOverride;
     return pd;
   } else if (incrAuthInputDescriptor) {
     pd.input_descriptors = incrAuthInputDescriptor;
-    console.log(
+    logger.debug(
       "Using input descriptor override for incremental authorization",
       pd,
     );

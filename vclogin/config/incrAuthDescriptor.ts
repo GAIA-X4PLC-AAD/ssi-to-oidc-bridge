@@ -1,5 +1,6 @@
 import { InputDescriptor } from "@/types/InputDescriptor";
 import { promises as fs } from "fs";
+import { logger } from "@/config/logger";
 
 export const getInputDescriptorPath = (scope: string) => {
   let mainPath = "./init_config/input_descriptors";
@@ -49,7 +50,7 @@ const readDescriptor = async (scope: string) => {
     const file = await fs?.readFile(path, "utf8");
     return JSON.parse(file);
   } catch (error) {
-    console.error("Error reading policy:", error);
+    logger.error("Error reading policy:", error);
     throw error;
   }
 };
