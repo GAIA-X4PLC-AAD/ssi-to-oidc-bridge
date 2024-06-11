@@ -20,7 +20,8 @@
       "@/lib/*": ["lib/*"],
       "@/config/*": ["config/*"],
       "@/types/*": ["types/*"],
-      "@/pages/*": ["pages/*"]
+      "@/pages/*": ["pages/*"],
+      "@/styles/*": ["styles/*"]
     },
     "typeRoots": ["./types"]
   },
