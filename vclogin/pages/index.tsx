@@ -33,7 +33,6 @@ export default function Home() {
           This application supports VC-based logins for other services.
         </div>
       </div>
-
       <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
         {/*TODO add some more informative content here later on*/}
         &nbsp;

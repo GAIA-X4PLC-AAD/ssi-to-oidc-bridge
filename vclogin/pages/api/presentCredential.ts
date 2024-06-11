@@ -10,7 +10,8 @@ import { isTrustedPresentation, extractClaims } from "@/lib/extractClaims";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
-import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
+import { mergePolicyFiles } from "@/config/incrAuthPolicy";
+import { mergeInputDescriptors } from "@/config/incrAuthDescriptor";
 import { withLogging } from "@/middleware/logging";
 import { logger } from "@/config/logger";
 import { redisSet, redisGet } from "@/config/redis";
@@ -19,15 +20,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
+      logger.debug("LOGIN API GET");
+      logger.debug(req.query);
+
+      const challenge = req.query["login_id"];
+      const loginChallenge = (await redisGet("" + challenge))!;
+
+      const scopesRequested = await getScopesRequested(loginChallenge);
+      logger.debug("Scopes Requested: \n", scopesRequested);
+      const policyInitialized = await getPolicyInitialized(scopesRequested!);
+      const descriptorInitialized = await getDescriptorInitialized(
+        scopesRequested!,
+      );
       const presentation_definition = generatePresentationDefinition(
-        getConfiguredLoginPolicy()!,
+        policyInitialized!,
+        descriptorInitialized,
       );
       const did = keyToDID("key", process.env.DID_KEY_JWK!);
       const verificationMethod = await keyToVerificationMethod(
         "key",
         process.env.DID_KEY_JWK!,
       );
-      const challenge = req.query["login_id"];
       const payload = {
         client_id: did,
         client_id_scheme: "did",
@@ -67,10 +80,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
       const presentation = JSON.parse(req.body.vp_token);
       logger.debug(req.body.vp_token, "Verifiable Presentaiton was sent");
 
+      // Get the user claims
+      const subject = presentation["holder"];
+      const login_id = presentation["proof"]["challenge"];
+      const challenge = (await redisGet("" + login_id))!;
+      const requestedScopes = await getScopesRequested(challenge);
+      const policyInitialized = await getPolicyInitialized(requestedScopes!);
+
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {
         // Evaluate if the VP should be trusted
-        if (isTrustedPresentation(presentation)) {
+        if (await isTrustedPresentation(presentation, policyInitialized)) {
           logger.debug("Verifiable Presentation verified");
         } else {
           logger.debug("Verifiable Presentation not trusted");
@@ -83,13 +103,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
         return;
       }
 
-      // Get the user claims
-      const userClaims = extractClaims(presentation);
-      const subject = presentation["holder"];
-      const login_id = presentation["proof"]["challenge"];
-      const challenge = (await redisGet("" + login_id))!;
-      logger.debug({ subject, challenge }, "Sign-in confirmed");
+      const userClaims = await extractClaims(presentation, policyInitialized);
 
+      logger.debug("Logging in: " + subject + " with challenge: " + challenge);
+      logger.debug("User Claims: \n", userClaims);
       // hydra login
       await hydraAdmin
         .adminGetOAuth2LoginRequest(challenge)
@@ -141,6 +158,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
     res.status(500).end();
   }
 }
+
+const getScopesRequested = async (loginChallenge: string) => {
+  let scopesRequested;
+  await hydraAdmin
+    .adminGetOAuth2LoginRequest(loginChallenge)
+    .then(async ({ data: loginRequest }) => {
+      scopesRequested = loginRequest.requested_scope;
+    });
+  return scopesRequested;
+};
+
+const getDescriptorInitialized = async (requestedScopes: string[]) => {
+  return await mergeInputDescriptors(requestedScopes);
+};
+const getPolicyInitialized = async (requestedScopes: string[]) => {
+  return await mergePolicyFiles(requestedScopes);
+};
 
 export default withLogging(handler);
 export const config = { api: { bodyParser: true } };

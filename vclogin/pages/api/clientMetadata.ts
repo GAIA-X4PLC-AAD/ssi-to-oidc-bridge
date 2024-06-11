@@ -11,7 +11,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
     const { method } = req;
     if (method === "GET") {
       const metadata = {
-        scopes_supported: ["openid"],
+        scopes_supported: ["openid", "student"],
         response_types_supported: ["id_token", "vp_token"],
         response_modes_supported: ["query"],
         subject_types_supported: ["public"],

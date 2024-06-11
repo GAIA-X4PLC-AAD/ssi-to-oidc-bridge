@@ -12,8 +12,8 @@ import {
 import jp from "jsonpath";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 
-export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
-  var configuredPolicy = getConfiguredLoginPolicy();
+export const isTrustedPresentation = async (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = await getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
@@ -25,8 +25,8 @@ export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
   return getConstraintFit(creds, usedPolicy, VP).length > 0;
 };
 
-export const extractClaims = (VP: any, policy?: LoginPolicy) => {
-  var configuredPolicy = getConfiguredLoginPolicy();
+export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = await getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
@@ -36,10 +36,21 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
     : [VP.verifiableCredential];
 
   const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
-  const claims = vcClaims.reduce(
-    (acc: any, vc: any) => Object.assign(acc, vc),
-    {},
-  );
+
+  const claims: any = {};
+
+  vcClaims.forEach((claim: any) => {
+    // Merge tokenId properties
+    claims.tokenId = Object.assign({}, claims.tokenId, claim.tokenId);
+
+    // Merge tokenAccess properties
+    claims.tokenAccess = Object.assign(
+      {},
+      claims.tokenAccess,
+      claim.tokenAccess,
+    );
+  });
+
   return claims;
 };
 
@@ -111,6 +122,7 @@ const isCredentialFittingPattern = (
 };
 
 const getAllUniqueDraws = (patternFits: any[][]): any[][] => {
+  // get all unique draws of credentials that fit the expected credential claims
   const draws = getAllUniqueDrawsHelper(patternFits, []);
   return draws.filter((draw) => draw.length == patternFits.length);
 };
@@ -122,7 +134,6 @@ const getAllUniqueDrawsHelper = (
   if (patternFits.length === 0) {
     return [];
   }
-
   let uniqueDraws: any[][] = [];
   for (let cred of patternFits[0]) {
     if (!usedIds.includes(cred.id)) {
@@ -141,14 +152,16 @@ const isValidConstraintFit = (
   VP: any,
 ): boolean => {
   const credDict: any = {};
+  credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
+  // check if all constraints are fulfilled
+  var fittingArr = [];
 
   for (let i = 0; i < policy.length; i++) {
     const cred = credFit[i];
     const expectation = policy[i];
-    var oneFittingPattern = false;
     for (let pattern of expectation.patterns) {
       if (isCredentialFittingPattern(cred, pattern)) {
         if (pattern.constraint) {
@@ -159,15 +172,19 @@ const isValidConstraintFit = (
             VP,
           );
           if (res) {
-            oneFittingPattern = true;
-            break;
+            // if one pattern fits, the credential is fitting
+            fittingArr.push(true);
+          } else {
+            // if one pattern does not fit, the credential is not fitting
+            fittingArr.push(false);
           }
         }
       }
     }
-    if (!oneFittingPattern) {
-      return true;
-    }
+  }
+  // if all patterns fit, the credential is fitting
+  if (!fittingArr.includes(false)) {
+    return true;
   }
   return false;
 };
@@ -225,34 +242,68 @@ const evaluateConstraint = (
   throw Error("Unknown constraint operator: " + constraint.op);
 };
 
+const resolveSingleNodeValue = (
+  expression: string,
+  cred: any,
+  VP: any,
+): string => {
+  var nodes: any;
+  if (expression.startsWith("$")) {
+    if (expression.startsWith("$1.")) {
+      nodes = jp.nodes(cred, "$" + expression.slice(2));
+    } else if (expression.startsWith("$VP.")) {
+      nodes = jp.nodes(VP, "$" + expression.slice(3));
+    }
+    if (nodes === undefined) {
+      return expression;
+    } else if (nodes.length > 1 || nodes.length <= 0) {
+      throw Error("JSON Paths in constraints must be single-valued");
+    }
+    return nodes[0].value;
+  }
+  return expression;
+};
+
 const resolveValue = (
   expression: string,
   cred: any,
   credDict: any,
   VP: any,
 ): string => {
-  if (expression.startsWith("$")) {
-    var nodes: any;
-    if (expression.startsWith("$.")) {
-      nodes = jp.nodes(cred, expression);
-    } else if (expression.startsWith("$VP.")) {
-      nodes = jp.nodes(VP, "$" + expression.slice(3));
-    } else {
-      nodes = jp.nodes(
-        credDict[expression.slice(1).split(".")[0]],
-        expression.slice(1).split(".").slice(1).join("."),
-      );
+  var nodes: any;
+  if (Object.entries(credDict).length > 0) {
+    // store object key's value in array to prevent querying wrong key
+    let keyValues = [];
+    for (const [key, value] of Object.entries(credDict)) {
+      keyValues.push(key);
     }
-    if (nodes.length > 1 || nodes.length <= 0) {
-      throw Error("JSON Paths in constraints must be single-valued");
-    }
-    return nodes[0].value;
-  }
 
-  return expression;
+    for (const [key, value] of Object.entries(credDict)) {
+      if (expression.startsWith("$" + key + ".")) {
+        for (const [key2, value2] of Object.entries(credDict)) {
+          // check if both keys are in credDict
+          if (keyValues.includes(key2) && keyValues.includes(key)) {
+            if (key !== key2) {
+              nodes = jp.nodes(value2, expression.slice(2 + key.length));
+              if (nodes.length <= 1 && nodes.length > 0) {
+                return nodes[0].value;
+              }
+            }
+          } else {
+            // if key is not found in credDict
+            throw Error("Key not found in credDict");
+          }
+        }
+      }
+    }
+    resolveSingleNodeValue(expression, cred, VP);
+  }
+  return resolveSingleNodeValue(expression, cred, VP);
 };
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
+  let reiterateOuterLoop = false;
+
   for (let expectation of policy) {
     for (let pattern of expectation.patterns) {
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
@@ -275,6 +326,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
 
         for (let claim of pattern.claims) {
           const nodes = jp.nodes(VC, claim.claimPath);
+
           let newPath = claim.newPath;
           let value: any;
 
@@ -295,6 +347,10 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
               .reduce((acc: any, vals: any) => Object.assign(acc, vals), {});
           } else {
             if (!newPath) {
+              if (nodes.length === 0 || nodes === undefined) {
+                reiterateOuterLoop = true;
+                break;
+              }
               newPath = "$." + nodes[0].path[nodes[0].path.length - 1];
             }
 
@@ -308,6 +364,10 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
           jp.value(claimTarget, newPath, value);
         }
 
+        if (reiterateOuterLoop) {
+          reiterateOuterLoop = false;
+          break; // Break inner loop
+        }
         return extractedClaims;
       }
     }
