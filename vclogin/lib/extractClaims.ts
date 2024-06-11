@@ -207,9 +207,6 @@ const evaluateConstraint = (
       b = resolveValue(constraint.b as string, cred, credDict, VP);
   }
 
-  console.log("a", a);
-  console.log("b", b);
-
   switch (constraint.op) {
     case "equals":
       return a === b;
@@ -328,8 +325,6 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
         };
 
         for (let claim of pattern.claims) {
-          console.log("claim", claim);
-          console.log("VC", VC);
           const nodes = jp.nodes(VC, claim.claimPath);
 
           let newPath = claim.newPath;
@@ -339,7 +334,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
             if (!newPath) {
               throw Error(
                 "New path not defined for multi-valued claim: " +
-                claim.claimPath,
+                  claim.claimPath,
               );
             }
 
@@ -373,7 +368,6 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
           reiterateOuterLoop = false;
           break; // Break inner loop
         }
-        console.log("extractedClaims", extractedClaims);
         return extractedClaims;
       }
     }

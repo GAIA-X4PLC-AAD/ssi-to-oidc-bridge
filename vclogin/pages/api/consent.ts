@@ -14,13 +14,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
     if (method === "GET") {
       const challenge = req.query["consent_challenge"] as string;
 
-      const { data: body } =
-        await hydraAdmin.adminGetOAuth2ConsentRequest(challenge);
+      const { data: body } = await hydraAdmin.adminGetOAuth2ConsentRequest(
+        challenge,
+      );
 
       // get user identity and fetch user claims from redis
       const userClaims = JSON.parse((await redisGet("" + body.subject))!);
-
-      console.log(userClaims);
 
       hydraAdmin
         .adminAcceptOAuth2ConsentRequest(challenge, {
