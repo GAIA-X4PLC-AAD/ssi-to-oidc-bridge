@@ -195,10 +195,6 @@ Now you can develop and it will hot-reload.
 
 ## Logging Configuration
 
-### vclogin
-
-The vclogin server uses the `pino` library for logging. Due to the peculiarities of NextJS, http events are only logged for API routes.
-
 ### Ory Hydra
 
 Hydra is set to a minimal log output. To expand log output, edit the hydra service in `compose.yaml`:
