@@ -4,15 +4,12 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from "next";
+import { withLogging } from "@/middleware/logging";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<any>,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
-      console.log("METADATA API GET");
       const metadata = {
         scopes_supported: ["openid"],
         response_types_supported: ["id_token", "vp_token"],
@@ -68,4 +65,5 @@ export default async function handler(
   }
 }
 
+export default withLogging(handler);
 export const config = { api: { bodyParser: false } };
