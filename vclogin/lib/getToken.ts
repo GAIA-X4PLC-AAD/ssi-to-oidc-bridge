@@ -2,6 +2,7 @@ import { PresentationDefinition } from "@/types/PresentationDefinition";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import * as jose from "jose";
 import { NextApiResponse } from "next/types";
+import { logger } from "@/config/logger";
 
 /**
  *
@@ -50,7 +51,7 @@ export const getToken = async (
     .setExpirationTime("1 hour")
     .sign(privateKey)
     .catch((err) => {
-      console.log(err);
+      logger.error(err);
       res.status(500).end();
     });
   return token;

@@ -11,6 +11,7 @@ import {
 } from "@/types/LoginPolicy";
 import jp from "jsonpath";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
+import { logger } from "@/config/logger";
 
 export const isTrustedPresentation = async (VP: any, policy?: LoginPolicy) => {
   var configuredPolicy = await getConfiguredLoginPolicy();
@@ -31,18 +32,18 @@ export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
 
   var usedPolicy = policy ? policy : configuredPolicy!;
 
-  console.log("Used Policy", usedPolicy);
+  logger.info("Used Policy", usedPolicy);
   const creds = Array.isArray(VP.verifiableCredential)
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
-  console.log("Credentials", creds);
+  logger.info("Credentials", creds);
   const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
-  console.log("Extracted VC Claims", vcClaims);
+  logger.info("Extracted VC Claims", vcClaims);
   const claims = vcClaims.reduce(
     (acc: any, vc: any) => Object.assign(acc, vc),
     {},
   );
-  console.log("Extracted Claims", claims);
+  logger.info("Extracted Claims", claims);
   return claims;
 };
 
@@ -258,7 +259,7 @@ const resolveValue = (
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
   for (let expectation of policy) {
-    console.log("Expectation", expectation);
+    logger.info("Expectation", expectation);
     for (let pattern of expectation.patterns) {
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
         const containsAllRequired =
@@ -287,7 +288,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
             if (!newPath) {
               throw Error(
                 "New path not defined for multi-valued claim: " +
-                claim.claimPath,
+                  claim.claimPath,
               );
             }
 
@@ -312,7 +313,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
               : extractedClaims.tokenId;
           jp.value(claimTarget, newPath, value);
         }
-        console.log("Extracted Claims", extractedClaims);
+        logger.info("Extracted Claims", extractedClaims);
         return extractedClaims;
       }
     }

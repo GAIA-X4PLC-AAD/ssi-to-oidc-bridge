@@ -12,13 +12,15 @@ import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 import { withLogging } from "@/middleware/logging";
 import { logger } from "@/config/logger";
 import { redisSet, redisGet } from "@/config/redis";
+import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
+import * as jose from "jose";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
       const presentation_definition = generatePresentationDefinition(
-        getConfiguredLoginPolicy()!,
+        await getConfiguredLoginPolicy()!,
       );
       const did = keyToDID("key", process.env.DID_KEY_JWK!);
       const verificationMethod = await keyToVerificationMethod(
@@ -68,7 +70,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {
         // Evaluate if the VP should be trusted
-        if (isTrustedPresentation(presentation)) {
+        if (await isTrustedPresentation(presentation)) {
           logger.debug("Verifiable Presentation verified");
         } else {
           logger.debug("Verifiable Presentation not trusted");

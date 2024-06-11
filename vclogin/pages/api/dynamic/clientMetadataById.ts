@@ -5,6 +5,7 @@
 
 import { getMetadata } from "@/lib/getMetadata";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { logger } from "@/config/logger";
 
 export default async function handler(
   req: NextApiRequest,
@@ -13,7 +14,7 @@ export default async function handler(
   try {
     const { method } = req;
     if (method === "GET") {
-      console.log("METADATA BY ID API GET");
+      logger.info("METADATA BY ID API GET");
       const metadata = getMetadata([
         process.env.NEXT_PUBLIC_INTERNET_URL +
           "/api/dynamic/presentCredentialById",

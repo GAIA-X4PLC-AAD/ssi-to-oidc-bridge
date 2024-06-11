@@ -5,16 +5,17 @@ import { LoginPolicy } from "@/types/LoginPolicy";
 import { extractClaims, isTrustedPresentation } from "@/lib/extractClaims";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { getToken } from "@/lib/getToken";
+import { logger } from "@/config/logger";
 
 var redis: Redis;
 try {
   redis = new Redis(parseInt(process.env.REDIS_PORT!), process.env.REDIS_HOST!);
 } catch (error) {
-  console.error("Failed to connect to Redis:", error);
+  logger.error("Failed to connect to Redis:", error);
 }
 
 const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  console.log("LOGIN API GET BY ID");
+  logger.info("LOGIN API GET BY ID");
 
   // Get login_id from query
   const uuid = req.query["login_id"];
@@ -24,7 +25,7 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   // fetch inputDescriptor from redis using uuid
   const inputDescriptor = await redis.get(uuid + "_inputDescriptor");
-  console.log("inputDescriptor: ", JSON.parse(inputDescriptor!));
+  logger.info("inputDescriptor: ", JSON.parse(inputDescriptor!));
 
   //if policy is found
   if (policy) {
@@ -60,11 +61,11 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  console.log("LOGIN API POST BY ID");
+  logger.info("LOGIN API POST BY ID");
 
   // Parse the JSON string into a JavaScript object
   const presentation = JSON.parse(req.body.vp_token);
-  console.log("Presentation: \n", req.body.vp_token);
+  logger.info("Presentation: \n", req.body.vp_token);
 
   const uuid = presentation["proof"]["challenge"];
   const policy = await redis.get(uuid + "_policy");
@@ -78,14 +79,14 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Verify the presentation and the status of the credential
     if (await verifyAuthenticationPresentation(presentation)) {
-      console.log("Presentation valid");
+      logger.info("Presentation valid");
       // Evaluate if the VP should be trusted
       if (await isTrustedPresentation(presentation, policyObject)) {
-        console.log("Presentation verified");
+        logger.info("Presentation verified");
 
         // Get the user claims when the presentation is trusted
         const userClaims = await extractClaims(presentation, policyObject);
-        console.log(userClaims);
+        logger.info(userClaims);
 
         // Store the authentication result in Redis
         await redis.set(uuid + "_auth-res", "success", EXPIRY_MS, MAX_AGE);
@@ -98,7 +99,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
           MAX_AGE,
         );
       } else {
-        console.log("Presentation not trusted");
+        logger.info("Presentation not trusted");
 
         await redis.set(
           "auth_res:" + uuid,
@@ -111,7 +112,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
         return;
       }
     } else {
-      console.log("Presentation invalid");
+      logger.info("Presentation invalid");
       await redis.set(
         "auth_res:" + uuid,
         "error_invalid_presentation",

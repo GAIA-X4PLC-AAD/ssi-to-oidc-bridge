@@ -1,11 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Redis } from "ioredis";
+import { logger } from "@/config/logger";
 
 var redis: Redis;
 try {
   redis = new Redis(parseInt(process.env.REDIS_PORT!), process.env.REDIS_HOST!);
 } catch (error) {
-  console.error("Failed to connect to Redis:", error);
+  logger.error("Failed to connect to Redis:", error);
 }
 
 export default async function handler(
@@ -14,7 +15,7 @@ export default async function handler(
 ) {
   //read uuid from query params
   const uuid = req.query["uuid"];
-  console.log("uuid: ", uuid);
+  logger.info("uuid: ", uuid);
 
   // Read auth_res from redis and check if it matches the uuid
 

@@ -7,6 +7,7 @@ import { InputDescriptor, InputDescriptors } from "@/types/InputDescriptor";
 import { LoginPolicy } from "@/types/LoginPolicy";
 import { PresentationDefinition } from "@/types/PresentationDefinition";
 import { promises as fs } from "fs";
+import { logger } from "@/config/logger";
 
 var inputDescriptorOverride: any = undefined;
 if (process.env.PEX_DESCRIPTOR_OVERRIDE) {
@@ -56,7 +57,7 @@ export const generatePresentationDefinition = (
     return pd;
   } else if (incrAuthInputDescriptor) {
     pd.input_descriptors = incrAuthInputDescriptor;
-    console.log(
+    logger.info(
       "Using input descriptor override for incremental authorization",
       pd,
     );
