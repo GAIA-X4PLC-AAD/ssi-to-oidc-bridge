@@ -5,31 +5,21 @@
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { hydraAdmin } from "@/config/ory";
-import { Redis } from "ioredis";
+import { redisGet } from "@/config/redis";
+import { withLogging } from "@/middleware/logging";
 
-var redis: Redis;
-try {
-  redis = new Redis(parseInt(process.env.REDIS_PORT!), process.env.REDIS_HOST!);
-} catch (error) {
-  console.error("Failed to connect to Redis:", error);
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<any>,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
-      console.log("CONSENT API GET");
-
       const challenge = req.query["consent_challenge"] as string;
 
-      const { data: body } =
-        await hydraAdmin.adminGetOAuth2ConsentRequest(challenge);
+      const { data: body } = await hydraAdmin.adminGetOAuth2ConsentRequest(
+        challenge,
+      );
 
       // get user identity and fetch user claims from redis
-      const userClaims = JSON.parse((await redis.get("" + body.subject))!);
+      const userClaims = JSON.parse((await redisGet("" + body.subject))!);
 
       hydraAdmin
         .adminAcceptOAuth2ConsentRequest(challenge, {
@@ -64,4 +54,5 @@ export default async function handler(
   }
 }
 
+export default withLogging(handler);
 export const config = { api: { bodyParser: false } };
