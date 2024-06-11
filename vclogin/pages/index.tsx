@@ -26,11 +26,11 @@ export default function Home() {
             id="gx-text"
             className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 transition duration-500 ease-in-out transform -translate-y-full"
           >
-            GX Credentials Bridge
+            SSI-to-OIDC Bridge
           </h1>
         </div>
         <div className="w-full flex align-center justify-center">
-          This page supports VC-based logins.
+          This application supports VC-based logins for other services.
         </div>
       </div>
 
