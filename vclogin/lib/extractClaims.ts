@@ -11,9 +11,10 @@ import {
 } from "@/types/LoginPolicy";
 import jp from "jsonpath";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
+import { logger } from "@/config/logger";
 
-export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
-  var configuredPolicy = getConfiguredLoginPolicy();
+export const isTrustedPresentation = async (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = await getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
@@ -25,21 +26,24 @@ export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
   return getConstraintFit(creds, usedPolicy, VP).length > 0;
 };
 
-export const extractClaims = (VP: any, policy?: LoginPolicy) => {
-  var configuredPolicy = getConfiguredLoginPolicy();
+export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = await getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
 
+  logger.debug("Used Policy", usedPolicy);
   const creds = Array.isArray(VP.verifiableCredential)
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
-
+  logger.debug("Credentials", creds);
   const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
+  logger.debug("Extracted VC Claims", vcClaims);
   const claims = vcClaims.reduce(
     (acc: any, vc: any) => Object.assign(acc, vc),
     {},
   );
+  logger.debug("Extracted Claims", claims);
   return claims;
 };
 
@@ -141,6 +145,7 @@ const isValidConstraintFit = (
   VP: any,
 ): boolean => {
   const credDict: any = {};
+  credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
@@ -254,6 +259,7 @@ const resolveValue = (
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
   for (let expectation of policy) {
+    logger.debug("Expectation", expectation);
     for (let pattern of expectation.patterns) {
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
         const containsAllRequired =
@@ -282,7 +288,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
             if (!newPath) {
               throw Error(
                 "New path not defined for multi-valued claim: " +
-                  claim.claimPath,
+                claim.claimPath,
               );
             }
 
@@ -307,7 +313,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
               : extractedClaims.tokenId;
           jp.value(claimTarget, newPath, value);
         }
-
+        logger.debug("Extracted Claims", extractedClaims);
         return extractedClaims;
       }
     }

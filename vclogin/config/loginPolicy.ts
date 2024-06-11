@@ -4,13 +4,14 @@
  */
 
 import { promises as fs } from "fs";
-import { LoginPolicy } from "@/types/LoginPolicy";
+import { logger } from "@/config/logger";
 
-var configuredPolicy: LoginPolicy | undefined = undefined;
-fs.readFile(process.env.LOGIN_POLICY as string, "utf8").then((file) => {
-  configuredPolicy = JSON.parse(file);
-});
-
-export const getConfiguredLoginPolicy = () => {
-  return configuredPolicy;
+export const getConfiguredLoginPolicy = async () => {
+  try {
+    const file = await fs.readFile(process.env.LOGIN_POLICY as string, "utf8");
+    return JSON.parse(file);
+  } catch (error) {
+    logger.error("Failed to read login policy:", error);
+    return undefined;
+  }
 };

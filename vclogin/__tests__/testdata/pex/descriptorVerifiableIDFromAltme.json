@@ -1,0 +1,18 @@
+[
+  {
+    "id": "verifiableId",
+    "name": "Input descriptor for login credential",
+    "purpose": "Sign-in to MVG",
+    "constraints": {
+      "fields": [
+        {
+          "path": ["$.credentialSubject.type"],
+          "filter": {
+            "type": "string",
+            "pattern": "VerifiableId"
+          }
+        }
+      ]
+    }
+  }
+]
