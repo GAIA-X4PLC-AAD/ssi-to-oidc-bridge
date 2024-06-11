@@ -193,6 +193,18 @@ _Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override th
 
 Now you can develop and it will hot-reload.
 
+## Logging Configuration
+
+### Ory Hydra
+
+Hydra is set to a minimal log output. To expand log output, edit the hydra service in `compose.yaml`:
+
+```yaml
+- LOG_LEVEL=debug
+- LOG_FORMAT=json
+- LOG_LEAK_SENSITIVE_VALUES=true
+```
+
 ## Policy Configuration
 
 The login policy is the one configuration file that configures the bridge's behavior. The most simple example of one looks like this and accepts any credential, while forwarding all subject fields to the `id_token`:
