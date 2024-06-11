@@ -6,7 +6,7 @@
 > This repository is intended for prototyping and as a reference implementation. At this time, no security guarantees can be given.
 
 > [!NOTE]
-> A preprint of our paper providing more background information is available [on arXiv](https://arxiv.org/abs/2401.09488).
+> A preprint of our paper providing more background information is available [on arXiv](https://arxiv.org/abs/2401.09488). While it is slightly outdated now, it provides a good introduction.
 
 > [!NOTE]
 > This software artifact was originally intended to support only Gaia-X Participant Credentials. It has since evolved to be fully configurable for almost any Verifiable Credential, almost any wallet application, and almost any current OIDC client.
@@ -62,55 +62,55 @@ The user's browser starts out on the service website, which takes the role of an
 
 ```mermaid
 sequenceDiagram
-	autonumber
-	actor User
-	participant Browser
-	participant Client as OIDC Client (Web Server)
+ autonumber
+ actor User
+ participant Browser
+ participant Client as OIDC Client (Web Server)
     participant Wallet as Smartphone Wallet
     participant VPLS as vclogin
     participant Redis
     participant OP as Ory Hydra
-	User->>Browser: Click "Sign-in"
-	Browser->>OP: Redirect to /authorize
-	OP->>VPLS: Redirect to /login?login_challenge=<challenge>
-	VPLS->>VPLS: Generate random UUID to replace challenge
-	VPLS->>Redis: Save (UUID,challenge) and (challenge,UUID)
-	VPLS->>Browser: Send login page
-	Browser->>User: Show login page with QR Code
-	User->>Wallet: Scan QR code containing SIOP Provider Invocation
-	Wallet->>VPLS: GET /api/presentCredential?login_id=<UUID>
-	VPLS->>VPLS: Generate and sign Auth Request JWT
-	VPLS->>Wallet: Auth Request with Presentation Definition
-	Wallet->>VPLS: GET /api/clientMetadata
-	VPLS->>Wallet: Return static Client Metadata
-	Wallet->>User: Prompt for VC selection and consent
-	User->>Wallet: Choose VC(s) and confirm
-	Wallet->>Wallet: Create and sign VP
-	Wallet->>VPLS: Submit Auth Response via POST /api/presentCredential
-	VPLS->>VPLS: Verify VP
-	VPLS->>VPLS: Process claims from VP
-	VPLS->>Redis: Get challenge using UUID
-	VPLS->>OP: Confirm sign-in for subject DID using challenge
-	OP->>VPLS: Client redirect link
-	VPLS->>Redis: Save (subject DID, claims)
-	VPLS->>Redis: Save ("redirect" + UUID, redirect)
-	loop Every few seconds
-		Browser->>VPLS: Try to retrieve redirect using challenge
-		Note over Client,Redis: Failed lookups omitted
-	end
-	Browser->>VPLS: Get redirect using challenge
-	VPLS->>Redis: Get UUID using challenge
-	VPLS->>Redis: Get redirect using UUID
-	VPLS->>OP: Redirect to Hydra
-	OP->>VPLS: Redirect to /api/consent?consent_challenge=<challenge2>
-	VPLS->>OP: Get consent metadata using challenge2
-	OP->>VPLS: Metadata including subject DID
-	VPLS->>Redis: Get claims using subject DID
-	VPLS->>OP: Confirm consent and send user claims
-	OP->>Client: Redirect to client callback with code
-	Client->>OP: Get tokens using code
-	OP->>Client: Return id_token and access_token
-	Client->>Browser: Provide access to protected service
+ User->>Browser: Click "Sign-in"
+ Browser->>OP: Redirect to /authorize
+ OP->>VPLS: Redirect to /login?login_challenge=<challenge>
+ VPLS->>VPLS: Generate random UUID to replace challenge
+ VPLS->>Redis: Save (UUID,challenge) and (challenge,UUID)
+ VPLS->>Browser: Send login page
+ Browser->>User: Show login page with QR Code
+ User->>Wallet: Scan QR code containing SIOP Provider Invocation
+ Wallet->>VPLS: GET /api/presentCredential?login_id=<UUID>
+ VPLS->>VPLS: Generate and sign Auth Request JWT
+ VPLS->>Wallet: Auth Request with Presentation Definition
+ Wallet->>VPLS: GET /api/clientMetadata
+ VPLS->>Wallet: Return static Client Metadata
+ Wallet->>User: Prompt for VC selection and consent
+ User->>Wallet: Choose VC(s) and confirm
+ Wallet->>Wallet: Create and sign VP
+ Wallet->>VPLS: Submit Auth Response via POST /api/presentCredential
+ VPLS->>VPLS: Verify VP
+ VPLS->>VPLS: Process claims from VP
+ VPLS->>Redis: Get challenge using UUID
+ VPLS->>OP: Confirm sign-in for subject DID using challenge
+ OP->>VPLS: Client redirect link
+ VPLS->>Redis: Save (subject DID, claims)
+ VPLS->>Redis: Save ("redirect" + UUID, redirect)
+ loop Every few seconds
+  Browser->>VPLS: Try to retrieve redirect using challenge
+  Note over Client,Redis: Failed lookups omitted
+ end
+ Browser->>VPLS: Get redirect using challenge
+ VPLS->>Redis: Get UUID using challenge
+ VPLS->>Redis: Get redirect using UUID
+ VPLS->>OP: Redirect to Hydra
+ OP->>VPLS: Redirect to /api/consent?consent_challenge=<challenge2>
+ VPLS->>OP: Get consent metadata using challenge2
+ OP->>VPLS: Metadata including subject DID
+ VPLS->>Redis: Get claims using subject DID
+ VPLS->>OP: Confirm consent and send user claims
+ OP->>Client: Redirect to client callback with code
+ Client->>OP: Get tokens using code
+ OP->>Client: Return id_token and access_token
+ Client->>Browser: Provide access to protected service
 ```
 
 ## Running a Local Deployment
@@ -118,7 +118,7 @@ sequenceDiagram
 A local deployment is a great way to test the bridge and to use it for prototyping an OIDC client service you are developing.
 
 > [!IMPORTANT]
-> You need to use a tool like ngrok for testing so your smartphone wallet can access the vclogin backend. However, it can lead to issues with `application/x-www-form-urlencoded` request bodies used in the flow (https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22). But you can manually replay that request on the ngrok interface, if you run into problems.
+> You need to use a tool like ngrok for testing so your smartphone wallet can access the vclogin backend. However, it can lead to issues with `application/x-www-form-urlencoded` request bodies used in the flow (<https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22>). But you can manually replay that request on the ngrok interface, if you run into problems.
 
 1. `$ ngrok http 5002`, which will set up a randomly generated URL
 2. enter the domain for the vclogin service into the env file `/vclogin/.env` with key `EXTERNAL_URL`
