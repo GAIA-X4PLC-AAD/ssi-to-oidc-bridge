@@ -6,36 +6,28 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { hydraAdmin } from "@/config/ory";
-import { Redis } from "ioredis";
 import { isTrustedPresentation, extractClaims } from "@/lib/extractClaims";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
 import { mergePolicyFiles } from "@/config/incrAuthPolicy";
 import { mergeInputDescriptors } from "@/config/incrAuthDescriptor";
+import { withLogging } from "@/middleware/logging";
+import { logger } from "@/config/logger";
+import { redisSet, redisGet } from "@/config/redis";
 
-var redis: Redis;
-try {
-  redis = new Redis(parseInt(process.env.REDIS_PORT!), process.env.REDIS_HOST!);
-} catch (error) {
-  console.error("Failed to connect to Redis:", error);
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<any>,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
-      console.log("LOGIN API GET");
-      console.log(req.query);
+      logger.debug("LOGIN API GET");
+      logger.debug(req.query);
 
       const challenge = req.query["login_id"];
-      const loginChallenge = (await redis.get("" + challenge))!;
+      const loginChallenge = (await redisGet("" + challenge))!;
 
       const scopesRequested = await getScopesRequested(loginChallenge);
-      console.log("Scopes Requested: \n", scopesRequested);
+      logger.debug("Scopes Requested: \n", scopesRequested);
       const policyInitialized = await getPolicyInitialized(scopesRequested!);
       const descriptorInitialized = await getDescriptorInitialized(
         scopesRequested!,
@@ -44,10 +36,7 @@ export default async function handler(
         policyInitialized!,
         descriptorInitialized,
       );
-
-      console.log("Presentation Definition: \n", presentation_definition);
-
-      const did = await keyToDID("key", process.env.DID_KEY_JWK!);
+      const did = keyToDID("key", process.env.DID_KEY_JWK!);
       const verificationMethod = await keyToVerificationMethod(
         "key",
         process.env.DID_KEY_JWK!,
@@ -79,25 +68,22 @@ export default async function handler(
         .setExpirationTime("1 hour")
         .sign(privateKey)
         .catch((err) => {
-          console.log(err);
+          logger.error(err, "Failed signing presentation definition token");
           res.status(500).end();
         });
-      console.log("TOKEN: " + token);
       res
         .status(200)
         .appendHeader("Content-Type", "application/oauth-authz-req+jwt")
         .send(token);
     } else if (method === "POST") {
-      console.log("LOGIN API POST");
-
       // Parse the JSON string into a JavaScript object
       const presentation = JSON.parse(req.body.vp_token);
-      console.log("Presentation: \n", req.body.vp_token);
+      logger.debug(req.body.vp_token, "Verifiable Presentaiton was sent");
 
       // Get the user claims
       const subject = presentation["holder"];
       const login_id = presentation["proof"]["challenge"];
-      const challenge = (await redis.get("" + login_id))!;
+      const challenge = (await redisGet("" + login_id))!;
       const requestedScopes = await getScopesRequested(challenge);
       const policyInitialized = await getPolicyInitialized(requestedScopes!);
 
@@ -105,26 +91,26 @@ export default async function handler(
       if (await verifyAuthenticationPresentation(presentation)) {
         // Evaluate if the VP should be trusted
         if (await isTrustedPresentation(presentation, policyInitialized)) {
-          console.log("Presentation verified");
+          logger.debug("Verifiable Presentation verified");
         } else {
-          console.log("Presentation not trusted");
+          logger.debug("Verifiable Presentation not trusted");
           res.status(500).end();
           return;
         }
       } else {
-        console.log("Presentation invalid");
+        logger.debug("Verifiable Presentation not valid");
         res.status(500).end();
         return;
       }
 
       const userClaims = await extractClaims(presentation, policyInitialized);
 
-      console.log("Logging in: " + subject + " with challenge: " + challenge);
-      console.log("User Claims: \n", userClaims);
+      logger.debug("Logging in: " + subject + " with challenge: " + challenge);
+      logger.debug("User Claims: \n", userClaims);
       // hydra login
       await hydraAdmin
         .adminGetOAuth2LoginRequest(challenge)
-        .then(({ data: loginRequest }) =>
+        .then(({}) =>
           hydraAdmin
             .adminAcceptOAuth2LoginRequest(challenge, {
               // Subject is an alias for user ID. A subject can be a random string, a UUID, an email address, ....
@@ -148,23 +134,17 @@ export default async function handler(
             })
             .then(({ data: body }) => {
               const MAX_AGE = 30; // 30 seconds
-              const EXPIRY_MS = "EX"; // seconds
 
               // save the user claims to redis
-              redis.set(
-                "" + subject,
-                JSON.stringify(userClaims),
-                EXPIRY_MS,
+              redisSet("" + subject, JSON.stringify(userClaims), MAX_AGE);
+
+              // save the redirect address to redis for the browser
+              redisSet(
+                "redirect" + login_id,
+                String(body.redirect_to),
                 MAX_AGE,
               );
 
-              // save the redirect address to redis for the browser
-              redis.set(
-                "redirect" + login_id,
-                String(body.redirect_to),
-                EXPIRY_MS,
-                MAX_AGE,
-              );
               // phone just gets a 200 ok
               res.status(200).end();
             }),
@@ -196,4 +176,5 @@ const getPolicyInitialized = async (requestedScopes: string[]) => {
   return await mergePolicyFiles(requestedScopes);
 };
 
+export default withLogging(handler);
 export const config = { api: { bodyParser: true } };

@@ -7,11 +7,16 @@ import {
   verifyCredential,
   verifyPresentation,
 } from "@spruceid/didkit-wasm-node";
+import { logger } from "@/config/logger";
 
 export const verifyAuthenticationPresentation = async (VP: any) => {
   try {
     if (!VP?.verifiableCredential) {
-      console.error("Unable to detect verifiable credentials in the VP");
+      logger.error("Unable to find VCs in VP");
+      return false;
+    }
+
+    if (!(await verifyJustPresentation(VP))) {
       return false;
     }
 
@@ -20,52 +25,37 @@ export const verifyAuthenticationPresentation = async (VP: any) => {
       : [VP.verifiableCredential];
 
     for (const cred of creds) {
-      if (!(await verifyPresentationHelper(cred, VP))) {
+      if (!(await verifyJustCredential(cred))) {
         return false;
       }
     }
 
     return true;
   } catch (error) {
-    console.error(error);
+    logger.error(error, "Failed during VP verification");
     return false;
   }
 };
 
-const verifyPresentationHelper = async (VC: any, VP: any): Promise<boolean> => {
-  if (
-    VP.holder &&
-    VP.holder === VC.credentialSubject.id &&
-    VP.proof.verificationMethod.split("#")[0] === VP.holder
-  ) {
-    // Verify the signature on the VC
-    const verifyOptionsString = "{}";
-    const verifyResult = JSON.parse(
-      await verifyCredential(JSON.stringify(VC), verifyOptionsString),
-    );
-    // If credential verification is successful, verify the presentation
-    if (verifyResult?.errors?.length === 0) {
-      const res = JSON.parse(
-        await verifyPresentation(JSON.stringify(VP), verifyOptionsString),
-      );
-      // If verification is successful
-      if (res.errors.length === 0) {
-        return true;
-      } else {
-        const errorMessage = `Unable to verify presentation: ${res.errors.join(
-          ", ",
-        )}`;
-        console.error(errorMessage);
-      }
-    } else {
-      const errorMessage = `Unable to verify credential: ${verifyResult.errors.join(
-        ", ",
-      )}`;
-      console.error(errorMessage);
-    }
+const verifyJustPresentation = async (VP: any): Promise<boolean> => {
+  const res = JSON.parse(await verifyPresentation(JSON.stringify(VP), "{}"));
+  // If verification is successful
+  if (res.errors.length === 0) {
+    return true;
   } else {
-    const errorMessage = "The credential subject does not match the VP holder.";
-    console.error(errorMessage);
+    logger.error({ errors: res.errors }, "Unable to verify VP");
+    return false;
   }
-  return false;
+};
+
+const verifyJustCredential = async (VC: any): Promise<boolean> => {
+  // Verify the signature on the VC
+  const res = JSON.parse(await verifyCredential(JSON.stringify(VC), "{}"));
+  // If verification is successful
+  if (res?.errors?.length === 0) {
+    return true;
+  } else {
+    logger.error({ errors: res.errors }, "Unable to verify VC");
+    return false;
+  }
 };
