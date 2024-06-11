@@ -15,7 +15,7 @@ try {
 }
 
 const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  logger.info("LOGIN API GET BY ID");
+  logger.debug("LOGIN API GET BY ID");
 
   // Get login_id from query
   const uuid = req.query["login_id"];
@@ -25,7 +25,7 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   // fetch inputDescriptor from redis using uuid
   const inputDescriptor = await redis.get(uuid + "_inputDescriptor");
-  logger.info("inputDescriptor: ", JSON.parse(inputDescriptor!));
+  logger.debug("inputDescriptor: ", JSON.parse(inputDescriptor!));
 
   //if policy is found
   if (policy) {
@@ -61,11 +61,11 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  logger.info("LOGIN API POST BY ID");
+  logger.debug("LOGIN API POST BY ID");
 
   // Parse the JSON string into a JavaScript object
   const presentation = JSON.parse(req.body.vp_token);
-  logger.info("Presentation: \n", req.body.vp_token);
+  logger.debug("Presentation: \n", req.body.vp_token);
 
   const uuid = presentation["proof"]["challenge"];
   const policy = await redis.get(uuid + "_policy");
@@ -79,14 +79,14 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Verify the presentation and the status of the credential
     if (await verifyAuthenticationPresentation(presentation)) {
-      logger.info("Presentation valid");
+      logger.debug("Presentation valid");
       // Evaluate if the VP should be trusted
       if (await isTrustedPresentation(presentation, policyObject)) {
-        logger.info("Presentation verified");
+        logger.debug("Presentation verified");
 
         // Get the user claims when the presentation is trusted
         const userClaims = await extractClaims(presentation, policyObject);
-        logger.info(userClaims);
+        logger.debug(userClaims);
 
         // Store the authentication result in Redis
         await redis.set(uuid + "_auth-res", "success", EXPIRY_MS, MAX_AGE);
@@ -99,7 +99,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
           MAX_AGE,
         );
       } else {
-        logger.info("Presentation not trusted");
+        logger.debug("Presentation not trusted");
 
         await redis.set(
           "auth_res:" + uuid,
@@ -112,7 +112,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
         return;
       }
     } else {
-      logger.info("Presentation invalid");
+      logger.debug("Presentation invalid");
       await redis.set(
         "auth_res:" + uuid,
         "error_invalid_presentation",

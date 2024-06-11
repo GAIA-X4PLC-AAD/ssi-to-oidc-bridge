@@ -32,18 +32,18 @@ export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
 
   var usedPolicy = policy ? policy : configuredPolicy!;
 
-  logger.info("Used Policy", usedPolicy);
+  logger.debug("Used Policy", usedPolicy);
   const creds = Array.isArray(VP.verifiableCredential)
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
-  logger.info("Credentials", creds);
+  logger.debug("Credentials", creds);
   const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
-  logger.info("Extracted VC Claims", vcClaims);
+  logger.debug("Extracted VC Claims", vcClaims);
   const claims = vcClaims.reduce(
     (acc: any, vc: any) => Object.assign(acc, vc),
     {},
   );
-  logger.info("Extracted Claims", claims);
+  logger.debug("Extracted Claims", claims);
   return claims;
 };
 
@@ -259,7 +259,7 @@ const resolveValue = (
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
   for (let expectation of policy) {
-    logger.info("Expectation", expectation);
+    logger.debug("Expectation", expectation);
     for (let pattern of expectation.patterns) {
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
         const containsAllRequired =
@@ -313,7 +313,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
               : extractedClaims.tokenId;
           jp.value(claimTarget, newPath, value);
         }
-        logger.info("Extracted Claims", extractedClaims);
+        logger.debug("Extracted Claims", extractedClaims);
         return extractedClaims;
       }
     }

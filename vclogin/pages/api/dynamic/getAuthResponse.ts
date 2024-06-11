@@ -15,7 +15,7 @@ export default async function handler(
 ) {
   //read uuid from query params
   const uuid = req.query["uuid"];
-  logger.info("uuid: ", uuid);
+  logger.debug("uuid: ", uuid);
 
   // Read auth_res from redis and check if it matches the uuid
 
