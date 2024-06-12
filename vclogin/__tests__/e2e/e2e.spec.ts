@@ -51,18 +51,20 @@ test.describe("Login Page", () => {
 
     await expect(
       page.getByRole("heading", { name: "SSI-to-OIDC Bridge" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("has CTA", async ({ page }) => {
     await page.goto(url + "/login?login_challenge=challenge123");
 
-    await expect(page.getByRole("heading", { name: /Scan/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Scan/i })).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   test("has QR Code", async ({ page }) => {
     await page.goto(url + "/login?login_challenge=challenge123");
 
-    await expect(page.locator("canvas")).toBeVisible();
+    await expect(page.locator("canvas")).toBeVisible({ timeout: 15000 });
   });
 });

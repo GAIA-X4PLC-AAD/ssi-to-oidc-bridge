@@ -5,9 +5,27 @@
 
 import { logger } from "@/config/logger";
 import { NextApiRequest, NextApiResponse } from "next";
+import pino from "pino";
 import { pinoHttp } from "pino-http";
 
-const loggerHttp = pinoHttp({ logger: logger });
+const loggerHttp = pinoHttp({
+  logger: logger,
+  serializers: {
+    req: pino.stdSerializers.wrapRequestSerializer((r) => {
+      return {
+        id: r.id,
+        method: r.method,
+        url: r.url.split("?")[0],
+        query: r.query,
+        headers: {
+          host: r.raw.headers.host,
+          "user-agent": r.raw.headers["user-agent"],
+          referer: r.raw.headers.referer,
+        },
+      };
+    }),
+  },
+});
 
 export const withLogging = (
   handler: (a: NextApiRequest, b: NextApiResponse) => Promise<void>,
