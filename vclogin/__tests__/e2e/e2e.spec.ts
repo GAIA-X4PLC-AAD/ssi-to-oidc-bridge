@@ -19,6 +19,7 @@ test.beforeAll(async () => {
       redisContainer.getNetworkNames()[0] ?? "",
     )}`,
     REDIS_PORT: "6379",
+    NODE_ENV: "test",
   };
   const vcloginImage = await GenericContainer.fromDockerfile("./")
     .withCache(true)
@@ -41,7 +42,7 @@ test.describe("Index Page", () => {
 
     await expect(
       page.getByRole("heading", { name: "SSI-to-OIDC Bridge" }),
-    ).toBeVisible({ timeout: 60000 });
+    ).toBeVisible({ timeout: 15000 });
   });
 });
 
@@ -51,20 +52,20 @@ test.describe("Login Page", () => {
 
     await expect(
       page.getByRole("heading", { name: "SSI-to-OIDC Bridge" }),
-    ).toBeVisible({ timeout: 60000 });
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("has CTA", async ({ page }) => {
     await page.goto(url + "/login?login_challenge=challenge123");
 
     await expect(page.getByRole("heading", { name: /Scan/i })).toBeVisible({
-      timeout: 60000,
+      timeout: 15000,
     });
   });
 
   test("has QR Code", async ({ page }) => {
     await page.goto(url + "/login?login_challenge=challenge123");
 
-    await expect(page.locator("canvas")).toBeVisible({ timeout: 60000 });
+    await expect(page.locator("canvas")).toBeVisible({ timeout: 15000 });
   });
 });
