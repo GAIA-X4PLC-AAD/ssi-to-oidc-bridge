@@ -53,4 +53,16 @@ test.describe("Login Page", () => {
       page.getByRole("heading", { name: "SSI-to-OIDC Bridge" }),
     ).toBeVisible();
   });
+
+  test("has CTA", async ({ page }) => {
+    await page.goto(url + "/login?login_challenge=challenge123");
+
+    await expect(page.getByRole("heading", { name: /Scan/i })).toBeVisible();
+  });
+
+  test("has QR Code", async ({ page }) => {
+    await page.goto(url + "/login?login_challenge=challenge123");
+
+    await expect(page.locator("canvas")).toBeVisible();
+  });
 });

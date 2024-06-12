@@ -117,7 +117,7 @@ export async function getServerSideProps(context: NextPageContext) {
       };
     }
 
-    const did = await keyToDID("key", process.env.DID_KEY_JWK!);
+    const did = keyToDID("key", process.env.DID_KEY_JWK!);
 
     return {
       props: { loginId, externalUrl: process.env.EXTERNAL_URL, clientId: did },
