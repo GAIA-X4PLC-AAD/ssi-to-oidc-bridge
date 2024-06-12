@@ -11,7 +11,7 @@ describe("Home", () => {
   it("renders a heading", () => {
     render(<Home />);
     const heading = screen.getByRole("heading", {
-      name: /GX\sCredentials\sBridge/i,
+      name: /SSI-to-OIDC\sBridge/i,
     });
     expect(heading).toBeInTheDocument();
   });

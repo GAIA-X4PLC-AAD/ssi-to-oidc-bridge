@@ -1,13 +1,14 @@
 {
-  "name": "gxc-vclogin",
-  "version": "0.1.0",
+  "name": "ssi-to-oidc-bridge",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev -p 5002",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_OPTIONS='-r next-logger' next start",
     "lint": "next lint",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "test:e2e": "npx playwright test --project='chromium'"
   },
   "dependencies": {
     "@material-tailwind/react": "^2.0.3",
@@ -22,6 +23,7 @@
     "multer": "^1.4.5-lts.1",
     "next": "13.3.0",
     "next-connect": "^1.0.0",
+    "next-logger": "^4.0.0",
     "next-qrcode": "^2.5.1",
     "pino": "^9.1.0",
     "pino-http": "^10.1.0",
@@ -30,6 +32,8 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.44.1",
+    "@testcontainers/redis": "^10.9.0",
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/react": "^14.1.2",
     "@types/jsonpath": "^0.2.4",

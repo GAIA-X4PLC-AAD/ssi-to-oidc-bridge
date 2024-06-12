@@ -36,5 +36,9 @@ export const redisSet = (
   value: RedisValue,
   seconds: string | number,
 ) => {
-  redis.set(key, value, "EX", seconds);
+  try {
+    redis.set(key, value, "EX", seconds);
+  } catch (error) {
+    logger.error(error, "Redis repeatedly failed to set value");
+  }
 };

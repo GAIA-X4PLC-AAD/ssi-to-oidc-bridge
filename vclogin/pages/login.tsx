@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Redis } from "ioredis";
 import { NextPageContext } from "next";
 import { useRouter } from "next/router";
 import { useQRCode } from "next-qrcode";
 import { useEffect } from "react";
 import { keyToDID } from "@spruceid/didkit-wasm-node";
+import { redisGet, redisSet } from "@/config/redis";
 
 export default function Login(props: any) {
   const router = useRouter();
@@ -98,21 +98,15 @@ export async function getServerSideProps(context: NextPageContext) {
       };
     }
 
-    const redis = new Redis(
-      parseInt(process.env.REDIS_PORT!),
-      process.env.REDIS_HOST!,
-    );
-
-    let loginId = await redis.get("" + loginChallenge);
+    let loginId = await redisGet("" + loginChallenge);
     if (!loginId) {
       loginId = crypto.randomUUID();
       const MAX_AGE = 60 * 5; // 5 minutes
-      const EXPIRY_MS = "EX"; // seconds
-      await redis.set("" + loginChallenge, "" + loginId, EXPIRY_MS, MAX_AGE);
-      await redis.set("" + loginId, "" + loginChallenge, EXPIRY_MS, MAX_AGE);
+      redisSet("" + loginChallenge, "" + loginId, MAX_AGE);
+      redisSet("" + loginId, "" + loginChallenge, MAX_AGE);
     }
 
-    const redirect = await redis.get("redirect" + loginId);
+    const redirect = await redisGet("redirect" + loginId);
 
     if (redirect) {
       return {
