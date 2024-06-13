@@ -235,6 +235,56 @@ A pattern object has the following fields:
 - `token` optionally defines if the claim value ends up either in `"id_token"` or `"access_token"`, with the former being the default.
 - `required` is optional and defaults to `false`
 
+### Constraints
+
+A policy pattern can additionally have a constraint field. A full policy making use of this could look like this:
+
+```json
+[
+  {
+    "credentialId": "one",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ],
+        "constraint": {
+          "op": "equalsDID",
+          "a": "$VP.proof.verificationMethod",
+          "b": "$.credentialSubject.id"
+        }
+      }
+    ]
+  }
+]
+```
+
+This example expects a verified Email from the Altme wallet and ensures that the Verifiable Presentation is signed with the same key that is subject of the Verifiable Credential. That enforces a simple holder binding.
+
+A simple constraint always consists of two operands `a` and `b` and an operator `op`. The following operators are currently supported:
+
+- _equals_ Strictly compares two string values. Takes two JSONPaths or a JSONPath and a string.
+- _startsWith_ Evaluates whether `a` starts with `b`. Takes two JSONPaths or a JSONPath and a string.
+- _endsWith_ Evaluates whether `a` ends with `b`. Takes two JSONPaths or a JSONPath and a string.
+- _matches_ Evaluates whether `a` has a match for regular expression `b`. Takes a JSONPath and a string.
+- _equalsDID_ Compares two DIDs or DID URLs by only their base DID. Takes two JSONPaths or a JSONPath and a string.
+
+Sometimes, constraints may need to access fields from other Verifiable Credentials in a Verifiable Presentation, or from the Verifiable Presentation itself. For this purpose, we introduce two custom JSONPath roots:
+
+- `$VP` is the root of the VP.
+- `$credentialId` is the root of the Verifiable Credential mapped to the corresponding presentation.
+
+Note that the `credentialId` refers to an expected credential, which can be seen as a "role to fulfill" (e.g., any type of confirmed email credential), not a specific pattern. Thus, a value that another pattern constraint refers to may not always be there, if the targeted `credentialId` has more than one pattern. In cases where a constraint evaluation error occurs (e.g., unresolvable JSONPath), the constraint returns `false`, but does not immediately cause the top-level constraint to fail.
+
+A pattern can only have exactly one top-level constraint object, but there are logical operators that can combine multiple constraints:
+
+- _and_ Takes two constraint objects `a` and `b`.
+- _or_ Takes two constraint objects `a` and `b`.
+- _not_ Takes one constraint object `a`
+
 ## Token Introspection
 
 Look into the access token like this:
