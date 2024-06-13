@@ -116,6 +116,7 @@ sequenceDiagram
 ## Running a Local Deployment
 
 A local deployment is a great way to test the bridge and to use it for prototyping an OIDC client service you are developing.
+Note that running a full deployment requires the same steps, but instead of using a tool like `ngrok`, a proper domain has to be set up.
 
 > [!IMPORTANT]
 > You need to use a tool like ngrok for testing so your smartphone wallet can access the vclogin backend. However, it can lead to issues with `application/x-www-form-urlencoded` request bodies used in the flow (<https://ngrok.com/docs/ngrok-agent/changelog/#changes-in-22>). But you can manually replay that request on the ngrok interface, if you run into problems.
@@ -148,9 +149,9 @@ To validate the running bridge with a simple OIDC client:
 
 ## Running for Development
 
-Running for development means that all components apart from the vclogin service will run containerized. The vclogin service can be edited and run with hot-reload for fast testing and iteration.
+Running for development means that all components apart from the vclogin service will run containerized. The vclogin service can be edited and run locally with hot-reload for fast testing and iteration.
 
-The repository comes with a VSCode devcontainer configuration. We recommend using it. To prepare your VSCode setup, you need two settings files.
+If you are using VSCode, you may need to prepare configuration files to ensure `eslint` and `prettier` work properly:
 
 `./.vscode/settings.json` contains:
 
@@ -171,42 +172,34 @@ The repository comes with a VSCode devcontainer configuration. We recommend usin
 To develop the vclogin service, follow these steps:
 
 1. `$ ngrok http 5002`, which will set up a randomly generated URL
-2. create the file `./vclogin/.env.local`
+2. create the file `./vclogin/.env`
 
 ```bash
+DID_KEY_JWK=<Ed25519 JWK>
+EXTERNAL_URL=<ngrok URL>
+LOGIN_POLICY=./__tests__/testdata/policies/acceptAnything.json
+PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
 HYDRA_ADMIN_URL=http://localhost:5001
 REDIS_HOST=localhost
 REDIS_PORT=6379
-NODE_TLS_REJECT_UNAUTHORIZED=0
-LOGIN_POLICY=./__tests__/testdata/policies/acceptAnything.json
-PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
-EXTERNAL_URL=<ngrok url>
-DID_KEY_JWK=<Ed25519 JWK>
 ```
 
 _Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override the automatic descriptor generation._
 
-3. `$ docker compose up`
+3. `$ docker compose up --build`
 4. `$ docker compose stop vclogin`
 5. in `vclogin` directory upon first checkout: `$ npm i`
 6. in `vclogin` directory: `$ npm run dev`
 
-Now you can develop and it will hot-reload.
+Now you can develop and it will hot-reload. For testing with a client, you may refer to the end of the previous section.
 
-## Logging Configuration
+## Running Tests
 
-### vclogin
+This repository includes unit tests with `jest` and end-to-end tests with `playwright`. You may run them as follows:
 
-The vclogin server uses the `pino` library for logging. Due to the peculiarities of NextJS, http events are only logged for API routes.
-
-### Ory Hydra
-
-Hydra is set to a minimal log output. To expand log output, edit the hydra service in `compose.yaml`:
-
-```yaml
-- LOG_LEVEL=debug
-- LOG_FORMAT=json
-- LOG_LEAK_SENSITIVE_VALUES=true
+```bash
+npm run test
+npm run test:e2e
 ```
 
 ## Policy Configuration
@@ -254,6 +247,22 @@ $ docker run --rm -it \
     --format json-pretty \
     -e http://hydra:4445 \
     TOKEN
+```
+
+## Logging Configuration
+
+### vclogin
+
+The vclogin server uses the `pino` library for logging. Due to the peculiarities of NextJS, http events are only logged for API routes.
+
+### Ory Hydra
+
+Hydra is set to a minimal log output. To expand log output, edit the hydra service in `compose.yaml`:
+
+```yaml
+- LOG_LEVEL=debug
+- LOG_FORMAT=json
+- LOG_LEAK_SENSITIVE_VALUES=true
 ```
 
 ## Relevant Standards
