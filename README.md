@@ -15,17 +15,17 @@
 
 ### The Problem Statement
 
-You operate a service and want to allow your users to sign-in using Verifiable Credentials from a mobile wallet. But building that takes considerable time and expertise.
+You operate a service and want to allow your users to sign in using Verifiable Credentials from a mobile wallet. But building that takes considerable time and expertise.
 
 ### The Solution
 
-A service provider can run this dockerized bridge software, that acts as a normal OIDC Provider towards the service. That means, any service supporting OIDC or OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with Verifiable Credentials. When setting up the bridge software, you can configure what Verifiable Credentials are accepted and how the data within is put into `id_token` or `access_token`.
+A service provider can run this dockerized bridge software that acts as a normal OIDC Provider toward the service. That means any service supporting OIDC or OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with Verifiable Credentials. When setting up the bridge software, you can configure what Verifiable Credentials are accepted and how the data within is put into `id_token` or `access_token`.
 
-As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems, while making integration simpler through using established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
+As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable users to use their Gaia-X Participant Credentials to access systems while making integration simpler through the use of established SSO protocols. The bridge can also be configured to use other Verifiable Credentials.
 
 ## Architecture
 
-There are two main components to this project and some additional containers for monitoring and databases. A company (or at least a small consortium) wanting to support SSI in their existing (or new) systems, is expected to run this full setup to avoid introducing a middle man:
+There are two main components to this project, as well as some additional containers for monitoring and databases. A company (or at least a small consortium) wanting to support SSI in their existing (or new) systems is expected to run this full setup to avoid introducing a middleman:
 
 ```mermaid
 graph LR
@@ -50,7 +50,7 @@ _Note: While we test with Altme Wallet, any SSI wallet supporting OID4VP + SIOPv
 
 ### OIDC Provider: Ory Hydra
 
-Hydra is a FOSS and OpenID certified implementation. It should allow any OIDC or OAuth2 client to leverage it as an IdP. For development, it has the advantage of giving us freedom to build a custom login process, as we can specify arbitrary redirects.
+Hydra is a OpenID-certified implementation and FOSS. It should allow any OIDC or OAuth2 client to leverage it as an IdP. For development, it has the advantage of giving us the freedom to build a custom login process, as we can specify arbitrary redirects.
 
 ### VC Login Service
 
@@ -58,7 +58,7 @@ This custom Next.js web app provides a user frontend for the login process, as w
 
 ## Login Flow
 
-The user's browser starts out on the service website, which takes the role of an OIDC client here. The flow is slightly simplified for improved readability. For example, the responses for Redis lookups are not shown. Also, redirects are shown immediately going to the redirect target. This is an authorization code flow:
+The user's browser starts out on the service website, which takes on the role of an OIDC client here. The flow is slightly simplified for improved readability. For example, the responses for Redis lookups are not shown. Also, redirects are shown immediately going to the redirect target. This is an authorization code flow:
 
 ```mermaid
 sequenceDiagram
@@ -126,7 +126,7 @@ Note that running a full deployment requires the same steps, but instead of usin
 3. enter a JWK key (Ed25519) into the env file `./vclogin/.env` with key `DID_KEY_JWK` (example for quick testing: `{"kty":"OKP","crv":"Ed25519","x":"cwa3dufHNLg8aQb2eEUqTyoM1cKQW3XnOkMkj_AAl5M","d":"me03qhLByT-NKrfXDeji-lpADSpVOKWoaMUzv5EyzKY"}`)
 4. enter the path to a login policy file into the env file `/vclogin/.env` with key `LOGIN_POLICY` (example for quick testing: `./__tests__/testdata/policies/acceptAnything.json`)
 5. OPTIONAL: enter an override for a credential descriptor into the env file `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over what wallets are asked for is desired (example for quick testing: `./__tests__/testdata/pex/descriptorEmailFromAltme.json`)
-6. at this point it needs to be ensured that the container for the vclogin service is freshly built with the new env file: `docker compose down && docker compose build`
+6. at this point, it needs to be ensured that the container for the vclogin service is freshly built with the new env file: `docker compose down && docker compose build`
 7. `$ docker compose up`
 
 To validate the running bridge with a simple OIDC client:
@@ -136,7 +136,7 @@ To validate the running bridge with a simple OIDC client:
 
 1. `$ ./test_client.sh`
 2. go to `http://localhost:9010` in browser
-3. download Altme Wallet and set up the (new) wallet
+3. download Altme wallet and go through the setup process
 4. to make sure you have a credential for testing, click on the "Discover" tab at the bottom and get a "Proof of email" credential
 5. in your browser, click on "Authorize" and scan the QR code with Altme wallet
 6. the wallet will prompt you with a list of possible credentials to present, from which you choose one and confirm
@@ -149,7 +149,7 @@ To validate the running bridge with a simple OIDC client:
 
 ## Running for Development
 
-Running for development means that all components apart from the vclogin service will run containerized. The vclogin service can be edited and run locally with hot-reload for fast testing and iteration.
+Running for development means that all components, apart from the vclogin service, will run containerized. The vclogin service can be edited and run locally with hot-reload for fast testing and iteration.
 
 If you are using VSCode, you may need to prepare configuration files to ensure `eslint` and `prettier` work properly:
 
@@ -226,11 +226,11 @@ The login policy is the one configuration file that configures the bridge's beha
 ]
 ```
 
-A login policy is always an array of objects that represent expected Verifiable Credentials. For each expected credential, we have to specify a unique ID used for internal tracking. We also need to provide an array of pattern objects, describing how the credential looks like and how its values are used.
+A login policy is always an array of objects that represent expected Verifiable Credentials. For each expected credential, we have to specify a unique ID used for internal tracking. We also need to provide an array of pattern objects, describing what the credential looks like and how its values are used.
 
 A pattern object has the following fields:
 
-- `claimPath` is a JSONPath that points to one or more values in the credential. If it points to multiple values, they will be aggregated in a new object and indexed by just their final JSONPath component. _This is generally convenient, but can lead to values being overwritten if not careful and working with a credential that uses the same path components in different depths._
+- `claimPath` is a JSONPath that points to one or more values in the credential. If it points to multiple values, they will be aggregated into a new object and indexed by just their final JSONPath component. _This is generally convenient, but can lead to values being overwritten if not careful, and working with a credential that uses the same path components in different depths._
 - `newPath` is the new path of the value relative to the root of the token it will be written into. This value is optional, as long as `claimPath` points to exactly one value. In that case, it defaults to `$.<final claimPath component>`.
 - `token` optionally defines if the claim value ends up either in `"id_token"` or `"access_token"`, with the former being the default.
 - `required` is optional and defaults to `false`
@@ -262,7 +262,7 @@ A policy pattern can additionally have a constraint field. A full policy making 
 ]
 ```
 
-This example expects a verified Email from the Altme wallet and ensures that the Verifiable Presentation is signed with the same key that is subject of the Verifiable Credential. That enforces a simple holder binding.
+This example expects a verified Email from the Altme wallet and ensures that the Verifiable Presentation is signed with the same key that is the subject of the Verifiable Credential. That enforces a simple holder binding.
 
 A simple constraint always consists of two operands `a` and `b` and an operator `op`. The following operators are currently supported:
 
@@ -277,7 +277,7 @@ Sometimes, constraints may need to access fields from other Verifiable Credentia
 - `$VP` is the root of the VP.
 - `$credentialId` is the root of the Verifiable Credential mapped to the corresponding presentation.
 
-Note that the `credentialId` refers to an expected credential, which can be seen as a "role to fulfill" (e.g., any type of confirmed email credential), not a specific pattern. Thus, a value that another pattern constraint refers to may not always be there, if the targeted `credentialId` has more than one pattern. In cases where a constraint evaluation error occurs (e.g., unresolvable JSONPath), the constraint returns `false`, but does not immediately cause the top-level constraint to fail.
+Note that the `credentialId` refers to an expected credential, which can be seen as a "role to fulfill" (e.g., any type of confirmed email credential), not a specific pattern. Thus, a value that another pattern constraint refers to may not always be there if the targeted `credentialId` has more than one pattern. In cases where a constraint evaluation error occurs (e.g., unresolvable JSONPath), the constraint returns `false`, but does not immediately cause the top-level constraint to fail.
 
 A pattern can only have exactly one top-level constraint object, but there are logical operators that can combine multiple constraints:
 
@@ -303,11 +303,11 @@ $ docker run --rm -it \
 
 ### vclogin
 
-The vclogin server uses the `pino` library for logging. Due to the peculiarities of NextJS, http events are only logged for API routes.
+The vclogin server uses the `pino` library for logging. Due to the peculiarities of Next.js, http events are only logged for API routes.
 
 ### Ory Hydra
 
-Hydra is set to a minimal log output. To expand log output, edit the hydra service in `compose.yaml`:
+Hydra is set to a minimal log output. To expand log output, edit the `hydra` service in `compose.yaml`:
 
 ```yaml
 - LOG_LEVEL=debug
