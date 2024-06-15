@@ -58,7 +58,9 @@ test.describe("Login Page", () => {
   test("has CTA", async ({ page }) => {
     await page.goto(url + "/login?login_challenge=challenge123");
 
-    await expect(page.getByRole("heading", { name: /Scan/i })).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: /Scan the code/i }),
+    ).toBeVisible({
       timeout: 15000,
     });
   });
