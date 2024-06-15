@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { describe, it, expect } from "vitest";
 import { verifyCredential } from "@spruceid/didkit-wasm-node";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";

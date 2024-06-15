@@ -24,7 +24,7 @@
       "@/styles/*": ["styles/*"],
       "@/middleware/*": ["middleware/*"]
     },
-    "types": ["jest", "node"],
+    "types": ["node"],
     "typeRoots": ["./types"]
   },
   "include": [

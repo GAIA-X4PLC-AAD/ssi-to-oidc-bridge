@@ -74,7 +74,9 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
       }
 
       let fields = pattern.claims
-        .filter((claim) => claim.required)
+        .filter((claim) =>
+          Object.hasOwn(claim, "required") ? claim.required : true,
+        )
         .map((claim) => {
           return { path: [claim.claimPath] };
         });

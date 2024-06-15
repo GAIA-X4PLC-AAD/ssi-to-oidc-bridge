@@ -12,7 +12,7 @@ if (process.env.LOGIN_POLICY) {
   fs.readFile(process.env.LOGIN_POLICY as string, "utf8").then((file) => {
     configuredPolicy = JSON.parse(file);
   });
-} else {
+} else if (process.env.NODE_ENV !== "test") {
   logger.error("No login policy set");
 }
 
