@@ -1,6 +1,6 @@
 [
   {
-    "credentialID": "one",
+    "credentialId": "one",
     "patterns": [
       {
         "issuer": "*",
@@ -10,12 +10,10 @@
             "newPath": "$.companyName"
           },
           {
-            "claimPath": "$.credentialSubject.name",
-            "token": "id_token"
+            "claimPath": "$.credentialSubject.name"
           },
           {
-            "claimPath": "$.credentialSubject.email",
-            "token": "id_token"
+            "claimPath": "$.credentialSubject.email"
           }
         ]
       }

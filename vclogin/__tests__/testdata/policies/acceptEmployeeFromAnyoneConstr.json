@@ -1,0 +1,51 @@
+[
+  {
+    "credentialId": "one",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.hasLegallyBindingName",
+            "newPath": "$.companyName"
+          },
+          {
+            "claimPath": "$.credentialSubject.name"
+          },
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ],
+        "constraint": {
+          "op": "and",
+          "a": {
+            "op": "equalsDID",
+            "a": "$VP.proof.verificationMethod",
+            "b": "$.credentialSubject.id"
+          },
+          "b": {
+            "op": "and",
+            "a": {
+              "op": "endsWith",
+              "a": "$.credentialSubject.email",
+              "b": "@test.com"
+            },
+            "b": {
+              "op": "or",
+              "a": {
+                "op": "matches",
+                "a": "$.credentialSubject.title",
+                "b": "C[EOT]O"
+              },
+              "b": {
+                "op": "equals",
+                "a": "$.credentialSubject.hasJurisdiction",
+                "b": "GER"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+]

@@ -1,6 +1,6 @@
 [
   {
-    "credentialID": "one",
+    "credentialId": "one",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",

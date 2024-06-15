@@ -6,34 +6,24 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { hydraAdmin } from "@/config/ory";
-import { Redis } from "ioredis";
-import { isTrustedPresentation } from "@/lib/evaluateLoginPolicy";
-import { extractClaims } from "@/lib/extractClaims";
+import { isTrustedPresentation, extractClaims } from "@/lib/extractClaims";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
+import { withLogging } from "@/middleware/logging";
+import { logger } from "@/config/logger";
+import { redisSet, redisGet } from "@/config/redis";
 
-var redis: Redis;
-try {
-  redis = new Redis(parseInt(process.env.REDIS_PORT!), process.env.REDIS_HOST!);
-} catch (error) {
-  console.error("Failed to connect to Redis:", error);
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<any>,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
-      console.log("LOGIN API GET");
-      console.log(req.query);
+      logger.error("FIRST GET");
       const presentation_definition = generatePresentationDefinition(
         getConfiguredLoginPolicy()!,
       );
-      const did = await keyToDID("key", process.env.DID_KEY_JWK!);
+      const did = keyToDID("key", process.env.DID_KEY_JWK!);
       const verificationMethod = await keyToVerificationMethod(
         "key",
         process.env.DID_KEY_JWK!,
@@ -66,33 +56,30 @@ export default async function handler(
         .setExpirationTime("1 hour")
         .sign(privateKey)
         .catch((err) => {
-          console.log(err);
+          logger.error(err, "Failed signing presentation definition token");
           res.status(500).end();
         });
-      console.log("TOKEN: " + token);
       res
         .status(200)
         .appendHeader("Content-Type", "application/oauth-authz-req+jwt")
         .send(token);
     } else if (method === "POST") {
-      console.log("LOGIN API POST");
-
       // Parse the JSON string into a JavaScript object
       const presentation = JSON.parse(req.body.vp_token);
-      console.log("Presentation: \n", req.body.vp_token);
+      logger.debug(req.body.vp_token, "Verifiable Presentation was sent");
 
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {
         // Evaluate if the VP should be trusted
         if (isTrustedPresentation(presentation)) {
-          console.log("Presentation verified");
+          logger.debug("Verifiable Presentation verified");
         } else {
-          console.log("Presentation not trusted");
+          logger.debug("Verifiable Presentation not trusted");
           res.status(500).end();
           return;
         }
       } else {
-        console.log("Presentation invalid");
+        logger.debug("Verifiable Presentation not valid");
         res.status(500).end();
         return;
       }
@@ -101,13 +88,13 @@ export default async function handler(
       const userClaims = extractClaims(presentation);
       const subject = presentation["holder"];
       const login_id = presentation["proof"]["challenge"];
-      const challenge = (await redis.get("" + login_id))!;
-      console.log("Logging in: " + subject + " with challenge: " + challenge);
+      const challenge = (await redisGet("" + login_id))!;
+      logger.debug({ subject, challenge }, "Sign-in confirmed");
 
       // hydra login
       await hydraAdmin
         .adminGetOAuth2LoginRequest(challenge)
-        .then(({ data: loginRequest }) =>
+        .then(({}) =>
           hydraAdmin
             .adminAcceptOAuth2LoginRequest(challenge, {
               // Subject is an alias for user ID. A subject can be a random string, a UUID, an email address, ....
@@ -131,23 +118,17 @@ export default async function handler(
             })
             .then(({ data: body }) => {
               const MAX_AGE = 30; // 30 seconds
-              const EXPIRY_MS = "EX"; // seconds
 
               // save the user claims to redis
-              redis.set(
-                "" + subject,
-                JSON.stringify(userClaims),
-                EXPIRY_MS,
+              redisSet("" + subject, JSON.stringify(userClaims), MAX_AGE);
+
+              // save the redirect address to redis for the browser
+              redisSet(
+                "redirect" + login_id,
+                String(body.redirect_to),
                 MAX_AGE,
               );
 
-              // save the redirect address to redis for the browser
-              redis.set(
-                "redirect" + login_id,
-                String(body.redirect_to),
-                EXPIRY_MS,
-                MAX_AGE,
-              );
               // phone just gets a 200 ok
               res.status(200).end();
             }),
@@ -162,4 +143,5 @@ export default async function handler(
   }
 }
 
+export default withLogging(handler);
 export const config = { api: { bodyParser: true } };

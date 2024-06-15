@@ -40,7 +40,7 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
       },
     },
     id: crypto.randomUUID(),
-    name: "VC Login Service",
+    name: "SSI-to-OIDC Bridge",
     purpose: "Sign-in",
     input_descriptors: [] as any[],
   };
@@ -53,29 +53,39 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
   for (let expectation of policy) {
     if (expectation.patterns.length > 1) {
       let req = {
+        name: "Group " + expectation.credentialId,
         rule: "pick",
         count: 1,
-        from: "group_" + expectation.credentialID,
+        from: "group_" + expectation.credentialId,
       };
       pd.submission_requirements.push(req);
     }
 
     for (let pattern of expectation.patterns) {
       let descr: any = {
-        id: expectation.credentialID,
+        id: expectation.credentialId,
         purpose: "Sign-in",
-        name: "Input descriptor for " + expectation.credentialID,
+        name: "Input descriptor for " + expectation.credentialId,
         constraints: {},
       };
 
       if (expectation.patterns.length > 1) {
-        descr.group = ["group_" + expectation.credentialID];
+        descr.group = ["group_" + expectation.credentialId];
       }
 
       let fields = pattern.claims
-        .filter((claim) => claim.required)
+        .filter((claim) =>
+          Object.hasOwn(claim, "required") ? claim.required : true,
+        )
         .map((claim) => {
-          return { path: [claim.claimPath] };
+          return {
+            path: [claim.claimPath],
+            filter: {
+              // Altme wallet seems to require the optional filter
+              type: "string",
+              pattern: "^.*$", // for some reason Altme wallet is picky about this regex and just this variation of "accept everything" works
+            },
+          };
         });
 
       if (fields.length > 0) {

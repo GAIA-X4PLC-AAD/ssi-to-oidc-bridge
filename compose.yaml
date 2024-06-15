@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   hydra-migrate:
     image: oryd/hydra:v2.2.0
@@ -35,15 +33,16 @@ services:
       - SERVE_PUBLIC_CORS_ALLOWED_METHODS=POST,GET,PUT,DELETE
       - SERVE_ADMIN_CORS_ENABLED=true
       - SERVE_ADMIN_CORS_ALLOWED_METHODS=POST,GET,PUT,DELETE
-      - LOG_LEVEL=debug
-      - LOG_LEAK_SENSITIVE_VALUES=true
+      - LOG_LEVEL=error
+      - LOG_FORMAT=json
+      - LOG_LEAK_SENSITIVE_VALUES=false
       - OAUTH2_EXPOSE_INTERNAL_ERRORS=1
       # - TRACING_PROVIDER=jaeger
       # - TRACING_PROVIDERS_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
       # - TRACING_PROVIDERS_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
       # - TRACING_PROVIDERS_JAEGER_SAMPLING_TYPE=const
       # - TRACING_PROVIDERS_JAEGER_SAMPLING_VALUE=1
-      - WEBFINGER_OIDC_DISCOVERY_USERINFO_URL=http://hydra:4444/userinfo
+      - WEBFINGER_OIDC_DISCOVERY_USERINFO_URL=http://localhost:5004/userinfo
       - OIDC_DYNAMIC_CLIENT_REGISTRATION_ENABLED=true
     restart: on-failure
 
@@ -82,7 +81,6 @@ services:
       - HYDRA_ADMIN_URL=http://hydra:4445
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
     networks:
       - ory-hydra-network
     ports:

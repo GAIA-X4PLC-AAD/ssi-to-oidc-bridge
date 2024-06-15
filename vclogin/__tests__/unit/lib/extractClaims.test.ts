@@ -3,18 +3,21 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { describe, it, expect } from "vitest";
 import { extractClaims } from "@/lib/extractClaims";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
 import policyAcceptAnything from "@/testdata/policies/acceptAnything.json";
 import policyEmailFromAltme from "@/testdata/policies/acceptEmailFromAltme.json";
+import policyEmailFromAltmeConstr from "@/testdata/policies/acceptEmailFromAltmeConstr.json";
 import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyone.json";
 
 describe("extractClaims", () => {
   it("all subject claims from an EmployeeCredential are extracted", () => {
     var claims = extractClaims(vpEmployee, policyAcceptAnything);
     var expected = {
-      tokenAccess: {
+      tokenAccess: {},
+      tokenId: {
         subjectData: {
           id: "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
           hash: "9ecf754ffdad0c6de238f60728a90511780b2f7dbe2f0ea015115515f3f389cd",
@@ -31,7 +34,6 @@ describe("extractClaims", () => {
           surname: "Surname",
         },
       },
-      tokenId: {},
     };
     expect(claims).toStrictEqual(expected);
   });
@@ -47,15 +49,25 @@ describe("extractClaims", () => {
     expect(claims).toStrictEqual(expected);
   });
 
+  it("all designated claims from an EmailPass Credential are mapped (constrained)", () => {
+    var claims = extractClaims(vpEmail, policyEmailFromAltmeConstr);
+    var expected = {
+      tokenId: {
+        email: "felix.hoops@tum.de",
+      },
+      tokenAccess: {},
+    };
+    expect(claims).toStrictEqual(expected);
+  });
+
   it("all designated claims from an EmployeeCredential are extracted", () => {
     var claims = extractClaims(vpEmployee, policyEmployeeFromAnyone);
     var expected = {
-      tokenAccess: {
-        companyName: "deltaDAO AG",
-      },
+      tokenAccess: {},
       tokenId: {
         email: "test@test.com",
         name: "Name Surname",
+        companyName: "deltaDAO AG",
       },
     };
     expect(claims).toStrictEqual(expected);

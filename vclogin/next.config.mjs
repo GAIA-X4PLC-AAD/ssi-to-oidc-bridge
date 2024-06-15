@@ -2,6 +2,7 @@
  * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
  * SPDX-License-Identifier: MIT
  */
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -46,4 +47,4 @@ class WasmChunksFixPlugin {
   }
 }
 
-module.exports = nextConfig;
+export default nextConfig;

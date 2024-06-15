@@ -8,7 +8,12 @@
           {
             "claimPath": "$.credentialSubject.email"
           }
-        ]
+        ],
+        "constraint": {
+          "op": "equalsDID",
+          "a": "$VP.proof.verificationMethod",
+          "b": "$.credentialSubject.id"
+        }
       }
     ]
   }
