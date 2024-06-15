@@ -53,6 +53,7 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
   for (let expectation of policy) {
     if (expectation.patterns.length > 1) {
       let req = {
+        name: "Group " + expectation.credentialId,
         rule: "pick",
         count: 1,
         from: "group_" + expectation.credentialId,

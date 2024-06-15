@@ -8,7 +8,8 @@ import policyAcceptAnything from "@/testdata/policies/acceptAnything.json";
 import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyone.json";
 import policyEmailFromAltme from "@/testdata/policies/acceptEmailFromAltme.json";
 import policyFromAltme from "@/testdata/policies/acceptFromAltme.json";
-
+import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
+import { PEX } from "@sphereon/pex";
 import crypto from "crypto";
 
 Object.defineProperty(global, "crypto", {
@@ -29,5 +30,22 @@ describe("generatePresentationDefinition", () => {
       undefined,
     );
     expect(generatePresentationDefinition(policyFromAltme)).not.toBe(undefined);
+  });
+
+  it("produces a valid definition", () => {
+    const def = generatePresentationDefinition(policyEmailFromAltme);
+    const checkArray = PEX.validateDefinition(def);
+    const problemCount = checkArray.filter(
+      (check) => check.status !== "info",
+    ).length;
+    expect(problemCount).toBe(0);
+  });
+
+  it("produces a definition that accepts a test VP", () => {
+    const pex = new PEX();
+    const def = generatePresentationDefinition(policyEmailFromAltme);
+    const { warnings, errors } = pex.evaluatePresentation(def, vpEmail);
+    expect(warnings.length).toBe(0);
+    expect(errors.length).toBe(0);
   });
 });
