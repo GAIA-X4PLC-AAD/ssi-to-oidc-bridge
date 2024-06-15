@@ -19,6 +19,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
+      logger.error("FIRST GET");
       const presentation_definition = generatePresentationDefinition(
         getConfiguredLoginPolicy()!,
       );
@@ -65,7 +66,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
     } else if (method === "POST") {
       // Parse the JSON string into a JavaScript object
       const presentation = JSON.parse(req.body.vp_token);
-      logger.debug(req.body.vp_token, "Verifiable Presentaiton was sent");
+      logger.debug(req.body.vp_token, "Verifiable Presentation was sent");
 
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {

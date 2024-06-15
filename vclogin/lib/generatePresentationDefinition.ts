@@ -40,7 +40,7 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
       },
     },
     id: crypto.randomUUID(),
-    name: "VC Login Service",
+    name: "SSI-to-OIDC Bridge",
     purpose: "Sign-in",
     input_descriptors: [] as any[],
   };
@@ -78,7 +78,14 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
           Object.hasOwn(claim, "required") ? claim.required : true,
         )
         .map((claim) => {
-          return { path: [claim.claimPath] };
+          return {
+            path: [claim.claimPath],
+            filter: {
+              // Altme wallet seems to require the optional filter
+              type: "string",
+              pattern: "^.*$", // for some reason Altme wallet is picky about this regex and just this variation of "accept everything" works
+            },
+          };
         });
 
       if (fields.length > 0) {
