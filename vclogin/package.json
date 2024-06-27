@@ -30,6 +30,7 @@
     "pino-http": "^10.1.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "ua-parser-js": "^1.0.38",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
@@ -41,6 +42,7 @@
     "@types/node": "^18.15.13",
     "@types/react": "18.0.37",
     "@types/react-dom": "18.0.11",
+    "@types/ua-parser-js": "^0.7.39",
     "@types/uuid": "^9.0.1",
     "@vitest/coverage-v8": "^1.6.0",
     "@wasm-tool/wasm-pack-plugin": "^1.7.0",
