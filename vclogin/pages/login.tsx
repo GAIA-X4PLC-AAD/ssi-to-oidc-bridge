@@ -9,10 +9,14 @@ import { useQRCode } from "next-qrcode";
 import { useEffect } from "react";
 import { keyToDID } from "@spruceid/didkit-wasm-node";
 import { redisGet, redisSet } from "@/config/redis";
+import parser from "ua-parser-js";
 
 export default function Login(props: any) {
   const router = useRouter();
   const { Canvas } = useQRCode();
+  const uaparser = new parser.UAParser();
+  const agent = uaparser.getDevice();
+  const agentIsMobile = agent.type === "mobile" || agent.type === "tablet";
 
   const refreshData = () => {
     return router.replace(router.asPath);
@@ -51,22 +55,33 @@ export default function Login(props: any) {
         </div>
         <div className="flex flex-col bg-gxblue aspect-square w-full pb-14 px-14 rounded-b-3xl min-w-fit">
           <h2 className="text-white place-self-center">
-            Scan the code to sign in!
+            {!agentIsMobile
+              ? "Scan the code to sign in!"
+              : "Click the link to your wallet!"}
           </h2>
-          <div className="grid grid-cols-1 flex-grow place-items-center bg-white rounded-2xl aspect-square p-6 min-w-fit">
-            <Canvas
-              text={getWalletUrl()}
-              options={{
-                errorCorrectionLevel: "M",
-                margin: 3,
-                scale: 4,
-                width: 400,
-                color: {
-                  dark: "#000000FF",
-                  light: "#FFFFFFFF",
-                },
-              }}
-            />
+          <div className="grid grid-cols-1 flex-grow place-items-center bg-white rounded-2xl aspect-square p-4 min-w-fit">
+            {!agentIsMobile ? (
+              <Canvas
+                text={getWalletUrl()}
+                options={{
+                  errorCorrectionLevel: "M",
+                  margin: 3,
+                  scale: 3,
+                  width: 300,
+                  color: {
+                    dark: "#000000FF",
+                    light: "#FFFFFFFF",
+                  },
+                }}
+              />
+            ) : (
+              <a
+                href={getWalletUrl()}
+                className="text-gxblue text-2xl border-gxblue border-solid border-4 rounded-full p-4"
+              >
+                Authenticate
+              </a>
+            )}
           </div>
         </div>
         <div className="text-sm pt-2">
