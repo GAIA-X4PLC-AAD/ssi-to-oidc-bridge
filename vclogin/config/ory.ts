@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Configuration, V0alpha2Api } from "@ory/client";
+import { Configuration, OAuth2ApiFactory } from "@ory/hydra-client";
 
 const baseOptions: any = {};
 
@@ -17,6 +17,6 @@ const configuration = new Configuration({
   baseOptions,
 });
 
-const hydraAdmin = new V0alpha2Api(configuration);
+const hydraAdmin = OAuth2ApiFactory(configuration);
 
 export { hydraAdmin };
