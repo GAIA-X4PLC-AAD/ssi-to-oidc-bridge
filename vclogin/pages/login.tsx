@@ -19,7 +19,7 @@ export default function Login(props: any) {
   const agentIsMobile = agent.type === "mobile" || agent.type === "tablet";
 
   const refreshData = () => {
-    return router.replace(router.asPath);
+    return router.replace(router.asPath, undefined, { scroll: false });
   };
 
   const getWalletUrl = () => {
