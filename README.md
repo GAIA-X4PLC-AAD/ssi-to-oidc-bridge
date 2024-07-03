@@ -3,15 +3,18 @@
 ![jest workflow](https://github.com/GAIA-X4PLC-AAD/ssi-to-oidc-bridge/actions/workflows/node.js.yml/badge.svg)
 ![playwright workflow](https://github.com/GAIA-X4PLC-AAD/ssi-to-oidc-bridge/actions/workflows/playwright.yml/badge.svg)
 
+<!-- prettier-ignore -->
 > [!WARNING]
 > This repository is intended for prototyping and as a reference
 > implementation. At this time, no security guarantees can be given.
 
+<!-- prettier-ignore -->
 > [!NOTE]
 > A preprint of our paper providing more background information is
 > available [on arXiv](https://arxiv.org/abs/2401.09488). While it is slightly
 > outdated now, it provides a good introduction.
 
+<!-- prettier-ignore -->
 > [!NOTE]
 > This software artifact was originally intended to support only Gaia-X
 > Participant Credentials. It has since evolved to be fully configurable for
@@ -151,6 +154,7 @@ prototyping an OIDC client service you are developing. Note that running a full
 deployment requires the same steps, but instead of using a tool like `ngrok`, a
 proper domain has to be set up.
 
+<!-- prettier-ignore -->
 > [!IMPORTANT]
 > You need to use a tool like ngrok for testing so your smartphone
 > wallet can access the vclogin backend. However, it can lead to issues with
@@ -178,6 +182,7 @@ proper domain has to be set up.
 
 To validate the running bridge with a simple OIDC client:
 
+<!-- prettier-ignore -->
 > [!NOTE]
 > You might run into a "Permisson denied" issue when running the shell
 > script `./test_client.sh`. You need to mark the file as executable using
@@ -196,6 +201,7 @@ To validate the running bridge with a simple OIDC client:
 9. end up at `http://localhost:9010/callback` with metadata about the login
    being displayed
 
+<!-- prettier-ignore -->
 > [!TIP]
 > If you want to understand what the wallet is doing in the exchange, go
 > to settings and toggle on "Developer Mode". After scanning a QR code, the

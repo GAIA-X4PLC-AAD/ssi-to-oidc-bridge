@@ -9,13 +9,17 @@ import { useQRCode } from "next-qrcode";
 import { useEffect } from "react";
 import { keyToDID } from "@spruceid/didkit-wasm-node";
 import { redisGet, redisSet } from "@/config/redis";
+import parser from "ua-parser-js";
 
 export default function Login(props: any) {
   const router = useRouter();
   const { Canvas } = useQRCode();
+  const uaparser = new parser.UAParser();
+  const agent = uaparser.getDevice();
+  const agentIsMobile = agent.type === "mobile" || agent.type === "tablet";
 
   const refreshData = () => {
-    return router.replace(router.asPath);
+    return router.replace(router.asPath, undefined, { scroll: false });
   };
 
   const getWalletUrl = () => {
@@ -37,36 +41,50 @@ export default function Login(props: any) {
   });
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="flex max-h-screen flex-col items-center justify-between pt-24">
       <div className="flex flex-col place-items-center">
-        <div className="flex flex-col place-items-center overflow-hidden bg-gxblue pt-8 px-8 rounded-t-3xl min-w-max">
+        <div className="flex flex-col place-items-center overflow-hidden bg-gxblue pt-8 px-8 rounded-t-3xl min-w-max w-full">
           <div>
             <p className="text-white font-semibold">
               You are signing in via the
             </p>
-            <h1 id="gx-text" className="text-6xl font-bold pb-4 text-white">
+            <h1
+              id="gx-text"
+              className="2xl:text-6xl lg:text-5xl text-4xl font-bold pb-4 text-white"
+            >
               SSI-to-OIDC Bridge
             </h1>
           </div>
         </div>
         <div className="flex flex-col bg-gxblue aspect-square w-full pb-14 px-14 rounded-b-3xl min-w-fit">
-          <h2 className="text-white place-self-center">
-            Scan the code to sign in!
+          <h2 className="text-white place-self-center 2xl:text-2xl lg:text-xl text-lg">
+            {!agentIsMobile
+              ? "Scan the code to sign in!"
+              : "Click the link to your wallet!"}
           </h2>
-          <div className="grid grid-cols-1 flex-grow place-items-center bg-white rounded-2xl aspect-square p-6 min-w-fit">
-            <Canvas
-              text={getWalletUrl()}
-              options={{
-                errorCorrectionLevel: "M",
-                margin: 3,
-                scale: 4,
-                width: 400,
-                color: {
-                  dark: "#000000FF",
-                  light: "#FFFFFFFF",
-                },
-              }}
-            />
+          <div className="grid grid-cols-1 flex-grow place-items-center bg-white rounded-2xl aspect-square p-4 min-w-fit">
+            {!agentIsMobile ? (
+              <div className="2xl:scale-150 scale-100">
+                <Canvas
+                  text={getWalletUrl()}
+                  options={{
+                    errorCorrectionLevel: "M",
+                    margin: 3,
+                    color: {
+                      dark: "#000000FF",
+                      light: "#FFFFFFFF",
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <a
+                href={getWalletUrl()}
+                className="text-gxblue text-2xl border-gxblue border-solid border-4 rounded-full p-4"
+              >
+                Authenticate
+              </a>
+            )}
           </div>
         </div>
         <div className="text-sm pt-2">
@@ -75,8 +93,6 @@ export default function Login(props: any) {
           </a>
         </div>
       </div>
-
-      <div className="mb-32">&nbsp;</div>
     </main>
   );
 }
