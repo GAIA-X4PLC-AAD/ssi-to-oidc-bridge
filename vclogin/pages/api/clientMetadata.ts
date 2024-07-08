@@ -5,13 +5,18 @@
 
 import { getMetadata } from "@/lib/getMetadata";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { logger } from "@/config/logger";
 
-async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<any>,
+) {
   try {
     const { method } = req;
     if (method === "GET") {
+      logger.debug("METADATA BY ID API GET");
       const metadata = getMetadata([
-        process.env.NEXT_PUBLIC_INTERNET_URL + "/api/presentCredential",
+        process.env.NEXT_PUBLIC_INTERNET_URL + "/api/dynamic/presentCredential",
       ]);
       res.status(200).json(metadata);
     } else {
