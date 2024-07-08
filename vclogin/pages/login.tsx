@@ -3,20 +3,23 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Redis } from "ioredis";
 import { NextPageContext } from "next";
 import { useRouter } from "next/router";
 import { useQRCode } from "next-qrcode";
 import { useEffect } from "react";
 import { keyToDID } from "@spruceid/didkit-wasm-node";
-import { logger } from "@/config/logger";
+import { redisGet, redisSet } from "@/config/redis";
+import parser from "ua-parser-js";
 
 export default function Login(props: any) {
   const router = useRouter();
   const { Canvas } = useQRCode();
+  const uaparser = new parser.UAParser();
+  const agent = uaparser.getDevice();
+  const agentIsMobile = agent.type === "mobile" || agent.type === "tablet";
 
   const refreshData = () => {
-    return router.replace(router.asPath);
+    return router.replace(router.asPath, undefined, { scroll: false });
   };
 
   const getWalletUrl = () => {
@@ -38,35 +41,56 @@ export default function Login(props: any) {
   });
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="flex flex-col place-items-center overflow-hidden">
-        <div>
-          <h4
-            id="gx-text"
-            className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 pb-4 mt-2"
-          >
-            Sign-in with SSI-to-OIDC Bridge
-          </h4>
+    <main className="flex max-h-screen flex-col items-center justify-between pt-24">
+      <div className="flex flex-col place-items-center">
+        <div className="flex flex-col place-items-center overflow-hidden bg-gxblue pt-8 px-8 rounded-t-3xl min-w-max w-full">
+          <div>
+            <p className="text-white font-semibold">
+              You are signing in via the
+            </p>
+            <h1
+              id="gx-text"
+              className="2xl:text-6xl lg:text-5xl text-4xl font-bold pb-4 text-white"
+            >
+              SSI-to-OIDC Bridge
+            </h1>
+          </div>
         </div>
-
-        <div className="w-full flex align-center justify-center">
-          <Canvas
-            text={getWalletUrl()}
-            options={{
-              errorCorrectionLevel: "M",
-              margin: 3,
-              scale: 4,
-              width: 300,
-              color: {
-                dark: "#000000FF",
-                light: "#FFFFFFFF",
-              },
-            }}
-          />
+        <div className="flex flex-col bg-gxblue aspect-square w-full pb-14 px-14 rounded-b-3xl min-w-fit">
+          <h2 className="text-white place-self-center 2xl:text-2xl lg:text-xl text-lg">
+            {!agentIsMobile
+              ? "Scan the code to sign in!"
+              : "Click the link to your wallet!"}
+          </h2>
+          <div className="grid grid-cols-1 flex-grow place-items-center bg-white rounded-2xl aspect-square p-4 min-w-fit">
+            {!agentIsMobile ? (
+              <div className="2xl:scale-150 scale-100">
+                <Canvas
+                  text={getWalletUrl()}
+                  options={{
+                    errorCorrectionLevel: "M",
+                    margin: 3,
+                    color: {
+                      dark: "#000000FF",
+                      light: "#FFFFFFFF",
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <a
+                href={getWalletUrl()}
+                className="text-gxblue text-2xl border-gxblue border-solid border-4 rounded-full p-4"
+              >
+                Authenticate
+              </a>
+            )}
+          </div>
         </div>
-
-        <div className="w-full flex align-center justify-center mt-2 text-sm font-light text-blue-700">
-          Scan QR Code with SSI Wallet
+        <div className="text-sm pt-2">
+          <a href="https://wwwmatthes.in.tum.de/pages/t5ma0jrv6q7k/sebis-Public-Website-Home">
+            Developed by sebis @ TUM
+          </a>
         </div>
       </div>
     </main>
@@ -85,21 +109,15 @@ export async function getServerSideProps(context: NextPageContext) {
       };
     }
 
-    const redis = new Redis(
-      parseInt(process.env.REDIS_PORT!),
-      process.env.REDIS_HOST!,
-    );
-
-    let loginId = await redis.get("" + loginChallenge);
+    let loginId = await redisGet("" + loginChallenge);
     if (!loginId) {
       loginId = crypto.randomUUID();
       const MAX_AGE = 60 * 5; // 5 minutes
-      const EXPIRY_MS = "EX"; // seconds
-      await redis.set("" + loginChallenge, "" + loginId, EXPIRY_MS, MAX_AGE);
-      await redis.set("" + loginId, "" + loginChallenge, EXPIRY_MS, MAX_AGE);
+      redisSet("" + loginChallenge, "" + loginId, MAX_AGE);
+      redisSet("" + loginId, "" + loginChallenge, MAX_AGE);
     }
 
-    const redirect = await redis.get("redirect" + loginId);
+    const redirect = await redisGet("redirect" + loginId);
 
     if (redirect) {
       return {
@@ -110,8 +128,7 @@ export async function getServerSideProps(context: NextPageContext) {
       };
     }
 
-    const did = await keyToDID("key", process.env.DID_KEY_JWK!);
-    logger.debug("DID: " + did);
+    const did = keyToDID("key", process.env.DID_KEY_JWK!);
 
     return {
       props: { loginId, externalUrl: process.env.EXTERNAL_URL, clientId: did },

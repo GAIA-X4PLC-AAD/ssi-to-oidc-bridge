@@ -2,16 +2,15 @@
  * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
  * SPDX-License-Identifier: MIT
  */
-
-import { InputDescriptor, InputDescriptors } from "@/types/InputDescriptor";
-import { LoginPolicy } from "@/types/LoginPolicy";
+import { InputDescriptor } from "@/types/InputDescriptor";
 import { PresentationDefinition } from "@/types/PresentationDefinition";
+import { LoginPolicy } from "@/types/LoginPolicy";
 import { promises as fs } from "fs";
 import { logger } from "@/config/logger";
 
 var inputDescriptorOverride: any = undefined;
 if (process.env.PEX_DESCRIPTOR_OVERRIDE) {
-  fs?.readFile(process.env.PEX_DESCRIPTOR_OVERRIDE as string, "utf8").then(
+  fs.readFile(process.env.PEX_DESCRIPTOR_OVERRIDE as string, "utf8").then(
     (file) => {
       inputDescriptorOverride = JSON.parse(file);
     },
@@ -20,7 +19,7 @@ if (process.env.PEX_DESCRIPTOR_OVERRIDE) {
 
 export const generatePresentationDefinition = (
   policy: LoginPolicy,
-  incrAuthInputDescriptor?: InputDescriptors,
+  incrAuthInputDescriptor?: InputDescriptor[],
 ) => {
   if (policy === undefined)
     throw Error(
@@ -49,7 +48,7 @@ export const generatePresentationDefinition = (
     id: crypto.randomUUID(),
     name: "VC Login Service",
     purpose: "Sign-in",
-    input_descriptors: [] as InputDescriptors,
+    input_descriptors: [] as InputDescriptor[],
   };
 
   if (inputDescriptorOverride && !incrAuthInputDescriptor) {
@@ -87,15 +86,23 @@ export const generatePresentationDefinition = (
       }
 
       let fields = pattern.claims
-        .filter((claim) => claim.required)
+        .filter((claim) =>
+          Object.hasOwn(claim, "required") ? claim.required : true,
+        )
         .map((claim) => {
-          return { path: [claim.claimPath] };
+          return {
+            path: [claim.claimPath],
+            filter: {
+              // Altme wallet seems to require the optional filter
+              type: "string",
+              pattern: "^.*$", // for some reason Altme wallet is picky about this regex and just this variation of "accept everything" works
+            },
+          };
         });
 
       if (fields.length > 0) {
         descr.constraints.fields = fields;
       }
-
       pd.input_descriptors.push(descr);
     }
   }

@@ -3,10 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/**
- * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
- * SPDX-License-Identifier: MIT
- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,22 +13,9 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  @apply bg-gray-200;
 }
 
 h1 {
@@ -41,14 +24,4 @@ h1 {
 
 h2 {
   @apply font-bold text-2xl mb-4;
-}
-
-button {
-  color: black;
-  background: white;
-  @apply font-bold py-2 px-4 rounded;
-}
-
-button:hover {
-  @apply bg-gray-200;
 }

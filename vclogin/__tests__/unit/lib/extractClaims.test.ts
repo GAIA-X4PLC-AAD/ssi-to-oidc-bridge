@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { describe, it, expect } from "vitest";
 import { extractClaims } from "@/lib/extractClaims";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";

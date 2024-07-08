@@ -36,7 +36,6 @@ export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
     : [VP.verifiableCredential];
 
   const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
-
   const claims: any = {};
 
   vcClaims.forEach((claim: any) => {
@@ -122,7 +121,6 @@ const isCredentialFittingPattern = (
 };
 
 const getAllUniqueDraws = (patternFits: any[][]): any[][] => {
-  // get all unique draws of credentials that fit the expected credential claims
   const draws = getAllUniqueDrawsHelper(patternFits, []);
   return draws.filter((draw) => draw.length == patternFits.length);
 };
@@ -134,6 +132,7 @@ const getAllUniqueDrawsHelper = (
   if (patternFits.length === 0) {
     return [];
   }
+
   let uniqueDraws: any[][] = [];
   for (let cred of patternFits[0]) {
     if (!usedIds.includes(cred.id)) {
@@ -152,11 +151,10 @@ const isValidConstraintFit = (
   VP: any,
 ): boolean => {
   const credDict: any = {};
-  credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
-  // check if all constraints are fulfilled
+
   var fittingArr = [];
 
   for (let i = 0; i < policy.length; i++) {
@@ -181,10 +179,11 @@ const isValidConstraintFit = (
         }
       }
     }
-  }
-  // if all patterns fit, the credential is fitting
-  if (!fittingArr.includes(false)) {
-    return true;
+    // if all patterns fit, the credential is fitting
+    if (!fittingArr.includes(false)) {
+      return true;
+    }
+    return false;
   }
   return false;
 };
@@ -247,13 +246,20 @@ const resolveSingleNodeValue = (
   cred: any,
   VP: any,
 ): string => {
-  var nodes: any;
   if (expression.startsWith("$")) {
-    if (expression.startsWith("$1.")) {
+    var nodes: any;
+    if (expression.startsWith("$.")) {
+      nodes = jp.nodes(cred, expression);
+    } else if (expression.startsWith("$1.")) {
       nodes = jp.nodes(cred, "$" + expression.slice(2));
     } else if (expression.startsWith("$VP.")) {
       nodes = jp.nodes(VP, "$" + expression.slice(3));
-    }
+    } /*else {
+      nodes = jp.nodes(
+        credDict[expression.slice(1).split(".")[0]],
+        expression.slice(1).split(".").slice(1).join("."),
+      );
+    }*/
     if (nodes === undefined) {
       return expression;
     } else if (nodes.length > 1 || nodes.length <= 0) {
@@ -261,6 +267,7 @@ const resolveSingleNodeValue = (
     }
     return nodes[0].value;
   }
+
   return expression;
 };
 
@@ -303,7 +310,6 @@ const resolveValue = (
 
 const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
   let reiterateOuterLoop = false;
-
   for (let expectation of policy) {
     for (let pattern of expectation.patterns) {
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
@@ -326,7 +332,6 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
 
         for (let claim of pattern.claims) {
           const nodes = jp.nodes(VC, claim.claimPath);
-
           let newPath = claim.newPath;
           let value: any;
 
@@ -366,8 +371,9 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
 
         if (reiterateOuterLoop) {
           reiterateOuterLoop = false;
-          break; // Break inner loop
+          break;
         }
+
         return extractedClaims;
       }
     }
