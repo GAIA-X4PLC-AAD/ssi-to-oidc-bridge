@@ -6,16 +6,13 @@
         "issuer": "did:web:app.altme.io:issuer",
         "claims": [
           {
-            "claimPath": "$.credentialSubject.dateOfBirth",
-            "token": "id_token"
+            "claimPath": "$.credentialSubject.dateOfBirth"
           },
           {
-            "claimPath": "$.credentialSubject.firstName",
-            "token": "id_token"
+            "claimPath": "$.credentialSubject.firstName"
           },
           {
-            "claimPath": "$.credentialSubject.familyName",
-            "token": "id_token"
+            "claimPath": "$.credentialSubject.familyName"
           }
         ]
       }

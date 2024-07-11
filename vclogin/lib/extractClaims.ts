@@ -17,7 +17,6 @@ export const isTrustedPresentation = async (VP: any, policy?: LoginPolicy) => {
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
-
   const creds = Array.isArray(VP.verifiableCredential)
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
@@ -35,7 +34,11 @@ export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
+  const vcClaims = creds.map((vc: any, credentialIndex: number) =>
+    // Important: credentialIndex defines helps us to extract the correct claims from the policy
+    // Ideally, the credentialIndex should be the same as the credentialId in the policy
+    extractClaimsFromVC(vc, usedPolicy, (credentialIndex + 1).toString()),
+  );
   const claims: any = {};
 
   vcClaims.forEach((claim: any) => {
@@ -109,9 +112,10 @@ const isCredentialFittingPattern = (
   }
 
   for (const claim of pattern.claims) {
+    const claimPath = claim.claimPath.replace(/\$\d+\./g, "$.");
     if (
       (!Object.hasOwn(claim, "required") || claim.required) &&
-      jp.paths(cred, claim.claimPath).length === 0
+      jp.paths(cred, claimPath).length === 0
     ) {
       return false;
     }
@@ -151,6 +155,7 @@ const isValidConstraintFit = (
   VP: any,
 ): boolean => {
   const credDict: any = {};
+  credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
@@ -210,10 +215,8 @@ const evaluateConstraint = (
     case "equals":
       return a === b;
     case "equalsDID":
-      return (
-        a.split("#").slice(0, -1).join("#") ===
-        b.split("#").slice(0, -1).join("#")
-      );
+      b = b.includes("#") ? b.split("#").slice(0, -1).join("#") : b;
+      return a.split("#").slice(0, -1).join("#") === b;
     case "startsWith":
       return a.startsWith(b);
     case "endsWith":
@@ -308,14 +311,23 @@ const resolveValue = (
   return resolveSingleNodeValue(expression, cred, VP);
 };
 
-const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
+const extractClaimsFromVC = (
+  VC: any,
+  policy: LoginPolicy,
+  credentialIndex: string,
+) => {
   let reiterateOuterLoop = false;
   for (let expectation of policy) {
+    const credentialId = expectation.credentialId;
     for (let pattern of expectation.patterns) {
+      if (credentialId !== credentialIndex) {
+        break;
+      }
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
         const containsAllRequired =
           pattern.claims.filter((claim: ClaimEntry) => {
-            const claimPathLength = jp.paths(VC, claim.claimPath).length;
+            const claimPath = claim.claimPath.replace(`${credentialId}`, "");
+            const claimPathLength = jp.paths(VC, claimPath).length;
             return claim.required && claimPathLength === 1;
           }).length > 0 ||
           pattern.claims.filter((claim: ClaimEntry) => claim.required)
@@ -331,7 +343,9 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
         };
 
         for (let claim of pattern.claims) {
-          const nodes = jp.nodes(VC, claim.claimPath);
+          const claimPath = claim.claimPath.replace(`${credentialId}`, "");
+
+          const nodes = jp.nodes(VC, claimPath);
           let newPath = claim.newPath;
           let value: any;
 
@@ -366,6 +380,7 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
             claim.token === "access_token"
               ? extractedClaims.tokenAccess
               : extractedClaims.tokenId;
+
           jp.value(claimTarget, newPath, value);
         }
 

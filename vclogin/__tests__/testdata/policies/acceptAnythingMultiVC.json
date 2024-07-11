@@ -1,0 +1,32 @@
+[
+  {
+    "credentialId": "1",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$1.credentialSubject.*",
+            "newPath": "$.firstCredentialSubject",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.*",
+            "newPath": "$.secondCredentialSubject",
+            "required": false
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -12,20 +12,18 @@ import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 // of all those web requests would be lots of work
 describe("verifyPresentation", () => {
   // kind of a sanity check
-  it("didkit verifies a valid Employee VC", () => {
-    return verifyCredential(
+  it("didkit verifies a valid Employee VC", async () => {
+    const result = await verifyCredential(
       JSON.stringify(vpEmployee.verifiableCredential),
       "{}",
-    ).then((result) => {
-      const verifyResult = JSON.parse(result);
-      //console.log(verifyResult);
-      expect(verifyResult.errors.length).toBe(0);
-    });
+    );
+    const verifyResult = JSON.parse(result);
+    //console.log(verifyResult);
+    expect(verifyResult.errors.length).toBe(0);
   });
 
-  it("verifies a valid VP with Employee VC", () => {
-    return verifyAuthenticationPresentation(vpEmployee).then((result) => {
-      expect(result).toBe(true);
-    });
+  it("verifies a valid VP with Employee VC", async () => {
+    const result = await verifyAuthenticationPresentation(vpEmployee);
+    expect(result).toBe(true);
   });
 });
