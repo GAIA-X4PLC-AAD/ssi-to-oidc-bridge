@@ -1,0 +1,28 @@
+[
+  {
+    "credentialId": "one",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.type"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "credentialId": "two",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.id"
+          }
+        ]
+      }
+    ]
+  }
+]
