@@ -1,13 +1,4 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Redis } from "ioredis";
-import { logger } from "@/config/logger";
-
-var redis: Redis;
-try {
-  redis = new Redis(parseInt(process.env.REDIS_PORT!), process.env.REDIS_HOST!);
-} catch (error) {
-  logger.error("Failed to connect to Redis:", error);
-}
 
 export default async function handler(
   req: NextApiRequest,
