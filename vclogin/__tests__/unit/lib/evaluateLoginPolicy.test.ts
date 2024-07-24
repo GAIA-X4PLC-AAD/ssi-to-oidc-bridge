@@ -20,6 +20,7 @@ import policyMultiEmailFromAltmeConstr from "@/testdata/policies/acceptMultiEmai
 import policyMultiEmailFromAltmeSimpleConstr from "@/testdata/policies/acceptMultiEmailFromAltmeSimpleConstr.json";
 import policyMultiVCFromAltmeConstr from "@/testdata/policies/acceptMultiVCFromAltmeConstr.json";
 import policyMultiVCFromAltmeSimpleConstr from "@/testdata/policies/acceptMultiVCFromAltmeSimpleConstr.json";
+import policyMultiVCFromAltmeComplexConstr from "@/testdata/policies/acceptMultiVCFromAltmeComplexConstr.json";
 
 describe("evaluateLoginPolicy", () => {
   it("defaults to false if no policy is available", async () => {
@@ -133,7 +134,7 @@ describe("evaluateLoginPolicy", () => {
     expect(trusted).toBe(false);
   });
 
-  it("accepts only VP with two credentials (different type of VCs that have common credentialSubject fields) with cross constraints", async () => {
+  it("accepts only VP with two credentials with cross constraints", async () => {
     var trusted = await isTrustedPresentation(
       vpMultiVC,
       policyMultiVCFromAltmeConstr,
@@ -151,7 +152,7 @@ describe("evaluateLoginPolicy", () => {
     expect(trusted).toBe(false);
   });
 
-  it("accepts only VP with two credentials (different type of VCs that have common credentialSubject fields) with simple constraints", async () => {
+  it("accepts only VP with two credentials with simple constraints", async () => {
     var trusted = await isTrustedPresentation(
       vpMultiVC,
       policyMultiVCFromAltmeSimpleConstr,
@@ -168,4 +169,22 @@ describe("evaluateLoginPolicy", () => {
     );
     expect(trusted).toBe(false);
   });
+});
+
+it("accepts only VP with two credentials with complex constraints", async () => {
+  var trusted = await isTrustedPresentation(
+    vpMultiVC,
+    policyMultiVCFromAltmeComplexConstr,
+  );
+  expect(trusted).toBe(true);
+  trusted = await isTrustedPresentation(
+    vpEmail,
+    policyMultiVCFromAltmeComplexConstr,
+  );
+  expect(trusted).toBe(false);
+  trusted = await isTrustedPresentation(
+    vpMultiEmail,
+    policyMultiVCFromAltmeComplexConstr,
+  );
+  expect(trusted).toBe(false);
 });

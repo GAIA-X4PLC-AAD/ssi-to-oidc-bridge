@@ -1,0 +1,62 @@
+[
+  {
+    "credentialId": "1",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ],
+        "constraint": {
+          "op": "equalsDID",
+          "a": "$VP.proof.verificationMethod",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.type"
+          }
+        ],
+        "constraint": {
+          "op": "and",
+          "a": {
+            "op": "equalsDID",
+            "a": "$VP.proof.verificationMethod",
+            "b": "$1.credentialSubject.id"
+          },
+          "b": {
+            "op": "and",
+            "a": {
+              "op": "endsWith",
+              "a": "$2.credentialSubject.firstName",
+              "b": "ca"
+            },
+            "b": {
+              "op": "or",
+              "a": {
+                "op": "matches",
+                "a": "$2.credentialSubject.familyName",
+                "b": "C[aoe]stafiori"
+              },
+              "b": {
+                "op": "equals",
+                "a": "$2.credentialSubject.type",
+                "b": "VerifiableId"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+]

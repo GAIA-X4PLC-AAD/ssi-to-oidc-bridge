@@ -66,8 +66,9 @@ const getConstraintFit = (
   if (uniqueFits.length === 0) {
     return [];
   }
+  let fittingArr: boolean[] = [];
   for (let fit of uniqueFits) {
-    if (isValidConstraintFit(fit, policy, VP)) {
+    if (isValidConstraintFit(fit, policy, VP, fittingArr)) {
       return fit;
     }
   }
@@ -153,14 +154,13 @@ const isValidConstraintFit = (
   credFit: any[],
   policy: LoginPolicy,
   VP: any,
+  fittingArr: boolean[],
 ): boolean => {
   const credDict: any = {};
   credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
-
-  var fittingArr = [];
 
   for (let i = 0; i < policy.length; i++) {
     const cred = credFit[i];
@@ -184,11 +184,10 @@ const isValidConstraintFit = (
         }
       }
     }
-    // if all patterns fit, the credential is fitting
-    if (!fittingArr.includes(false)) {
-      return true;
-    }
-    return false;
+  }
+  // if all items in fittingArr are true, the credentials in a VP are fitting
+  if (fittingArr.every((item) => item === true)) {
+    return true;
   }
   return false;
 };
@@ -291,10 +290,10 @@ const resolveValue = (
     for (const [key, value] of Object.entries(credDict)) {
       if (expression.startsWith("$" + key + ".")) {
         for (const [key2, value2] of Object.entries(credDict)) {
-          // check if both keys are in credDict
+          // check if key and key2 are in credDict
           if (keyValues.includes(key2) && keyValues.includes(key)) {
-            if (key !== key2) {
-              nodes = jp.nodes(value2, expression.slice(2 + key.length));
+            if (key !== key2 && expression.replace("$", "").startsWith(key)) {
+              nodes = jp.nodes(value, expression.slice(key.length + 2));
               if (nodes.length <= 1 && nodes.length > 0) {
                 return nodes[0].value;
               }
