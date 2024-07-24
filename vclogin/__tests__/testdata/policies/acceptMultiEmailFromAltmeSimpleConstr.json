@@ -1,6 +1,7 @@
 [
   {
     "credentialId": "1",
+    "type": "EmailPass",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -19,6 +20,7 @@
   },
   {
     "credentialId": "2",
+    "type": "EmailPass",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",

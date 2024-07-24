@@ -7,6 +7,58 @@
       "@context": [
         "https://www.w3.org/2018/credentials/v1",
         {
+          "VerifiableId": {
+            "@context": {
+              "@protected": true,
+              "@version": 1.1,
+              "dateIssued": "schema:dateIssued",
+              "dateOfBirth": "schema:birthDate",
+              "familyName": "schema:lastName",
+              "firstName": "schema:firstName",
+              "gender": "schema:gender",
+              "id": "@id",
+              "idRecto": "schema:image",
+              "idVerso": "schema:image",
+              "schema": "https://schema.org/",
+              "type": "@type"
+            },
+            "@id": "urn:employeecredential"
+          }
+        }
+      ],
+      "id": "urn:uuid:f1fcf591-1396-11ef-8875-0a1628958560",
+      "type": ["VerifiableCredential", "VerifiableId"],
+      "credentialSubject": {
+        "id": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",
+        "dateOfBirth": "1930-10-01",
+        "firstName": "Bianca",
+        "gender": "F",
+        "dateIssued": "2022-12-20",
+        "familyName": "Castafiori",
+        "type": "VerifiableId"
+      },
+      "issuer": "did:web:app.altme.io:issuer",
+      "issuanceDate": "2024-05-16T15:14:02Z",
+      "proof": {
+        "type": "EcdsaSecp256k1Signature2019",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:app.altme.io:issuer#key-3",
+        "created": "2024-05-16T15:14:09.781Z",
+        "jws": "eyJhbGciOiJFUzI1NksiLCJjcml0IjpbImI2NCJdLCJiNjQiOmZhbHNlfQ..smC_xxfdYC9fVhv2ETHWLBR9KCFlXRkujTJjQH6vAA47J5nal7QlVNeDGcb_nOlASBiGY_pG4PzaqoPe6-9q4A"
+      },
+      "expirationDate": "2025-05-16T15:14:02Z",
+      "credentialSchema": {
+        "id": "https://api-conformance.ebsi.eu/trusted-schemas-registry/v2/schemas/z22ZAMdQtNLwi51T2vdZXGGZaYyjrsuP1yzWyXZirCAHv",
+        "type": "FullJsonSchemaValidator2021"
+      },
+      "validUntil": "2025-05-16T15:14:09.768457Z",
+      "issued": "2024-05-16T15:14:09Z",
+      "validFrom": "2024-05-16T15:14:09Z"
+    },
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        {
           "EmailPass": {
             "@context": {
               "@protected": true,
@@ -55,58 +107,6 @@
       "issued": "2024-03-30T16:57:57Z",
       "validUntil": "2025-03-30T16:57:57.995257Z",
       "validFrom": "2024-03-30T16:57:57Z"
-    },
-    {
-      "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        {
-          "VerifiableId": {
-            "@context": {
-              "@protected": true,
-              "@version": 1.1,
-              "dateIssued": "schema:dateIssued",
-              "dateOfBirth": "schema:birthDate",
-              "familyName": "schema:lastName",
-              "firstName": "schema:firstName",
-              "gender": "schema:gender",
-              "id": "@id",
-              "idRecto": "schema:image",
-              "idVerso": "schema:image",
-              "schema": "https://schema.org/",
-              "type": "@type"
-            },
-            "@id": "urn:employeecredential"
-          }
-        }
-      ],
-      "id": "urn:uuid:f1fcf591-1396-11ef-8875-0a1628958560",
-      "type": ["VerifiableCredential", "VerifiableId"],
-      "credentialSubject": {
-        "id": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",
-        "dateOfBirth": "1930-10-01",
-        "firstName": "Bianca",
-        "gender": "F",
-        "dateIssued": "2022-12-20",
-        "familyName": "Castafiori",
-        "type": "VerifiableId"
-      },
-      "issuer": "did:web:app.altme.io:issuer",
-      "issuanceDate": "2024-05-16T15:14:02Z",
-      "proof": {
-        "type": "EcdsaSecp256k1Signature2019",
-        "proofPurpose": "assertionMethod",
-        "verificationMethod": "did:web:app.altme.io:issuer#key-3",
-        "created": "2024-05-16T15:14:09.781Z",
-        "jws": "eyJhbGciOiJFUzI1NksiLCJjcml0IjpbImI2NCJdLCJiNjQiOmZhbHNlfQ..smC_xxfdYC9fVhv2ETHWLBR9KCFlXRkujTJjQH6vAA47J5nal7QlVNeDGcb_nOlASBiGY_pG4PzaqoPe6-9q4A"
-      },
-      "expirationDate": "2025-05-16T15:14:02Z",
-      "credentialSchema": {
-        "id": "https://api-conformance.ebsi.eu/trusted-schemas-registry/v2/schemas/z22ZAMdQtNLwi51T2vdZXGGZaYyjrsuP1yzWyXZirCAHv",
-        "type": "FullJsonSchemaValidator2021"
-      },
-      "validUntil": "2025-05-16T15:14:09.768457Z",
-      "issued": "2024-05-16T15:14:09Z",
-      "validFrom": "2024-05-16T15:14:09Z"
     }
   ],
   "proof": {

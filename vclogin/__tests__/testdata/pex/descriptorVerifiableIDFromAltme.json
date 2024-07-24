@@ -2,7 +2,7 @@
   {
     "id": "verifiableId",
     "name": "Input descriptor for login credential",
-    "purpose": "Sign-in to MVG",
+    "purpose": "Please provide your VerifiableId credential to sign-in.",
     "constraints": {
       "fields": [
         {

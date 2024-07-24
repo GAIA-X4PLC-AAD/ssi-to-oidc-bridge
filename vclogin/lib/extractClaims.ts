@@ -17,11 +17,16 @@ export const isTrustedPresentation = async (VP: any, policy?: LoginPolicy) => {
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
-  const creds = Array.isArray(VP.verifiableCredential)
+
+  let creds = Array.isArray(VP.verifiableCredential)
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  return getConstraintFit(creds, usedPolicy, VP).length > 0;
+  // reorder the credentials in the VP to match the type in the policy file
+  // because the order of the credentials in the VP is not guaranteed
+  let reorderedCreds = orderCredsByType(creds, usedPolicy);
+
+  return getConstraintFit(reorderedCreds, usedPolicy, VP).length > 0;
 };
 
 export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
@@ -34,9 +39,13 @@ export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  const vcClaims = creds.map((vc: any, credentialIndex: number) =>
-    // Important: credentialIndex defines helps us to extract the correct claims from the policy
-    // Ideally, the credentialIndex should be the same as the credentialId in the policy
+  // reorder the credentials in the VP to match the type in the policy file
+  // because the order of the credentials in the VP is not guaranteed
+  let reorderedCreds = orderCredsByType(creds, usedPolicy);
+
+  const vcClaims = reorderedCreds.map((vc: any, credentialIndex: number) =>
+    // Important: credentialIndex helps us to extract the correct claims from the policy.
+    // Ideally, the credentialIndex should be the same as the credentialId in the policy.
     extractClaimsFromVC(vc, usedPolicy, (credentialIndex + 1).toString()),
   );
   const claims: any = {};
@@ -54,6 +63,25 @@ export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
   });
 
   return claims;
+};
+
+const orderCredsByType = (creds: any[], policy: LoginPolicy): any[] => {
+  let orderedCreds: any[] = [];
+  if (creds.length > 1) {
+    for (let policyObj of policy) {
+      for (let cred of creds) {
+        if (
+          cred.credentialSubject.type === policyObj.type &&
+          !orderedCreds.includes(cred)
+        ) {
+          orderedCreds.push(cred);
+        }
+      }
+    }
+  } else {
+    orderedCreds = creds;
+  }
+  return orderedCreds;
 };
 
 const getConstraintFit = (

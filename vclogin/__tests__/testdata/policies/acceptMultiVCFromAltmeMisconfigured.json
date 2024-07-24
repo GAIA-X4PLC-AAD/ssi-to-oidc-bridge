@@ -1,6 +1,7 @@
 [
   {
     "credentialId": "one",
+    "type": "EmailPass",
     "patterns": [
       {
         "issuer": "*",
@@ -14,6 +15,7 @@
   },
   {
     "credentialId": "two",
+    "type": "VerifiableId",
     "patterns": [
       {
         "issuer": "*",
