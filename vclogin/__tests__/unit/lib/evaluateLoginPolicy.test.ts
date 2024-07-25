@@ -8,6 +8,7 @@ import { isTrustedPresentation } from "@/lib/extractClaims";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpMultiEmail from "@/testdata/presentations/VP_MultiEmailPass.json";
 import vpMultiVC from "@/testdata/presentations/VP_MultiVC.json";
+import vpTripleVC from "@/testdata/presentations/VP_TripleVC.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
 import vpTezos from "@/testdata/presentations/VP_TezosAssociatedAddress.json";
 import policyAcceptAnything from "@/testdata/policies/acceptAnything.json";
@@ -21,6 +22,7 @@ import policyMultiEmailFromAltmeSimpleConstr from "@/testdata/policies/acceptMul
 import policyMultiVCFromAltmeConstr from "@/testdata/policies/acceptMultiVCFromAltmeConstr.json";
 import policyMultiVCFromAltmeSimpleConstr from "@/testdata/policies/acceptMultiVCFromAltmeSimpleConstr.json";
 import policyMultiVCFromAltmeComplexConstr from "@/testdata/policies/acceptMultiVCFromAltmeComplexConstr.json";
+import policyTripleVCSimpleConstr from "@/testdata/policies/acceptTripleVC.json";
 
 describe("evaluateLoginPolicy", () => {
   it("defaults to false if no policy is available", async () => {
@@ -169,22 +171,37 @@ describe("evaluateLoginPolicy", () => {
     );
     expect(trusted).toBe(false);
   });
-});
 
-it("accepts only VP with two credentials with complex constraints", async () => {
-  var trusted = await isTrustedPresentation(
-    vpMultiVC,
-    policyMultiVCFromAltmeComplexConstr,
-  );
-  expect(trusted).toBe(true);
-  trusted = await isTrustedPresentation(
-    vpEmail,
-    policyMultiVCFromAltmeComplexConstr,
-  );
-  expect(trusted).toBe(false);
-  trusted = await isTrustedPresentation(
-    vpMultiEmail,
-    policyMultiVCFromAltmeComplexConstr,
-  );
-  expect(trusted).toBe(false);
+  it("accepts only VP with two credentials with complex constraints", async () => {
+    var trusted = await isTrustedPresentation(
+      vpMultiVC,
+      policyMultiVCFromAltmeComplexConstr,
+    );
+    expect(trusted).toBe(true);
+    trusted = await isTrustedPresentation(
+      vpEmail,
+      policyMultiVCFromAltmeComplexConstr,
+    );
+    expect(trusted).toBe(false);
+    trusted = await isTrustedPresentation(
+      vpMultiEmail,
+      policyMultiVCFromAltmeComplexConstr,
+    );
+    expect(trusted).toBe(false);
+  });
+
+  it("accepts only VP with three credentials with simple constraints", async () => {
+    var trusted = await isTrustedPresentation(
+      vpTripleVC,
+      policyTripleVCSimpleConstr,
+    );
+    expect(trusted).toBe(true);
+    trusted = await isTrustedPresentation(vpEmail, policyTripleVCSimpleConstr);
+    expect(trusted).toBe(false);
+    trusted = await isTrustedPresentation(
+      vpMultiEmail,
+      policyTripleVCSimpleConstr,
+    );
+    expect(trusted).toBe(false);
+  });
 });

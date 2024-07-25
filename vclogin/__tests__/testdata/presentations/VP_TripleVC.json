@@ -1,0 +1,317 @@
+{
+  "@context": ["https://www.w3.org/2018/credentials/v1"],
+  "id": "urn:uuid:2c0b29f7-c530-4405-b509-d34d4a8a4028",
+  "type": ["VerifiablePresentation"],
+  "verifiableCredential": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        {
+          "VerifiableId": {
+            "@context": {
+              "@protected": true,
+              "@version": 1.1,
+              "dateIssued": "schema:dateIssued",
+              "dateOfBirth": "schema:birthDate",
+              "familyName": "schema:lastName",
+              "firstName": "schema:firstName",
+              "gender": "schema:gender",
+              "id": "@id",
+              "idRecto": "schema:image",
+              "idVerso": "schema:image",
+              "schema": "https://schema.org/",
+              "type": "@type"
+            },
+            "@id": "urn:employeecredential"
+          }
+        }
+      ],
+      "id": "urn:uuid:f1fcf591-1396-11ef-8875-0a1628958562",
+      "type": ["VerifiableCredential", "VerifiableId"],
+      "credentialSubject": {
+        "id": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",
+        "dateOfBirth": "1930-10-01",
+        "firstName": "Bianca",
+        "gender": "F",
+        "dateIssued": "2022-12-20",
+        "familyName": "Castafiori",
+        "type": "VerifiableId"
+      },
+      "issuer": "did:web:app.altme.io:issuer",
+      "issuanceDate": "2024-05-16T15:14:02Z",
+      "proof": {
+        "type": "EcdsaSecp256k1Signature2019",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:app.altme.io:issuer#key-3",
+        "created": "2024-05-16T15:14:09.781Z",
+        "jws": "eyJhbGciOiJFUzI1NksiLCJjcml0IjpbImI2NCJdLCJiNjQiOmZhbHNlfQ..smC_xxfdYC9fVhv2ETHWLBR9KCFlXRkujTJjQH6vAA47J5nal7QlVNeDGcb_nOlASBiGY_pG4PzaqoPe6-9q4A"
+      },
+      "expirationDate": "2025-05-16T15:14:02Z",
+      "credentialSchema": {
+        "id": "https://api-conformance.ebsi.eu/trusted-schemas-registry/v2/schemas/z22ZAMdQtNLwi51T2vdZXGGZaYyjrsuP1yzWyXZirCAHv",
+        "type": "FullJsonSchemaValidator2021"
+      },
+      "validUntil": "2025-05-16T15:14:09.768457Z",
+      "issued": "2024-05-16T15:14:09Z",
+      "validFrom": "2024-05-16T15:14:09Z"
+    },
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        {
+          "StatusList2021Entry": {
+            "@context": {
+              "@protected": true,
+              "id": "@id",
+              "statusListCredential": {
+                "@id": "https://w3id.org/vc/status-list#statusListCredential",
+                "@type": "@id"
+              },
+              "statusListIndex": "https://w3id.org/vc/status-list#statusListIndex",
+              "statusPurpose": "https://w3id.org/vc/status-list#statusPurpose",
+              "type": "@type"
+            },
+            "@id": "https://w3id.org/vc/status-list#StatusList2021Entry"
+          },
+          "EmployeeCredential": {
+            "@context": {
+              "@protected": true,
+              "@version": 1.1,
+              "email": "schema:email",
+              "ethereumAddress": "schema:identifier",
+              "hasCountry": "schema:addressCountry",
+              "hasJurisdiction": "schema:addressCountry",
+              "hasLegallyBindingName": "schema:legalName",
+              "hasRegistrationNumber": "schema:identifier",
+              "hash": "schema:sha256",
+              "id": "@id",
+              "leiCode": "schema:leiCode",
+              "name": "schema:name",
+              "parentOrganisation": "schema:legalName",
+              "schema": "https://schema.org/",
+              "subOrganisation": "schema:legalName",
+              "surname": "schema:givenName",
+              "title": "schema:jobTitle",
+              "type": "@type"
+            },
+            "@id": "urn:employeecredential"
+          }
+        }
+      ],
+      "id": "urn:uuid:2eb827bc-8ecc-11ee-9722-0a1628958561",
+      "type": ["VerifiableCredential", "EmployeeCredential"],
+      "credentialSubject": {
+        "id": "did:key:z6MkkdC46uhBGjMYS2ZDLUwCrTWdaqZdTD3596sN4397oRNd",
+        "hash": "9ecf754ffdad0c6de238f60728a90511780b2f7dbe2f0ea015115515f3f389cd",
+        "leiCode": "391200FJBNU0YW987L26",
+        "hasLegallyBindingName": "deltaDAO AG",
+        "ethereumAddress": "0x4C84a36fCDb7Bc750294A7f3B5ad5CA8F74C4A52",
+        "email": "test@test.com",
+        "hasRegistrationNumber": "DEK1101R.HRB170364",
+        "name": "Name Surname",
+        "hasCountry": "GER",
+        "type": "EmployeeCredential",
+        "title": "CEO",
+        "hasJurisdiction": "GER",
+        "surname": "Surname"
+      },
+      "issuer": "did:tz:tz1NyjrTUNxDpPaqNZ84ipGELAcTWYg6s5Du",
+      "issuanceDate": "2023-11-29T15:30:10.335704Z",
+      "proof": {
+        "@context": {
+          "Ed25519BLAKE2BDigestSize20Base58CheckEncodedSignature2021": {
+            "@context": {
+              "@protected": true,
+              "@version": 1.1,
+              "challenge": "https://w3id.org/security#challenge",
+              "created": {
+                "@id": "http://purl.org/dc/terms/created",
+                "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+              },
+              "domain": "https://w3id.org/security#domain",
+              "expires": {
+                "@id": "https://w3id.org/security#expiration",
+                "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+              },
+              "id": "@id",
+              "jws": "https://w3id.org/security#jws",
+              "nonce": "https://w3id.org/security#nonce",
+              "proofPurpose": {
+                "@context": {
+                  "@protected": true,
+                  "@version": 1.1,
+                  "assertionMethod": {
+                    "@container": "@set",
+                    "@id": "https://w3id.org/security#assertionMethod",
+                    "@type": "@id"
+                  },
+                  "authentication": {
+                    "@container": "@set",
+                    "@id": "https://w3id.org/security#authenticationMethod",
+                    "@type": "@id"
+                  },
+                  "id": "@id",
+                  "type": "@type"
+                },
+                "@id": "https://w3id.org/security#proofPurpose",
+                "@type": "@vocab"
+              },
+              "publicKeyJwk": {
+                "@id": "https://w3id.org/security#publicKeyJwk",
+                "@type": "@json"
+              },
+              "type": "@type",
+              "verificationMethod": {
+                "@id": "https://w3id.org/security#verificationMethod",
+                "@type": "@id"
+              }
+            },
+            "@id": "https://w3id.org/security#Ed25519BLAKE2BDigestSize20Base58CheckEncodedSignature2021"
+          },
+          "Ed25519PublicKeyBLAKE2BDigestSize20Base58CheckEncoded2021": {
+            "@id": "https://w3id.org/security#Ed25519PublicKeyBLAKE2BDigestSize20Base58CheckEncoded2021"
+          },
+          "P256BLAKE2BDigestSize20Base58CheckEncodedSignature2021": {
+            "@context": {
+              "@protected": true,
+              "@version": 1.1,
+              "challenge": "https://w3id.org/security#challenge",
+              "created": {
+                "@id": "http://purl.org/dc/terms/created",
+                "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+              },
+              "domain": "https://w3id.org/security#domain",
+              "expires": {
+                "@id": "https://w3id.org/security#expiration",
+                "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+              },
+              "id": "@id",
+              "jws": "https://w3id.org/security#jws",
+              "nonce": "https://w3id.org/security#nonce",
+              "proofPurpose": {
+                "@context": {
+                  "@protected": true,
+                  "@version": 1.1,
+                  "assertionMethod": {
+                    "@container": "@set",
+                    "@id": "https://w3id.org/security#assertionMethod",
+                    "@type": "@id"
+                  },
+                  "authentication": {
+                    "@container": "@set",
+                    "@id": "https://w3id.org/security#authenticationMethod",
+                    "@type": "@id"
+                  },
+                  "id": "@id",
+                  "type": "@type"
+                },
+                "@id": "https://w3id.org/security#proofPurpose",
+                "@type": "@vocab"
+              },
+              "publicKeyJwk": {
+                "@id": "https://w3id.org/security#publicKeyJwk",
+                "@type": "@json"
+              },
+              "type": "@type",
+              "verificationMethod": {
+                "@id": "https://w3id.org/security#verificationMethod",
+                "@type": "@id"
+              }
+            },
+            "@id": "https://w3id.org/security#P256BLAKE2BDigestSize20Base58CheckEncodedSignature2021"
+          },
+          "P256PublicKeyBLAKE2BDigestSize20Base58CheckEncoded2021": {
+            "@id": "https://w3id.org/security#P256PublicKeyBLAKE2BDigestSize20Base58CheckEncoded2021"
+          }
+        },
+        "type": "Ed25519BLAKE2BDigestSize20Base58CheckEncodedSignature2021",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:tz:tz1NyjrTUNxDpPaqNZ84ipGELAcTWYg6s5Du#blockchainAccountId",
+        "created": "2023-11-29T15:30:27.583Z",
+        "jws": "eyJhbGciOiJFZEJsYWtlMmIiLCJjcml0IjpbImI2NCJdLCJiNjQiOmZhbHNlfQ..EHmQL4JQ6RLZVFob3mH_Rlue3Nv9qyeug0ZYtysWJOfC-dJqCphb3li9llmSmazB1vvCFvG5WKTg2ooXpowYCg",
+        "publicKeyJwk": {
+          "crv": "Ed25519",
+          "kty": "OKP",
+          "x": "FUoLewH4w4-KdaPH2cjZbL--CKYxQRWR05Yd_bIbhQo"
+        }
+      },
+      "expirationDate": "2024-11-28T15:30:10.335716Z",
+      "credentialStatus": {
+        "id": "https://revocation-registry.abc-federation.dev.gaiax.ovh/api/v1/revocations/credentials/ABC-Federation-revocation#51",
+        "type": "StatusList2021Entry",
+        "statusListCredential": "https://revocation-registry.abc-federation.dev.gaiax.ovh/api/v1/revocations/credentials/ABC-Federation-revocation",
+        "statusPurpose": "revocation",
+        "statusListIndex": "51"
+      },
+      "credentialSchema": {
+        "id": "https://raw.githubusercontent.com/walt-id/waltid-ssikit-vclib/master/src/test/resources/schemas/ParticipantCredential.json",
+        "type": "JsonSchemaValidator2018"
+      },
+      "validFrom": "2023-07-20T15:36:41Z",
+      "issued": "2023-07-20T15:36:41Z"
+    },
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        {
+          "EmailPass": {
+            "@context": {
+              "@protected": true,
+              "@version": 1.1,
+              "email": "schema:email",
+              "id": "@id",
+              "issuedBy": {
+                "@context": {
+                  "@protected": true,
+                  "@version": 1.1,
+                  "logo": {
+                    "@id": "schema:image",
+                    "@type": "@id"
+                  },
+                  "name": "schema:name"
+                },
+                "@id": "schema:issuedBy"
+              },
+              "schema": "https://schema.org/",
+              "type": "@type"
+            },
+            "@id": "https://github.com/TalaoDAO/context#emailpass"
+          }
+        }
+      ],
+      "id": "urn:uuid:a8e2b30c-eeb6-11ee-a822-0a1628958560",
+      "type": ["VerifiableCredential", "EmailPass"],
+      "credentialSubject": {
+        "id": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",
+        "issuedBy": {
+          "name": "Altme"
+        },
+        "email": "first.vc@gmail.com",
+        "type": "EmailPass"
+      },
+      "issuer": "did:web:app.altme.io:issuer",
+      "issuanceDate": "2024-03-30T16:57:55Z",
+      "proof": {
+        "type": "Ed25519Signature2018",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:app.altme.io:issuer#key-1",
+        "created": "2024-03-30T16:57:58.048Z",
+        "jws": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..F9EXluMjwPtCe8A0WKusX0zSsCi6JKh0HDLuNk47-Wvig_8wrwh56IocbNMyNG8b2J4wGuXUuGLTkQuftx6iDA"
+      },
+      "expirationDate": "2025-03-30T16:57:55.390537Z",
+      "issued": "2024-03-30T16:57:57Z",
+      "validUntil": "2025-03-30T16:57:57.995257Z",
+      "validFrom": "2024-03-30T16:57:57Z"
+    }
+  ],
+  "proof": {
+    "type": "Ed25519Signature2018",
+    "proofPurpose": "authentication",
+    "challenge": "615e51a4-3f84-11ef-876f-0a1628958560",
+    "verificationMethod": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT#z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",
+    "created": "2024-07-11T12:52:05.187708Z",
+    "domain": "https://talao.co/",
+    "jws": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..ux7ny5CsclcU_4oovjitC4r7EktTOBH_qbdbca7OUKNbyFW-6CbREe0xj_izYxEqESvoJ-YfuvTkpgR35uw7AQ"
+  },
+  "holder": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT"
+}

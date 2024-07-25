@@ -84,7 +84,7 @@
           }
         }
       ],
-      "id": "urn:uuid:a8e2b30c-eeb6-11ee-a822-0a1628958560",
+      "id": "urn:uuid:a8e2b30c-eeb6-11ee-a822-0a1628958561",
       "type": ["VerifiableCredential", "EmailPass"],
       "credentialSubject": {
         "id": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",

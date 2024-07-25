@@ -22,11 +22,15 @@ export const isTrustedPresentation = async (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
+  const reorderedPolicy = usedPolicy.sort(
+    (a: { credentialId: string }, b: { credentialId: string }) =>
+      parseFloat(a.credentialId) - parseFloat(b.credentialId),
+  );
   // reorder the credentials in the VP to match the type in the policy file
   // because the order of the credentials in the VP is not guaranteed
-  let reorderedCreds = orderCredsByType(creds, usedPolicy);
+  let reorderedCreds = orderCredsByType(creds, reorderedPolicy);
 
-  return getConstraintFit(reorderedCreds, usedPolicy, VP).length > 0;
+  return getConstraintFit(reorderedCreds, reorderedPolicy, VP).length > 0;
 };
 
 export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
@@ -39,14 +43,21 @@ export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
+  // we need a way to map each policy object to the correct credential to extract the claims
+  // to do so, we need to reorder the policy objects to match the order of the credentials based on credentialId.
+  const reorderedPolicy = usedPolicy.sort(
+    (a: { credentialId: string }, b: { credentialId: string }) =>
+      parseFloat(a.credentialId) - parseFloat(b.credentialId),
+  );
+
   // reorder the credentials in the VP to match the type in the policy file
   // because the order of the credentials in the VP is not guaranteed
-  let reorderedCreds = orderCredsByType(creds, usedPolicy);
+  let reorderedCreds = orderCredsByType(creds, reorderedPolicy);
 
   const vcClaims = reorderedCreds.map((vc: any, credentialIndex: number) =>
-    // Important: credentialIndex helps us to extract the correct claims from the policy.
+    // Important: credentialIndex helps us to extract the correct claims from the correct policy.
     // Ideally, the credentialIndex should be the same as the credentialId in the policy.
-    extractClaimsFromVC(vc, usedPolicy, (credentialIndex + 1).toString()),
+    extractClaimsFromVC(vc, reorderedPolicy, (credentialIndex + 1).toString()),
   );
   const claims: any = {};
 
@@ -141,10 +152,9 @@ const isCredentialFittingPattern = (
   }
 
   for (const claim of pattern.claims) {
-    const claimPath = claim.claimPath.replace(/\$\d+\./g, "$.");
     if (
       (!Object.hasOwn(claim, "required") || claim.required) &&
-      jp.paths(cred, claimPath).length === 0
+      jp.paths(cred, claim.claimPath).length === 0
     ) {
       return false;
     }
@@ -155,7 +165,8 @@ const isCredentialFittingPattern = (
 
 const getAllUniqueDraws = (patternFits: any[][]): any[][] => {
   const draws = getAllUniqueDrawsHelper(patternFits, []);
-  return draws.filter((draw) => draw.length == patternFits.length);
+  const flatDraws = draws.map((draw) => draw.flat(Infinity));
+  return flatDraws.filter((draw) => draw.length == patternFits.length);
 };
 
 const getAllUniqueDrawsHelper = (
@@ -169,10 +180,12 @@ const getAllUniqueDrawsHelper = (
   let uniqueDraws: any[][] = [];
   for (let cred of patternFits[0]) {
     if (!usedIds.includes(cred.id)) {
-      uniqueDraws.push([
-        cred,
-        ...getAllUniqueDrawsHelper(patternFits.slice(1), [...usedIds, cred.id]),
+      const newDraws = getAllUniqueDrawsHelper(patternFits.slice(1), [
+        ...usedIds,
+        cred.id,
       ]);
+
+      uniqueDraws.push([cred, ...newDraws]);
     }
   }
   return uniqueDraws;
@@ -311,13 +324,13 @@ const resolveValue = (
   if (Object.entries(credDict).length > 0) {
     // store object key's value in array to prevent querying wrong key
     let keyValues = [];
-    for (const [key, value] of Object.entries(credDict)) {
+    for (const [key, _value] of Object.entries(credDict)) {
       keyValues.push(key);
     }
 
     for (const [key, value] of Object.entries(credDict)) {
       if (expression.startsWith("$" + key + ".")) {
-        for (const [key2, value2] of Object.entries(credDict)) {
+        for (const [key2, _value2] of Object.entries(credDict)) {
           // check if key and key2 are in credDict
           if (keyValues.includes(key2) && keyValues.includes(key)) {
             if (key !== key2 && expression.replace("$", "").startsWith(key)) {
@@ -353,8 +366,7 @@ const extractClaimsFromVC = (
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
         const containsAllRequired =
           pattern.claims.filter((claim: ClaimEntry) => {
-            const claimPath = claim.claimPath.replace(`${credentialId}`, "");
-            const claimPathLength = jp.paths(VC, claimPath).length;
+            const claimPathLength = jp.paths(VC, claim.claimPath).length;
             return claim.required && claimPathLength === 1;
           }).length > 0 ||
           pattern.claims.filter((claim: ClaimEntry) => claim.required)
@@ -370,9 +382,7 @@ const extractClaimsFromVC = (
         };
 
         for (let claim of pattern.claims) {
-          const claimPath = claim.claimPath.replace(`${credentialId}`, "");
-
-          const nodes = jp.nodes(VC, claimPath);
+          const nodes = jp.nodes(VC, claim.claimPath);
           let newPath = claim.newPath;
           let value: any;
 
