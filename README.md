@@ -29,6 +29,12 @@ You operate a service and want to allow your users to sign in using Verifiable
 Credentials from a mobile wallet. But building that takes considerable time and
 expertise.
 
+> [!NOTE] As a new feature, the bridge now supports incremental authorization.
+> This allows the service provider to request additional Verifiable Credentials
+> from the user via the bridge. Please see the
+> [Incremental Authorization Flow](#incremental-authorization-flow) section for
+> more details.
+
 ### The Solution
 
 A service provider can run this dockerized bridge software that acts as a normal
@@ -145,6 +151,40 @@ sequenceDiagram
  Client->>OP: Get tokens using code
  OP->>Client: Return id_token and access_token
  Client->>Browser: Provide access to protected service
+```
+
+## Incremental Authorization Flow
+
+The user assumed to be logged in via the bridge and the service provider
+requests additional VC from user to perform incremental authorization.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Wallet
+    participant B as SSI-to-OIDC Bridge
+    participant SP as Service Provider
+
+    SP ->> B: "POST /api/dynamic/createTempAuthorization"
+    B-->>SP: "Return UUID"
+
+    SP->>B: "GET /api/dynamic/getQRCodeString"
+    B-->>SP: "Return QR code string"
+
+    SP->>User: "Send Auth. page containing QR code"
+
+    SP->>B: "GET /api/dynamic/getAuthResponse"
+    User->>Wallet: "Scan QR code"
+    Wallet->>B: "GET /api/dynamic/presentCredentialById"
+    B-->>Wallet: "Return metadata"
+    Wallet-->>User: "Prompt user"
+
+    User ->>Wallet: "Select VC(s)"
+    Wallet->>B: "POST /api/dynamic/presentCredentialById"
+    B-->>Wallet: "Success"
+
+    B-->>SP: "Return Auth Response"
 ```
 
 ## Running a Local Deployment
@@ -278,7 +318,7 @@ credential, while forwarding all subject fields to the `id_token`:
 ```JSON
 [
   {
-    "credentialID": "credential1",
+    "credentialID": "1",
     "patterns": [
       {
         "issuer": "*",
@@ -294,6 +334,11 @@ credential, while forwarding all subject fields to the `id_token`:
   }
 ]
 ```
+
+> [!IMPORTANT] >`credentialID` helps us to extract the correct claims from the
+> VC. Ideally, it should be an integer string starting from 1 and incrementing
+> by 1 for each policy object in a policy file. It helps us to identify from
+> which VC the claims should be extracted.
 
 A login policy is always an array of objects that represent expected Verifiable
 Credentials. For each expected credential, we have to specify a unique ID used
@@ -323,7 +368,7 @@ use of this could look like this:
 ```json
 [
   {
-    "credentialId": "one",
+    "credentialId": "1",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -383,6 +428,125 @@ logical operators that can combine multiple constraints:
 - _and_ Takes two constraint objects `a` and `b`.
 - _or_ Takes two constraint objects `a` and `b`.
 - _not_ Takes one constraint object `a`
+
+### Multiple Policy Objects
+
+The bridge also supports multiple policy objects in a policy file. This allows
+for more complex scenarios where multiple credentials are expected to perform
+authorization. An example of such a policy file is:
+
+```json
+[
+  {
+    "credentialId": "1",
+    "type": "EmailPass",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "type": "VerifiableId",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.id"
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+> [!IMPORTANT] > Each `credentialId` should be unique across all policy objects,
+> and should have integer string values starting from 1. This helps us determine
+> the correct policy object to apply to the VCs.
+
+> [!IMPORTANT] > Altough the `type` field is an optional parameter, it needs to
+> be present in a policy file that has multiple policy objects.
+
+The `type` field helps to determine which policy object should be applied to
+which type of credential. When multiple policy objects are used, this field
+becomes important because the order of VCs in the VP is not guaranteed. Users
+might submit VCs in a random order, so the type field ensures that each
+credential is matched with the correct policy regardless of the submission
+order.
+
+In the code snippet above, the first policy object is applied to the VC with
+type `EmailPass` and the second policy object is applied to the VC with type
+`VerifiableId`. If the type fields are the same for multiple policy objects, the
+bridge will apply the policy objects to the VCs in the order they are defined in
+the policy file.
+
+### Multiple Constraints
+
+For each policy object, you can define constraints as defined in
+[Constraints](#constraints). An example of such a policy file is:
+
+```json
+[
+  {
+    "credentialId": "1",
+    "type": "EmailPass",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ],
+        "constraint": {
+          "op": "equalsDID",
+          "a": "$VP.proof.verificationMethod",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "type": "VerifiableId",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.id"
+          }
+        ],
+        "constraint": {
+          "op": "equals",
+          "a": "$2.credentialSubject.id",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  }
+]
+```
+
+You can cross reference different VCs using the constraints. As in the example
+below, the first VC's `credentialSubject.id` is compared with the second VC's
+`credentialSubject.id` in the second policy object.
+
+> [!IMPORTANT] > You need to correctly define the JSONPaths of the constraint
+> operands to be able to perform constraints check. The JSONPaths should have a
+> structure like `$<credentialId>.<claimPath>` when having multiple policy
+> objects.
+
+In the code snippet above, `a` operand of the constraint in the second policy
+object refers to the `credentialSubject.id` of the VC with type `VerifiableId`.
 
 ## Token Introspection
 
