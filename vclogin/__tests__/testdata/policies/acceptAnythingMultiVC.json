@@ -7,7 +7,7 @@
         "issuer": "*",
         "claims": [
           {
-            "claimPath": "$1.credentialSubject.*",
+            "claimPath": "$.credentialSubject.*",
             "newPath": "$.firstCredentialSubject",
             "required": false
           }
