@@ -29,7 +29,9 @@ You operate a service and want to allow your users to sign in using Verifiable
 Credentials from a mobile wallet. But building that takes considerable time and
 expertise.
 
-> [!NOTE] As a new feature, the bridge now supports incremental authorization.
+<!-- prettier-ignore -->
+> [!NOTE] 
+> As a new feature, the bridge now supports incremental authorization.
 > This allows the service provider to request additional Verifiable Credentials
 > from the user via the bridge. Please see the
 > [Incremental Authorization Flow](#incremental-authorization-flow) section for
@@ -187,6 +189,27 @@ sequenceDiagram
     B-->>SP: "Return Auth Response"
 ```
 
+### API Documentation
+
+This documentation provides all the necessary information to interact with the
+dynamic API endpoints. The API is documented using Swagger, which provides a
+user-friendly interface to explore and test the API.
+
+<!-- prettier-ignore -->
+> [!NOTE] 
+> To access the Swagger documentation, you need to run the bridge and
+> navigate to `http://localhost:5002/api-docs`.
+
+To authenticate requests to the dynamic API in Swagger, you need to provide a
+valid API key. The API key is stored in the `.env` file in the `vclogin` folder.
+
+<!-- prettier-ignore -->
+> [!NOTE] 
+> To authenticate requests to the dynamic API in Swagger, first click on
+> the "Authorize" button in the top right corner of the Swagger UI. Then, enter
+> the API key in the "Value" field with the format `API_KEY <api_key>`and click
+> on the "Authorize" button.
+
 ## Running a Local Deployment
 
 A local deployment is a great way to test the bridge and to use it for
@@ -335,11 +358,6 @@ credential, while forwarding all subject fields to the `id_token`:
 ]
 ```
 
-> [!IMPORTANT] >`credentialID` helps us to extract the correct claims from the
-> VC. Ideally, it should be an integer string starting from 1 and incrementing
-> by 1 for each policy object in a policy file. It helps us to identify from
-> which VC the claims should be extracted.
-
 A login policy is always an array of objects that represent expected Verifiable
 Credentials. For each expected credential, we have to specify a unique ID used
 for internal tracking. We also need to provide an array of pattern objects,
@@ -432,7 +450,7 @@ logical operators that can combine multiple constraints:
 ### Multiple Policy Objects
 
 The bridge also supports multiple policy objects in a policy file. This allows
-for more complex scenarios where multiple credentials are expected to perform
+for more complex scenarios where multiple credentials are needed to perform
 authorization. An example of such a policy file is:
 
 ```json
@@ -468,25 +486,39 @@ authorization. An example of such a policy file is:
 ]
 ```
 
-> [!IMPORTANT] > Each `credentialId` should be unique across all policy objects,
+<!-- prettier-ignore -->
+> [!IMPORTANT] 
+> Each `credentialId` should be unique across all policy objects,
 > and should have integer string values starting from 1. This helps us determine
 > the correct policy object to apply to the VCs.
 
-> [!IMPORTANT] > Altough the `type` field is an optional parameter, it needs to
-> be present in a policy file that has multiple policy objects.
+<!-- prettier-ignore -->
+> [!IMPORTANT] 
+> Altough the `type` field is an optional parameter, it needs to be
+> present in a policy file that has multiple policy objects.
+
+<!-- prettier-ignore -->
+> [!NOTE] 
+> First we reorder of policy objects in a policy file based on the `credentialId` and
+> then we reorder the credentials in the VP based on the `type` field in the reordered policy file.
+> This way we can ensure that the correct policy object is applied to the correct credential.
 
 The `type` field helps to determine which policy object should be applied to
 which type of credential. When multiple policy objects are used, this field
-becomes important because the order of VCs in the VP is not guaranteed. Users
-might submit VCs in a random order, so the type field ensures that each
+becomes important because the order of VCs in the VP is not guaranteed.
+
+Users might submit VCs in a random order, so the type field ensures that each
 credential is matched with the correct policy regardless of the submission
 order.
 
-In the code snippet above, the first policy object is applied to the VC with
-type `EmailPass` and the second policy object is applied to the VC with type
-`VerifiableId`. If the type fields are the same for multiple policy objects, the
-bridge will apply the policy objects to the VCs in the order they are defined in
-the policy file.
+In the code snippet above
+
+- The first policy object is applied to the VC with type `EmailPass`.
+- The second policy object is applied to the VC with type `VerifiableId`.
+
+If the type fields are the same for multiple policy objects, the bridge will
+apply the policy objects to the VCs in the order they are defined in the policy
+file.
 
 ### Multiple Constraints
 
@@ -540,13 +572,15 @@ You can cross reference different VCs using the constraints. As in the example
 below, the first VC's `credentialSubject.id` is compared with the second VC's
 `credentialSubject.id` in the second policy object.
 
-> [!IMPORTANT] > You need to correctly define the JSONPaths of the constraint
+<!-- prettier-ignore -->
+> [!IMPORTANT] 
+> You need to correctly define the JSONPaths of the constraint
 > operands to be able to perform constraints check. The JSONPaths should have a
 > structure like `$<credentialId>.<claimPath>` when having multiple policy
 > objects.
 
 In the code snippet above, `a` operand of the constraint in the second policy
-object refers to the `credentialSubject.id` of the VC with type `VerifiableId`.
+object refers to the `credentialSubject.id` of the second VC.
 
 ## Token Introspection
 
