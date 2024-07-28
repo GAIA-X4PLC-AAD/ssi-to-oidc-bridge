@@ -197,7 +197,7 @@ user-friendly interface to explore and test the API.
 
 <!-- prettier-ignore -->
 > [!NOTE] 
-> To access the Swagger documentation, you need to run the bridge and
+> To access the Swagger documentation, you need to run the bridge in development mode and
 > navigate to `http://localhost:5002/api-docs`.
 
 To authenticate requests to the dynamic API in Swagger, you need to provide a
@@ -238,10 +238,12 @@ proper domain has to be set up.
    `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over
    what wallets are asked for is desired (example for quick testing:
    `./__tests__/testdata/pex/descriptorEmailFromAltme.json`)
-6. at this point, it needs to be ensured that the container for the vclogin
+6. to be able to test dynamic endpoint APIs, you need to provide an API key in
+   the `.env` file in the `vclogin` folder with the key `API_KEY`.
+7. at this point, it needs to be ensured that the container for the vclogin
    service is freshly built with the new env file:
    `docker compose down && docker compose build`
-7. `$ docker compose up`
+8. `$ docker compose up`
 
 To validate the running bridge with a simple OIDC client:
 
@@ -309,6 +311,7 @@ PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
 HYDRA_ADMIN_URL=http://localhost:5001
 REDIS_HOST=localhost
 REDIS_PORT=6379
+API_KEY=<api-key>
 ```
 
 _Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override
@@ -489,19 +492,19 @@ authorization. An example of such a policy file is:
 <!-- prettier-ignore -->
 > [!IMPORTANT] 
 > Each `credentialId` should be unique across all policy objects,
-> and should have integer string values starting from 1. This helps us determine
+> and should have integer string values starting from 1, incrementing by 1 for each subsequent policy object. This helps us determine
 > the correct policy object to apply to the VCs.
 
 <!-- prettier-ignore -->
 > [!IMPORTANT] 
 > Altough the `type` field is an optional parameter, it needs to be
-> present in a policy file that has multiple policy objects.
+> present in a policy file that has multiple policy objects. This is crucial for the accurate application of policies.
 
 <!-- prettier-ignore -->
 > [!NOTE] 
-> First we reorder of policy objects in a policy file based on the `credentialId` and
-> then we reorder the credentials in the VP based on the `type` field in the reordered policy file.
-> This way we can ensure that the correct policy object is applied to the correct credential.
+> First we reorder the policy objects in a policy file based on the `credentialId` and
+> then we reorder the credentials in the VP based on the `type` field from the reordered policy file.
+> This ensures that each credential is matched with the correct policy object.
 
 The `type` field helps to determine which policy object should be applied to
 which type of credential. When multiple policy objects are used, this field
@@ -578,9 +581,6 @@ below, the first VC's `credentialSubject.id` is compared with the second VC's
 > operands to be able to perform constraints check. The JSONPaths should have a
 > structure like `$<credentialId>.<claimPath>` when having multiple policy
 > objects.
-
-In the code snippet above, `a` operand of the constraint in the second policy
-object refers to the `credentialSubject.id` of the second VC.
 
 ## Token Introspection
 
