@@ -82,7 +82,7 @@ const orderCredsByType = (creds: any[], policy: LoginPolicy): any[] => {
     for (let policyObj of policy) {
       for (let cred of creds) {
         if (
-          cred.credentialSubject.type === policyObj.type &&
+          cred.type.includes(policyObj.type) &&
           !orderedCreds.includes(cred)
         ) {
           orderedCreds.push(cred);
