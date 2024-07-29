@@ -12,21 +12,29 @@ import {
 import jp from "jsonpath";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 
-export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
-  var configuredPolicy = getConfiguredLoginPolicy();
+export const isTrustedPresentation = async (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = await getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
 
-  const creds = Array.isArray(VP.verifiableCredential)
+  let creds = Array.isArray(VP.verifiableCredential)
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  return getConstraintFit(creds, usedPolicy, VP).length > 0;
+  const reorderedPolicy = usedPolicy.sort(
+    (a: { credentialId: string }, b: { credentialId: string }) =>
+      parseFloat(a.credentialId) - parseFloat(b.credentialId),
+  );
+  // reorder the credentials in the VP to match the type in the policy file
+  // because the order of the credentials in the VP is not guaranteed
+  let reorderedCreds = orderCredsByType(creds, reorderedPolicy);
+
+  return getConstraintFit(reorderedCreds, reorderedPolicy, VP).length > 0;
 };
 
-export const extractClaims = (VP: any, policy?: LoginPolicy) => {
-  var configuredPolicy = getConfiguredLoginPolicy();
+export const extractClaims = async (VP: any, policy?: LoginPolicy) => {
+  var configuredPolicy = await getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
   var usedPolicy = policy ? policy : configuredPolicy!;
@@ -35,12 +43,56 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
-  const claims = vcClaims.reduce(
-    (acc: any, vc: any) => Object.assign(acc, vc),
-    {},
+  // we need a way to map each policy object to the correct credential to extract the claims
+  // to do so, we need to reorder the policy objects to match the order of the credentials based on credentialId.
+  const reorderedPolicy = usedPolicy.sort(
+    (a: { credentialId: string }, b: { credentialId: string }) =>
+      parseFloat(a.credentialId) - parseFloat(b.credentialId),
   );
+
+  // reorder the credentials in the VP to match the type in the policy file
+  // because the order of the credentials in the VP is not guaranteed
+  let reorderedCreds = orderCredsByType(creds, reorderedPolicy);
+
+  const vcClaims = reorderedCreds.map((vc: any, credentialIndex: number) =>
+    // Important: credentialIndex helps us to extract the correct claims from the correct policy.
+    // Ideally, the credentialIndex should be the same as the credentialId in the policy.
+    extractClaimsFromVC(vc, reorderedPolicy, (credentialIndex + 1).toString()),
+  );
+  const claims: any = {};
+
+  vcClaims.forEach((claim: any) => {
+    // Merge tokenId properties
+    claims.tokenId = Object.assign({}, claims.tokenId, claim.tokenId);
+
+    // Merge tokenAccess properties
+    claims.tokenAccess = Object.assign(
+      {},
+      claims.tokenAccess,
+      claim.tokenAccess,
+    );
+  });
+
   return claims;
+};
+
+const orderCredsByType = (creds: any[], policy: LoginPolicy): any[] => {
+  let orderedCreds: any[] = [];
+  if (creds.length > 1) {
+    for (let policyObj of policy) {
+      for (let cred of creds) {
+        if (
+          cred.type.includes(policyObj.type) &&
+          !orderedCreds.includes(cred)
+        ) {
+          orderedCreds.push(cred);
+        }
+      }
+    }
+  } else {
+    orderedCreds = creds;
+  }
+  return orderedCreds;
 };
 
 const getConstraintFit = (
@@ -53,8 +105,9 @@ const getConstraintFit = (
   if (uniqueFits.length === 0) {
     return [];
   }
+  let fittingArr: boolean[] = [];
   for (let fit of uniqueFits) {
-    if (isValidConstraintFit(fit, policy, VP)) {
+    if (isValidConstraintFit(fit, policy, VP, fittingArr)) {
       return fit;
     }
   }
@@ -112,7 +165,8 @@ const isCredentialFittingPattern = (
 
 const getAllUniqueDraws = (patternFits: any[][]): any[][] => {
   const draws = getAllUniqueDrawsHelper(patternFits, []);
-  return draws.filter((draw) => draw.length == patternFits.length);
+  const flatDraws = draws.map((draw) => draw.flat(Infinity));
+  return flatDraws.filter((draw) => draw.length == patternFits.length);
 };
 
 const getAllUniqueDrawsHelper = (
@@ -126,10 +180,12 @@ const getAllUniqueDrawsHelper = (
   let uniqueDraws: any[][] = [];
   for (let cred of patternFits[0]) {
     if (!usedIds.includes(cred.id)) {
-      uniqueDraws.push([
-        cred,
-        ...getAllUniqueDrawsHelper(patternFits.slice(1), [...usedIds, cred.id]),
+      const newDraws = getAllUniqueDrawsHelper(patternFits.slice(1), [
+        ...usedIds,
+        cred.id,
       ]);
+
+      uniqueDraws.push([cred, ...newDraws]);
     }
   }
   return uniqueDraws;
@@ -139,8 +195,10 @@ const isValidConstraintFit = (
   credFit: any[],
   policy: LoginPolicy,
   VP: any,
+  fittingArr: boolean[],
 ): boolean => {
   const credDict: any = {};
+  credFit = credFit.flat(Infinity);
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
@@ -148,7 +206,6 @@ const isValidConstraintFit = (
   for (let i = 0; i < policy.length; i++) {
     const cred = credFit[i];
     const expectation = policy[i];
-    var oneFittingPattern = false;
     for (let pattern of expectation.patterns) {
       if (isCredentialFittingPattern(cred, pattern)) {
         if (pattern.constraint) {
@@ -159,15 +216,19 @@ const isValidConstraintFit = (
             VP,
           );
           if (res) {
-            oneFittingPattern = true;
-            break;
+            // if one pattern fits, the credential is fitting
+            fittingArr.push(true);
+          } else {
+            // if one pattern does not fit, the credential is not fitting
+            fittingArr.push(false);
           }
         }
       }
     }
-    if (!oneFittingPattern) {
-      return true;
-    }
+  }
+  // if all items in fittingArr are true, the credentials in a VP are fitting
+  if (fittingArr.every((item) => item === true)) {
+    return true;
   }
   return false;
 };
@@ -194,10 +255,8 @@ const evaluateConstraint = (
     case "equals":
       return a === b;
     case "equalsDID":
-      return (
-        a.split("#").slice(0, -1).join("#") ===
-        b.split("#").slice(0, -1).join("#")
-      );
+      b = b.includes("#") ? b.split("#").slice(0, -1).join("#") : b;
+      return a.split("#").slice(0, -1).join("#") === b;
     case "startsWith":
       return a.startsWith(b);
     case "endsWith":
@@ -225,25 +284,28 @@ const evaluateConstraint = (
   throw Error("Unknown constraint operator: " + constraint.op);
 };
 
-const resolveValue = (
+const resolveSingleNodeValue = (
   expression: string,
   cred: any,
-  credDict: any,
   VP: any,
 ): string => {
   if (expression.startsWith("$")) {
     var nodes: any;
     if (expression.startsWith("$.")) {
       nodes = jp.nodes(cred, expression);
+    } else if (expression.startsWith("$1.")) {
+      nodes = jp.nodes(cred, "$" + expression.slice(2));
     } else if (expression.startsWith("$VP.")) {
       nodes = jp.nodes(VP, "$" + expression.slice(3));
-    } else {
+    } /*else {
       nodes = jp.nodes(
         credDict[expression.slice(1).split(".")[0]],
         expression.slice(1).split(".").slice(1).join("."),
       );
-    }
-    if (nodes.length > 1 || nodes.length <= 0) {
+    }*/
+    if (nodes === undefined) {
+      return expression;
+    } else if (nodes.length > 1 || nodes.length <= 0) {
       throw Error("JSON Paths in constraints must be single-valued");
     }
     return nodes[0].value;
@@ -252,9 +314,55 @@ const resolveValue = (
   return expression;
 };
 
-const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
+const resolveValue = (
+  expression: string,
+  cred: any,
+  credDict: any,
+  VP: any,
+): string => {
+  var nodes: any;
+  if (Object.entries(credDict).length > 0) {
+    // store object key's value in array to prevent querying wrong key
+    let keyValues = [];
+    for (const [key, _value] of Object.entries(credDict)) {
+      keyValues.push(key);
+    }
+
+    for (const [key, value] of Object.entries(credDict)) {
+      if (expression.startsWith("$" + key + ".")) {
+        for (const [key2, _value2] of Object.entries(credDict)) {
+          // check if key and key2 are in credDict
+          if (keyValues.includes(key2) && keyValues.includes(key)) {
+            if (key !== key2 && expression.replace("$", "").startsWith(key)) {
+              nodes = jp.nodes(value, expression.slice(key.length + 2));
+              if (nodes.length <= 1 && nodes.length > 0) {
+                return nodes[0].value;
+              }
+            }
+          } else {
+            // if key is not found in credDict
+            throw Error("Key not found in credDict");
+          }
+        }
+      }
+    }
+    resolveSingleNodeValue(expression, cred, VP);
+  }
+  return resolveSingleNodeValue(expression, cred, VP);
+};
+
+const extractClaimsFromVC = (
+  VC: any,
+  policy: LoginPolicy,
+  credentialIndex: string,
+) => {
+  let reiterateOuterLoop = false;
   for (let expectation of policy) {
+    const credentialId = expectation.credentialId;
     for (let pattern of expectation.patterns) {
+      if (credentialId !== credentialIndex) {
+        break;
+      }
       if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
         const containsAllRequired =
           pattern.claims.filter((claim: ClaimEntry) => {
@@ -295,6 +403,10 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
               .reduce((acc: any, vals: any) => Object.assign(acc, vals), {});
           } else {
             if (!newPath) {
+              if (nodes.length === 0 || nodes === undefined) {
+                reiterateOuterLoop = true;
+                break;
+              }
               newPath = "$." + nodes[0].path[nodes[0].path.length - 1];
             }
 
@@ -305,7 +417,13 @@ const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
             claim.token === "access_token"
               ? extractedClaims.tokenAccess
               : extractedClaims.tokenId;
+
           jp.value(claimTarget, newPath, value);
+        }
+
+        if (reiterateOuterLoop) {
+          reiterateOuterLoop = false;
+          break;
         }
 
         return extractedClaims;

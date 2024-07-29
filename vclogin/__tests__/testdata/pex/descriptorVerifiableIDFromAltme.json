@@ -1,0 +1,18 @@
+[
+  {
+    "id": "verifiableId",
+    "name": "Input descriptor for login credential",
+    "purpose": "Please provide your VerifiableId credential to sign-in.",
+    "constraints": {
+      "fields": [
+        {
+          "path": ["$.credentialSubject.type"],
+          "filter": {
+            "type": "string",
+            "pattern": "VerifiableId"
+          }
+        }
+      ]
+    }
+  }
+]

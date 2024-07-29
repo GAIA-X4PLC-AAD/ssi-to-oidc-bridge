@@ -16,7 +16,8 @@ export default async function handler(
     if (method === "GET") {
       logger.debug("METADATA BY ID API GET");
       const metadata = getMetadata([
-        process.env.NEXT_PUBLIC_INTERNET_URL + "/api/dynamic/presentCredential",
+        process.env.NEXT_PUBLIC_INTERNET_URL +
+          "/api/dynamic/presentCredentialById",
       ]);
       res.status(200).json(metadata);
     } else {

@@ -2,9 +2,11 @@
  * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
  * SPDX-License-Identifier: MIT
  */
-
+import { InputDescriptor } from "@/types/InputDescriptor";
+import { PresentationDefinition } from "@/types/PresentationDefinition";
 import { LoginPolicy } from "@/types/LoginPolicy";
 import { promises as fs } from "fs";
+import { logger } from "@/config/logger";
 
 var inputDescriptorOverride: any = undefined;
 if (process.env.PEX_DESCRIPTOR_OVERRIDE) {
@@ -15,12 +17,16 @@ if (process.env.PEX_DESCRIPTOR_OVERRIDE) {
   );
 }
 
-export const generatePresentationDefinition = (policy: LoginPolicy) => {
+export const generatePresentationDefinition = (
+  policy: LoginPolicy,
+  incrAuthInputDescriptor?: InputDescriptor[],
+) => {
   if (policy === undefined)
     throw Error(
       "A policy must be specified to generate a presentation definition",
     );
-  var pd: any = {
+
+  var pd: PresentationDefinition = {
     format: {
       ldp_vc: {
         proof_type: [
@@ -40,29 +46,35 @@ export const generatePresentationDefinition = (policy: LoginPolicy) => {
       },
     },
     id: crypto.randomUUID(),
-    name: "SSI-to-OIDC Bridge",
+    name: "VC Login Service",
     purpose: "Sign-in",
-    input_descriptors: [] as any[],
+    input_descriptors: [] as InputDescriptor[],
   };
 
-  if (inputDescriptorOverride) {
+  if (inputDescriptorOverride && !incrAuthInputDescriptor) {
     pd.input_descriptors = inputDescriptorOverride;
+    return pd;
+  } else if (incrAuthInputDescriptor) {
+    pd.input_descriptors = incrAuthInputDescriptor;
+    logger.debug(
+      "Using input descriptor override for incremental authorization",
+      pd,
+    );
     return pd;
   }
 
   for (let expectation of policy) {
     if (expectation.patterns.length > 1) {
       let req = {
-        name: "Group " + expectation.credentialId,
         rule: "pick",
         count: 1,
         from: "group_" + expectation.credentialId,
       };
-      pd.submission_requirements.push(req);
+      pd.submission_requirements!.push(req);
     }
 
     for (let pattern of expectation.patterns) {
-      let descr: any = {
+      let descr: InputDescriptor = {
         id: expectation.credentialId,
         purpose: "Sign-in",
         name: "Input descriptor for " + expectation.credentialId,

@@ -1,0 +1,34 @@
+[
+  {
+    "credentialId": "1",
+    "type": "EmailPass",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.*",
+            "newPath": "$.firstCredentialSubject",
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "type": "VerifiableId",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.*",
+            "newPath": "$.secondCredentialSubject",
+            "required": false
+          }
+        ]
+      }
+    ]
+  }
+]

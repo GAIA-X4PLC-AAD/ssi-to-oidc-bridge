@@ -1,6 +1,7 @@
 [
   {
     "credentialId": "1",
+    "type": "EmailPass",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -12,8 +13,22 @@
         "constraint": {
           "op": "equalsDID",
           "a": "$VP.proof.verificationMethod",
-          "b": "$.credentialSubject.id"
+          "b": "$1.credentialSubject.id"
         }
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "type": "EmailPass",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.type"
+          }
+        ]
       }
     ]
   }

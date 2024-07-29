@@ -23,6 +23,7 @@ export type CredentialPattern = {
 
 export type ExpectedCredential = {
   credentialId: string;
+  type?: string;
   patterns: CredentialPattern[];
 };
 

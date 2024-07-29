@@ -1,6 +1,6 @@
 [
   {
-    "credentialId": "credential1",
+    "credentialId": "1",
     "patterns": [
       {
         "issuer": "*",

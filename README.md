@@ -29,6 +29,14 @@ You operate a service and want to allow your users to sign in using Verifiable
 Credentials from a mobile wallet. But building that takes considerable time and
 expertise.
 
+<!-- prettier-ignore -->
+> [!NOTE] 
+> As a new feature, the bridge now supports incremental authorization.
+> This allows the service provider to request additional Verifiable Credentials
+> from the user via the bridge. Please see the
+> [Incremental Authorization Flow](#incremental-authorization-flow) section for
+> more details.
+
 ### The Solution
 
 A service provider can run this dockerized bridge software that acts as a normal
@@ -147,6 +155,61 @@ sequenceDiagram
  Client->>Browser: Provide access to protected service
 ```
 
+## Incremental Authorization Flow
+
+The user assumed to be logged in via the bridge and the service provider
+requests additional VC from user to perform incremental authorization.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Wallet
+    participant B as SSI-to-OIDC Bridge
+    participant SP as Service Provider
+
+    SP ->> B: "POST /api/dynamic/createTempAuthorization"
+    B-->>SP: "Return UUID"
+
+    SP->>B: "GET /api/dynamic/getQRCodeString"
+    B-->>SP: "Return QR code string"
+
+    SP->>User: "Send Auth. page containing QR code"
+
+    SP->>B: "GET /api/dynamic/getAuthResponse"
+    User->>Wallet: "Scan QR code"
+    Wallet->>B: "GET /api/dynamic/presentCredentialById"
+    B-->>Wallet: "Return metadata"
+    Wallet-->>User: "Prompt user"
+
+    User ->>Wallet: "Select VC(s)"
+    Wallet->>B: "POST /api/dynamic/presentCredentialById"
+    B-->>Wallet: "Success"
+
+    B-->>SP: "Return Auth Response"
+```
+
+### API Documentation
+
+This documentation provides all the necessary information to interact with the
+dynamic API endpoints. The API is documented using Swagger, which provides a
+user-friendly interface to explore and test the API.
+
+<!-- prettier-ignore -->
+> [!NOTE] 
+> To access the Swagger documentation, you need to run the bridge in development mode and
+> navigate to `http://localhost:5002/api-docs`.
+
+To authenticate requests to the dynamic API in Swagger, you need to provide a
+valid API key. The API key is stored in the `.env` file in the `vclogin` folder.
+
+<!-- prettier-ignore -->
+> [!NOTE] 
+> To authenticate requests to the dynamic API in Swagger, first click on
+> the "Authorize" button in the top right corner of the Swagger UI. Then, enter
+> the API key in the "Value" field with the format `API_KEY <api_key>`and click
+> on the "Authorize" button.
+
 ## Running a Local Deployment
 
 A local deployment is a great way to test the bridge and to use it for
@@ -175,10 +238,12 @@ proper domain has to be set up.
    `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over
    what wallets are asked for is desired (example for quick testing:
    `./__tests__/testdata/pex/descriptorEmailFromAltme.json`)
-6. at this point, it needs to be ensured that the container for the vclogin
+6. to be able to test dynamic endpoint APIs, you need to provide an API key in
+   the `.env` file in the `vclogin` folder with the key `API_KEY`.
+7. at this point, it needs to be ensured that the container for the vclogin
    service is freshly built with the new env file:
    `docker compose down && docker compose build`
-7. `$ docker compose up`
+8. `$ docker compose up`
 
 To validate the running bridge with a simple OIDC client:
 
@@ -246,6 +311,7 @@ PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
 HYDRA_ADMIN_URL=http://localhost:5001
 REDIS_HOST=localhost
 REDIS_PORT=6379
+API_KEY=<api-key>
 ```
 
 _Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override
@@ -278,7 +344,7 @@ credential, while forwarding all subject fields to the `id_token`:
 ```JSON
 [
   {
-    "credentialID": "credential1",
+    "credentialID": "1",
     "patterns": [
       {
         "issuer": "*",
@@ -323,7 +389,7 @@ use of this could look like this:
 ```json
 [
   {
-    "credentialId": "one",
+    "credentialId": "1",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -383,6 +449,138 @@ logical operators that can combine multiple constraints:
 - _and_ Takes two constraint objects `a` and `b`.
 - _or_ Takes two constraint objects `a` and `b`.
 - _not_ Takes one constraint object `a`
+
+### Multiple Policy Objects
+
+The bridge also supports multiple policy objects in a policy file. This allows
+for more complex scenarios where multiple credentials are needed to perform
+authorization. An example of such a policy file is:
+
+```json
+[
+  {
+    "credentialId": "1",
+    "type": "EmailPass",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "type": "VerifiableId",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.id"
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+<!-- prettier-ignore -->
+> [!IMPORTANT] 
+> Each `credentialId` should be unique across all policy objects,
+> and should have integer string values starting from 1, incrementing by 1 for each subsequent policy object. This helps us determine
+> the correct policy object to apply to the VCs.
+
+<!-- prettier-ignore -->
+> [!IMPORTANT] 
+> Altough the `type` field is an optional parameter, it needs to be
+> present in a policy file that has multiple policy objects. This is crucial for the accurate application of policies.
+
+<!-- prettier-ignore -->
+> [!NOTE] 
+> First we reorder the policy objects in a policy file based on the `credentialId` and
+> then we reorder the credentials in the VP based on the `type` field from the reordered policy file.
+> This ensures that each credential is matched with the correct policy object.
+
+The `type` field helps to determine which policy object should be applied to
+which type of credential. When multiple policy objects are used, this field
+becomes important because the order of VCs in the VP is not guaranteed.
+
+Users might submit VCs in a random order, so the type field ensures that each
+credential is matched with the correct policy regardless of the submission
+order.
+
+In the code snippet above
+
+- The first policy object is applied to the VC with type `EmailPass`.
+- The second policy object is applied to the VC with type `VerifiableId`.
+
+If the type fields are the same for multiple policy objects, the bridge will
+apply the policy objects to the VCs in the order they are defined in the policy
+file.
+
+### Multiple Constraints
+
+For each policy object, you can define constraints as defined in
+[Constraints](#constraints). An example of such a policy file is:
+
+```json
+[
+  {
+    "credentialId": "1",
+    "type": "EmailPass",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ],
+        "constraint": {
+          "op": "equalsDID",
+          "a": "$VP.proof.verificationMethod",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "type": "VerifiableId",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.id"
+          }
+        ],
+        "constraint": {
+          "op": "equals",
+          "a": "$2.credentialSubject.id",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  }
+]
+```
+
+You can cross reference different VCs using the constraints. As in the example
+below, the first VC's `credentialSubject.id` is compared with the second VC's
+`credentialSubject.id` in the second policy object.
+
+<!-- prettier-ignore -->
+> [!IMPORTANT] 
+> You need to correctly define the JSONPaths of the constraint
+> operands to be able to perform constraints check. The JSONPaths should have a
+> structure like `$<credentialId>.<claimPath>` when having multiple policy
+> objects.
 
 ## Token Introspection
 
