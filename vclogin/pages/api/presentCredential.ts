@@ -85,7 +85,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
       }
 
       // Get the user claims
-      const userClaims = extractClaims(presentation);
+      const userClaims = await extractClaims(presentation);
       const subject = presentation["holder"];
       const login_id = presentation["proof"]["challenge"];
       const challenge = (await redisGet("" + login_id))!;
