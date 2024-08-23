@@ -6,11 +6,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { logger } from "@/config/logger";
 import { redisGet } from "@/config/redis";
+import { withLogging } from "@/middleware/logging";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<any>,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   //read uuid from query params
   const uuid = req.query["uuid"];
   logger.debug("uuid: ", uuid);
@@ -29,3 +27,5 @@ export default async function handler(
     res.status(200).json({ auth_res: "error_not_found" });
   }
 }
+
+export default withLogging(handler);

@@ -6,11 +6,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import crypto from "crypto";
 import { redisSet } from "@/config/redis";
+import { withLogging } from "@/middleware/logging";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<any>,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   //Get Policy from request body
   const { policy, inputDescriptor } = req.body;
 
@@ -29,3 +27,5 @@ export default async function handler(
     return res.status(500).json({ redirect: "/error" });
   }
 }
+
+export default withLogging(handler);

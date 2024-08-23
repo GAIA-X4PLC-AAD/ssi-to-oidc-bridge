@@ -6,11 +6,9 @@
 import { getMetadata } from "@/lib/getMetadata";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { logger } from "@/config/logger";
+import { withLogging } from "@/middleware/logging";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<any>,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
@@ -29,3 +27,4 @@ export default async function handler(
 }
 
 export const config = { api: { bodyParser: false } };
+export default withLogging(handler);

@@ -11,6 +11,7 @@ import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { getToken } from "@/lib/getToken";
 import { logger } from "@/config/logger";
 import { redisSet, redisGet } from "@/config/redis";
+import { withLogging } from "@/middleware/logging";
 
 const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   logger.debug("LOGIN API GET BY ID");
@@ -115,7 +116,7 @@ const handlers: any = {
   GET: getHandler,
 };
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<any>, //todo look for separate handles
 ) {
@@ -129,3 +130,5 @@ export default async function handler(
     res.status(500).end();
   }
 }
+
+export default withLogging(handler);

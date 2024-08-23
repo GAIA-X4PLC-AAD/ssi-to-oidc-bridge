@@ -3,12 +3,10 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { withLogging } from "@/middleware/logging";
 import { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<any>,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   const { userId, uuid } = req.body;
 
   //Generate QR Code String from UUID
@@ -24,3 +22,5 @@ export default async function handler(
 
   return res.status(200).json({ qrCodeString });
 }
+
+export default withLogging(handler);
