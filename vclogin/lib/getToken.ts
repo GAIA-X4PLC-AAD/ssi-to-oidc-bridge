@@ -1,3 +1,8 @@
+/**
+ * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
+ * SPDX-License-Identifier: MIT
+ */
+
 import { PresentationDefinition } from "@/types/PresentationDefinition";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
 import * as jose from "jose";
