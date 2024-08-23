@@ -1,3 +1,8 @@
+/**
+ * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
+ * SPDX-License-Identifier: MIT
+ */
+
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 

@@ -1,3 +1,8 @@
+/**
+ * Copyright 2024 Software Engineering for Business Information Systems (sebis) <matthes@tum.de> .
+ * SPDX-License-Identifier: MIT
+ */
+
 import { NextApiRequest, NextApiResponse } from "next";
 import { generatePresentationDefinition } from "@/lib/generatePresentationDefinition";
 import { LoginPolicy } from "@/types/LoginPolicy";

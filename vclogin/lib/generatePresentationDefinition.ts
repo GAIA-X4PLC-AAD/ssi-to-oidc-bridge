@@ -46,7 +46,7 @@ export const generatePresentationDefinition = (
       },
     },
     id: crypto.randomUUID(),
-    name: "VC Login Service",
+    name: "SSI-to-OIDC Bridge",
     purpose: "Sign-in",
     input_descriptors: [] as InputDescriptor[],
   };
@@ -66,6 +66,7 @@ export const generatePresentationDefinition = (
   for (let expectation of policy) {
     if (expectation.patterns.length > 1) {
       let req = {
+        name: "Group " + expectation.credentialId,
         rule: "pick",
         count: 1,
         from: "group_" + expectation.credentialId,
