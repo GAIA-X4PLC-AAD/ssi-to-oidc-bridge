@@ -30,7 +30,7 @@ Credentials from a mobile wallet. But building that takes considerable time and
 expertise.
 
 <!-- prettier-ignore -->
-> [!NOTE] 
+> [!NOTE]
 > As a new feature, the bridge now supports incremental authorization.
 > This allows the service provider to request additional Verifiable Credentials
 > from the user via the bridge. Please see the
@@ -196,7 +196,7 @@ dynamic API endpoints. The API is documented using Swagger, which provides a
 user-friendly interface to explore and test the API.
 
 <!-- prettier-ignore -->
-> [!NOTE] 
+> [!NOTE]
 > To access the Swagger documentation, you need to run the bridge in development mode and
 > navigate to `http://localhost:5002/api-docs`.
 
@@ -204,7 +204,7 @@ To authenticate requests to the dynamic API in Swagger, you need to provide a
 valid API key. The API key is stored in the `.env` file in the `vclogin` folder.
 
 <!-- prettier-ignore -->
-> [!NOTE] 
+> [!NOTE]
 > To authenticate requests to the dynamic API in Swagger, first click on
 > the "Authorize" button in the top right corner of the Swagger UI. Then, enter
 > the API key in the "Value" field with the format `API_KEY <api_key>`and click
@@ -327,7 +327,7 @@ refer to the end of the previous section.
 
 ## Running Tests
 
-This repository includes unit tests with `jest` and end-to-end tests with
+This repository includes unit tests with `vitest` and end-to-end tests with
 `playwright`. You may run them as follows:
 
 ```bash
@@ -490,18 +490,18 @@ authorization. An example of such a policy file is:
 ```
 
 <!-- prettier-ignore -->
-> [!IMPORTANT] 
+> [!IMPORTANT]
 > Each `credentialId` should be unique across all policy objects,
 > and should have integer string values starting from 1, incrementing by 1 for each subsequent policy object. This helps us determine
 > the correct policy object to apply to the VCs.
 
 <!-- prettier-ignore -->
-> [!IMPORTANT] 
+> [!IMPORTANT]
 > Altough the `type` field is an optional parameter, it needs to be
 > present in a policy file that has multiple policy objects. This is crucial for the accurate application of policies.
 
 <!-- prettier-ignore -->
-> [!NOTE] 
+> [!NOTE]
 > First we reorder the policy objects in a policy file based on the `credentialId` and
 > then we reorder the credentials in the VP based on the `type` field from the reordered policy file.
 > This ensures that each credential is matched with the correct policy object.
@@ -576,7 +576,7 @@ below, the first VC's `credentialSubject.id` is compared with the second VC's
 `credentialSubject.id` in the second policy object.
 
 <!-- prettier-ignore -->
-> [!IMPORTANT] 
+> [!IMPORTANT]
 > You need to correctly define the JSONPaths of the constraint
 > operands to be able to perform constraints check. The JSONPaths should have a
 > structure like `$<credentialId>.<claimPath>` when having multiple policy

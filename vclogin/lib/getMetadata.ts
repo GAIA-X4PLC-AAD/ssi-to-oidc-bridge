@@ -43,7 +43,7 @@ export const getMetadata = (redirect_uris: string[]) => {
     ],
     subject_trust_frameworks_supported: ["ebsi"],
     id_token_types_supported: ["subject_signed_id_token"],
-    client_name: "VP Login Service",
+    client_name: "SSI-to-OIDC Bridge",
     request_uri_parameter_supported: true,
     request_parameter_supported: false,
     redirect_uris,
