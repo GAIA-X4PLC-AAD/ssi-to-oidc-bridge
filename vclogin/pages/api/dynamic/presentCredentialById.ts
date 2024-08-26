@@ -14,8 +14,6 @@ import { redisSet, redisGet } from "@/config/redis";
 import { withLogging } from "@/middleware/logging";
 
 const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  logger.debug("LOGIN API GET BY ID");
-
   // Get login_id from query
   const uuid = req.query["login_id"];
 
@@ -24,7 +22,10 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   // fetch inputDescriptor from redis using uuid
   const inputDescriptor = await redisGet(uuid + "_inputDescriptor");
-  logger.debug("inputDescriptor: ", JSON.parse(inputDescriptor!));
+  logger.debug(
+    JSON.parse(inputDescriptor!),
+    "Input descriptor used by dynamic endpoint",
+  );
 
   //if policy is found
   if (policy) {
@@ -60,11 +61,9 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  logger.debug("LOGIN API POST BY ID");
-
   // Parse the JSON string into a JavaScript object
   const presentation = JSON.parse(req.body.vp_token);
-  logger.debug("Presentation: \n", req.body.vp_token);
+  logger.debug(req.body.vp_token, "Verifiable Presentation was sent");
 
   const uuid = presentation["proof"]["challenge"];
   const policy = await redisGet(uuid + "_policy");
@@ -77,14 +76,16 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Verify the presentation and the status of the credential
     if (await verifyAuthenticationPresentation(presentation)) {
-      logger.debug("Presentation valid");
       // Evaluate if the VP should be trusted
       if (await isTrustedPresentation(presentation, policyObject)) {
-        logger.debug("Presentation verified");
+        logger.debug("Verifiable Presentation verified");
 
         // Get the user claims when the presentation is trusted
         const userClaims = await extractClaims(presentation, policyObject);
-        logger.debug(userClaims);
+        logger.debug(
+          userClaims,
+          "Claims extracted from Verifiable Presentation",
+        );
 
         // Store the authentication result in Redis
         redisSet(uuid + "_auth-res", "success", MAX_AGE);
@@ -92,7 +93,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
         // Store the user claims in Redis
         redisSet(uuid + "_claims", JSON.stringify(userClaims.tokenId), MAX_AGE);
       } else {
-        logger.debug("Presentation not trusted");
+        logger.debug("Verifiable Presentation not trusted");
 
         redisSet("auth_res:" + uuid, "error_presentation_not_trused", MAX_AGE);
         // Wallet gets an error message
@@ -100,7 +101,7 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
         return;
       }
     } else {
-      logger.debug("Presentation invalid");
+      logger.debug("Verifiable Presentation invalid");
       redisSet("auth_res:" + uuid, "error_invalid_presentation", MAX_AGE);
       res.status(500).end();
       return;

@@ -19,7 +19,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { method } = req;
     if (method === "GET") {
-      logger.error("FIRST GET");
       const presentation_definition = generatePresentationDefinition(
         await getConfiguredLoginPolicy()!,
       );
@@ -79,7 +78,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
           return;
         }
       } else {
-        logger.debug("Verifiable Presentation not valid");
+        logger.debug("Verifiable Presentation invalid");
         res.status(500).end();
         return;
       }

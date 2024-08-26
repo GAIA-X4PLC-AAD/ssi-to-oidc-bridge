@@ -4,14 +4,12 @@
  */
 
 import { NextApiRequest, NextApiResponse } from "next";
-import { logger } from "@/config/logger";
 import { redisGet } from "@/config/redis";
 import { withLogging } from "@/middleware/logging";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   //read uuid from query params
   const uuid = req.query["uuid"];
-  logger.debug("uuid: ", uuid);
 
   // Read auth_res from redis and check if it matches the uuid
 
