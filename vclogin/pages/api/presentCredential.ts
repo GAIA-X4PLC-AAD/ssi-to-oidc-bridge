@@ -47,7 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
         .setProtectedHeader({
           alg: "EdDSA",
           kid: verificationMethod,
-          typ: "JWT",
+          typ: "oauth-authz-req+jwt",
         })
         .setIssuedAt()
         .setIssuer(did)
@@ -58,10 +58,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
           logger.error(err, "Failed signing presentation definition token");
           res.status(500).end();
         });
-      res
-        .status(200)
-        .appendHeader("Content-Type", "application/oauth-authz-req+jwt")
-        .send(token);
+      res.status(200);
+      res.send(token);
     } else if (method === "POST") {
       // Parse the JSON string into a JavaScript object
       const presentation = JSON.parse(req.body.vp_token);

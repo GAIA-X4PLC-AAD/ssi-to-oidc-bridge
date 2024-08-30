@@ -45,7 +45,7 @@
     "@types/swagger-ui-react": "^4.18.3",
     "@types/ua-parser-js": "^0.7.39",
     "@types/uuid": "^9.0.1",
-    "@vitest/coverage-v8": "^1.6.0",
+    "@vitest/coverage-v8": "^2.0.5",
     "@wasm-tool/wasm-pack-plugin": "^1.7.0",
     "autoprefixer": "10.4.14",
     "eslint": "8.38.0",
@@ -60,7 +60,7 @@
     "typescript": "5.0.4",
     "vite": "^5.3.1",
     "vite-tsconfig-paths": "^4.3.2",
-    "vitest": "^1.6.0",
+    "vitest": "^2.0.5",
     "whatwg-fetch": "^3.6.19"
   },
   "browser": {
