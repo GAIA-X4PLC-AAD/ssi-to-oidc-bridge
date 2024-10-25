@@ -42,6 +42,11 @@ export const isLoginPolicy = (value: any): value is LoginPolicy => {
       return false;
     }
 
+    // check for conformity of credential id value
+    if (/\W/g.test(cred.credentialId)) {
+      return false;
+    }
+
     for (let pattern of cred.patterns) {
       if (
         !pattern.issuer ||
@@ -61,6 +66,12 @@ export const isLoginPolicy = (value: any): value is LoginPolicy => {
         return false;
       }
     }
+  }
+
+  // check that ids are unique
+  let ids = value.map((cred) => cred.credentialId);
+  if (new Set(ids).size !== ids.length) {
+    return false;
   }
 
   return true;

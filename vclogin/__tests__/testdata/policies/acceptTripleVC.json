@@ -1,7 +1,6 @@
 [
   {
     "credentialId": "3",
-    "type": "EmployeeCredential",
     "patterns": [
       {
         "issuer": "did:tz:tz1NyjrTUNxDpPaqNZ84ipGELAcTWYg6s5Du",
@@ -20,7 +19,6 @@
   },
   {
     "credentialId": "2",
-    "type": "EmailPass",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -39,7 +37,6 @@
   },
   {
     "credentialId": "1",
-    "type": "VerifiableId",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",

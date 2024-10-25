@@ -1,7 +1,6 @@
 [
   {
     "credentialId": "1",
-    "type": "EmailPass",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -20,7 +19,6 @@
   },
   {
     "credentialId": "2",
-    "type": "VerifiableId",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -34,7 +32,7 @@
           "a": {
             "op": "equalsDID",
             "a": "$VP.proof.verificationMethod",
-            "b": "$1.credentialSubject.id"
+            "b": "$2.credentialSubject.id"
           },
           "b": {
             "op": "and",

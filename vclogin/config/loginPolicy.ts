@@ -5,20 +5,39 @@
 
 import { promises as fs } from "fs";
 import { logger } from "./logger";
+import { isLoginPolicy } from "@/lib/isLoginPolicy";
 import { LoginPolicy } from "@/types/LoginPolicy";
 
 var configuredPolicy: LoginPolicy | undefined = undefined;
-if (process.env.LOGIN_POLICY) {
-  try {
-    fs.readFile(process.env.LOGIN_POLICY as string, "utf8").then((file) => {
-      configuredPolicy = JSON.parse(file);
-    });
-  } catch (error) {
-    logger.error("Failed to read login policy:", error);
+
+export const reloadConfiguredLoginPolicy = () => {
+  if (process.env.LOGIN_POLICY) {
+    try {
+      fs.readFile(process.env.LOGIN_POLICY as string, "utf8").then((file) => {
+        configuredPolicy = JSON.parse(file);
+      });
+    } catch (error) {
+      configuredPolicy = undefined;
+      logger.error("Failed to read login policy:", error);
+    }
+  } else {
+    configuredPolicy = undefined;
+    logger.error("No login policy set");
+    if (process.env.NODE_ENV !== "test") {
+      throw Error("No login policy set");
+    }
   }
-} else if (process.env.NODE_ENV !== "test") {
-  logger.error("No login policy set");
-}
+
+  if (!isLoginPolicy(configuredPolicy)) {
+    configuredPolicy = undefined;
+    logger.error("Configured login policy has syntax error");
+    if (process.env.NODE_ENV !== "test") {
+      throw Error("Configured login policy has syntax error");
+    }
+  }
+};
+
+reloadConfiguredLoginPolicy();
 
 export const getConfiguredLoginPolicy = () => {
   return configuredPolicy;

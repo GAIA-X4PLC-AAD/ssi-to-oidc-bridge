@@ -1,6 +1,6 @@
 [
   {
-    "credentialId": "some random string",
+    "credentialId": "some random string with spaces!",
     "patterns": [
       {
         "issuer": "*",

@@ -18,10 +18,11 @@ import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyo
 import policyMultiEmailFromAltmeConstr from "@/testdata/policies/acceptMultiEmailFromAltmeConstr.json";
 import policyMultiVCromAltmeConstr from "@/testdata/policies/acceptMultiVCFromAltmeConstr.json";
 import policyAcceptMultiVCMisconfigured from "@/testdata/policies/acceptMultiVCFromAltmeMisconfigured.json";
+import { LoginPolicy } from "@/types/LoginPolicy";
 
 describe("extractClaims", () => {
   it("all subject claims from an EmployeeCredential are extracted", async () => {
-    var claims = await extractClaims(vpEmployee, policyAcceptAnything);
+    var claims = extractClaims(vpEmployee, policyAcceptAnything);
     var expected = {
       tokenAccess: {},
       tokenId: {
@@ -46,7 +47,7 @@ describe("extractClaims", () => {
   });
 
   it("all designated claims from an EmailPass Credential are mapped", async () => {
-    var claims = await extractClaims(vpEmail, policyEmailFromAltme);
+    var claims = extractClaims(vpEmail, policyEmailFromAltme);
     var expected = {
       tokenId: {
         email: "felix.hoops@tum.de",
@@ -57,7 +58,7 @@ describe("extractClaims", () => {
   });
 
   it("all designated claims from an EmailPass Credential are mapped (constrained)", async () => {
-    var claims = await extractClaims(vpEmail, policyEmailFromAltmeConstr);
+    var claims = extractClaims(vpEmail, policyEmailFromAltmeConstr);
     var expected = {
       tokenId: {
         email: "felix.hoops@tum.de",
@@ -68,7 +69,7 @@ describe("extractClaims", () => {
   });
 
   it("all designated claims from an EmployeeCredential are extracted", async () => {
-    var claims = await extractClaims(vpEmployee, policyEmployeeFromAnyone);
+    var claims = extractClaims(vpEmployee, policyEmployeeFromAnyone);
     var expected = {
       tokenAccess: {},
       tokenId: {
@@ -81,14 +82,11 @@ describe("extractClaims", () => {
   });
 
   it("all designated claims from a multi VC (EmailPass) are extracted", async () => {
-    var claims = await extractClaims(
-      vpMultiEmail,
-      policyMultiEmailFromAltmeConstr,
-    );
+    var claims = extractClaims(vpMultiEmail, policyMultiEmailFromAltmeConstr);
     var expected = {
       tokenAccess: {},
       tokenId: {
-        email: "first.vc@gmail.com",
+        email: "second.vc@gmail.com",
         type: "EmailPass",
       },
     };
@@ -96,7 +94,7 @@ describe("extractClaims", () => {
   });
 
   it("all designated claims from a multi VC (EmailPass and VerifiableId) are extracted", async () => {
-    var claims = await extractClaims(vpMultiVC, policyMultiVCromAltmeConstr);
+    var claims = extractClaims(vpMultiVC, policyMultiVCromAltmeConstr);
     var expected = {
       tokenAccess: {},
       tokenId: {
@@ -107,32 +105,20 @@ describe("extractClaims", () => {
     expect(claims).toStrictEqual(expected);
   });
 
-  it("all designated claims from a multi VC (EmailPass and VerifiableId) with misconfigured policy", async () => {
-    var claims = await extractClaims(
-      vpMultiVC,
-      policyAcceptMultiVCMisconfigured,
-    );
-    var expected = {
-      tokenAccess: {},
-      tokenId: {},
-    };
-    expect(claims).toStrictEqual(expected);
+  it("fails for claims from a multi VC (EmailPass and VerifiableId) with misconfigured policy", async () => {
+    expect(() =>
+      extractClaims(vpMultiVC, policyAcceptMultiVCMisconfigured as LoginPolicy),
+    ).toThrowError(/syntax error/);
   });
 
-  it("all designated claims from a EmailPass with misconfigured policy", async () => {
-    var claims = await extractClaims(
-      vpEmail,
-      policyAcceptAnythingMisconfigured,
-    );
-    var expected = {
-      tokenAccess: {},
-      tokenId: {},
-    };
-    expect(claims).toStrictEqual(expected);
+  it("fails claims from a EmailPass with misconfigured policy", async () => {
+    expect(() =>
+      extractClaims(vpEmail, policyAcceptAnythingMisconfigured),
+    ).toThrowError(/syntax error/);
   });
 
   it("all designated claims from a multi VC (EmailPass and VerifiableId)", async () => {
-    var claims = await extractClaims(vpMultiVC, policyAcceptAnythingMultiVC);
+    var claims = extractClaims(vpMultiVC, policyAcceptAnythingMultiVC);
     var expected = {
       tokenAccess: {},
       tokenId: {
