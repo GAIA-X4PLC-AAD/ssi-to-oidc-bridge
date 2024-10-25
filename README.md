@@ -29,13 +29,9 @@ You operate a service and want to allow your users to sign in using Verifiable
 Credentials from a mobile wallet. But building that takes considerable time and
 expertise.
 
-<!-- prettier-ignore -->
-> [!NOTE]
-> As a new feature, the bridge now supports incremental authorization.
-> This allows the service provider to request additional Verifiable Credentials
-> from the user via the bridge. Please see the
-> [Incremental Authorization Flow](#incremental-authorization-flow) section for
-> more details.
+Additionally, you may need an easy solution to dynamically request additional
+Verifiable Credentials from a user during a session (i.e., "incremental
+authorization"). That would once again require a completely custom solution.
 
 ### The Solution
 
@@ -46,7 +42,7 @@ Verifiable Credentials. When setting up the bridge software, you can configure
 what Verifiable Credentials are accepted and how the data within is put into
 `id_token` or `access_token`.
 
-As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable
+As a contribution to Gaia-X infrastructure, the main goal here is to enable
 users to use their Gaia-X Participant Credentials to access systems while making
 integration simpler through the use of established SSO protocols. The bridge can
 also be configured to use other Verifiable Credentials.
@@ -157,8 +153,17 @@ sequenceDiagram
 
 ## Incremental Authorization Flow
 
-The user assumed to be logged in via the bridge and the service provider
-requests additional VC from user to perform incremental authorization.
+Independent of an OIDC session, a service provider can request additional VCs
+from a user. For example, this can be used to incrementally authorize a user to
+interact with more parts of a service. An example is that users of a mobility
+platform could, at any point in time, unlock the car sharing aspect by
+presenting an additional driver's license VC.
+
+From a technical perspective, the service provider backend initiates the request
+by sending a login policy to a specific endpoint to create a temporary new
+authorization endpoint within the bridge. This has the advantage of reusing the
+bridge's existing verification and powerful policy system. A high-level flow
+looks like this:
 
 ```mermaid
 sequenceDiagram
@@ -168,25 +173,25 @@ sequenceDiagram
     participant B as SSI-to-OIDC Bridge
     participant SP as Service Provider
 
-    SP ->> B: "POST /api/dynamic/createTempAuthorization"
-    B-->>SP: "Return UUID"
+    SP ->> B: POST /api/dynamic/createTempAuthorization
+    B-->>SP: Return UUID
 
-    SP->>B: "GET /api/dynamic/getQRCodeString"
-    B-->>SP: "Return QR code string"
+    SP->>B: GET /api/dynamic/getQRCodeString
+    B-->>SP: Return QR code string
 
-    SP->>User: "Send Auth. page containing QR code"
+    SP->>User: Send Auth. page containing QR code
 
-    SP->>B: "GET /api/dynamic/getAuthResponse"
-    User->>Wallet: "Scan QR code"
-    Wallet->>B: "GET /api/dynamic/presentCredentialById"
-    B-->>Wallet: "Return metadata"
-    Wallet-->>User: "Prompt user"
+    SP->>B: GET /api/dynamic/getAuthResponse
+    User->>Wallet: Scan QR code
+    Wallet->>B: GET /api/dynamic/presentCredentialById
+    B-->>Wallet: Return metadata
+    Wallet-->>User: Prompt user
 
-    User ->>Wallet: "Select VC(s)"
-    Wallet->>B: "POST /api/dynamic/presentCredentialById"
-    B-->>Wallet: "Success"
+    User ->>Wallet: Select VC(s)
+    Wallet->>B: POST /api/dynamic/presentCredentialById
+    B-->>Wallet: Success
 
-    B-->>SP: "Return Auth Response"
+    B-->>SP: Return Auth Response
 ```
 
 ### API Documentation
@@ -450,16 +455,16 @@ logical operators that can combine multiple constraints:
 - _or_ Takes two constraint objects `a` and `b`.
 - _not_ Takes one constraint object `a`
 
-### Multiple Policy Objects
+### Multiple Expected Credentials
 
-The bridge also supports multiple policy objects in a policy file. This allows
+The bridge supports multiple expected credentials in a policy file. This allows
 for more complex scenarios where multiple credentials are needed to perform
 authorization. An example of such a policy file is:
 
 ```json
 [
   {
-    "credentialId": "1",
+    "credentialId": "cred_email",
     "type": "EmailPass",
     "patterns": [
       {
@@ -473,7 +478,7 @@ authorization. An example of such a policy file is:
     ]
   },
   {
-    "credentialId": "2",
+    "credentialId": "cred_id",
     "type": "VerifiableId",
     "patterns": [
       {
@@ -491,42 +496,21 @@ authorization. An example of such a policy file is:
 
 <!-- prettier-ignore -->
 > [!IMPORTANT]
-> Each `credentialId` should be unique across all policy objects,
-> and should have integer string values starting from 1, incrementing by 1 for each subsequent policy object. This helps us determine
-> the correct policy object to apply to the VCs.
-
-<!-- prettier-ignore -->
-> [!IMPORTANT]
-> Altough the `type` field is an optional parameter, it needs to be
-> present in a policy file that has multiple policy objects. This is crucial for the accurate application of policies.
+> Each `credentialId` should be unique across all expected credentials in a policy,
+> and should only consist of alphanumeric characters and underscores. Similarly,
+> claim values should never be given colliding `newPath` values to avoid overwriting
+> token data.
 
 <!-- prettier-ignore -->
 > [!NOTE]
-> First we reorder the policy objects in a policy file based on the `credentialId` and
-> then we reorder the credentials in the VP based on the `type` field from the reordered policy file.
-> This ensures that each credential is matched with the correct policy object.
+> The expected credentials are matched to the submitted VCs solely on the basis of
+> required fields and constraints. If very similar VCs are required by a policy,
+> it should have constraints that make the matching unambiguous. Otherwise,
+> extracted claims may be switched up.
 
-The `type` field helps to determine which policy object should be applied to
-which type of credential. When multiple policy objects are used, this field
-becomes important because the order of VCs in the VP is not guaranteed.
-
-Users might submit VCs in a random order, so the type field ensures that each
-credential is matched with the correct policy regardless of the submission
-order.
-
-In the code snippet above
-
-- The first policy object is applied to the VC with type `EmailPass`.
-- The second policy object is applied to the VC with type `VerifiableId`.
-
-If the type fields are the same for multiple policy objects, the bridge will
-apply the policy objects to the VCs in the order they are defined in the policy
-file.
-
-### Multiple Constraints
-
-For each policy object, you can define constraints as defined in
-[Constraints](#constraints). An example of such a policy file is:
+When having multiple expected credentials, it is possible to define constraints
+for each as defined in [Constraints](#constraints). This is especially powerful
+since it is possible to refer to other expected credentials:
 
 ```json
 [
@@ -571,20 +555,9 @@ For each policy object, you can define constraints as defined in
 ]
 ```
 
-You can cross reference different VCs using the constraints. As in the example
-below, the first VC's `credentialSubject.id` is compared with the second VC's
-`credentialSubject.id` in the second policy object.
-
-<!-- prettier-ignore -->
-> [!IMPORTANT]
-> You need to correctly define the JSONPaths of the constraint
-> operands to be able to perform constraints check. The JSONPaths should have a
-> structure like `$<credentialId>.<claimPath>` when having multiple policy
-> objects.
-
 ## Token Introspection
 
-Look into the access token like this:
+Look into the Ory Hydra access token like this:
 
 ```bash
 $ docker run --rm -it \
@@ -618,6 +591,5 @@ service in `compose.yaml`:
 
 - [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html)
 - [OpenID for Verifiable Presentations](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID2.html)
-- [Self-Issued OpenID Provider v2](https://openid.net/specs/openid-connect-self-issued-v2-1_0.html)
 - [Verifiable Credentials Data Model v1.1](https://www.w3.org/TR/vc-data-model/)
 - [DIF Presentation Definition](https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-definition)
