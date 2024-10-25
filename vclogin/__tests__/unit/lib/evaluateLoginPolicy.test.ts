@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { isTrustedPresentation } from "@/lib/extractClaims";
 import vpEmployee from "@/testdata/presentations/VP_EmployeeCredential.json";
 import vpMultiEmail from "@/testdata/presentations/VP_MultiEmailPass.json";
@@ -26,7 +26,9 @@ import policyTripleVCSimpleConstr from "@/testdata/policies/acceptTripleVC.json"
 
 describe("evaluateLoginPolicy", () => {
   it("defaults to false if no policy is available", async () => {
+    vi.stubEnv("LOGIN_POLICY", "");
     var trusted = await isTrustedPresentation(vpEmployee, undefined);
+    vi.unstubAllEnvs();
     expect(trusted).toBe(false);
   });
 
