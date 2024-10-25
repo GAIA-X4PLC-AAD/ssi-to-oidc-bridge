@@ -15,6 +15,7 @@ export type ClaimEntry = {
   token?: string;
   required?: boolean;
 };
+
 export type CredentialPattern = {
   issuer: string;
   claims: ClaimEntry[];
@@ -23,7 +24,6 @@ export type CredentialPattern = {
 
 export type ExpectedCredential = {
   credentialId: string;
-  type?: string;
   patterns: CredentialPattern[];
 };
 
