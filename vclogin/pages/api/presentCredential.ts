@@ -20,7 +20,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
     const { method } = req;
     if (method === "GET") {
       const presentation_definition = generatePresentationDefinition(
-        await getConfiguredLoginPolicy()!,
+        getConfiguredLoginPolicy()!,
       );
       const did = keyToDID("key", process.env.DID_KEY_JWK!);
       const verificationMethod = await keyToVerificationMethod(
@@ -68,7 +68,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {
         // Evaluate if the VP should be trusted
-        if (await isTrustedPresentation(presentation)) {
+        if (isTrustedPresentation(presentation)) {
           logger.debug("Verifiable Presentation verified");
         } else {
           logger.debug("Verifiable Presentation not trusted");
@@ -82,7 +82,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
       }
 
       // Get the user claims
-      const userClaims = await extractClaims(presentation);
+      const userClaims = extractClaims(presentation);
       const subject = presentation["holder"];
       const login_id = presentation["proof"]["challenge"];
       const challenge = (await redisGet("" + login_id))!;

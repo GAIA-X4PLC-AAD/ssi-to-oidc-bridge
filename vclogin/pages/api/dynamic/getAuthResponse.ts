@@ -9,7 +9,7 @@ import { withLogging } from "@/middleware/logging";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   //read uuid from query params
-  const uuid = req.query["uuid"];
+  const uuid = req.query["auth_id"];
 
   // Read auth_res from redis and check if it matches the uuid
 

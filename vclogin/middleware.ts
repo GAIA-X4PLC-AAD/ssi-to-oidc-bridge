@@ -9,9 +9,12 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   // enforce authorization for sensitive endpoints needed for dynamic authorization
   if (req.nextUrl.pathname.startsWith("/api/dynamic")) {
+    if (!process.env.INCR_AUTH_API_SECRET) {
+      return new Response("Internal Server Error", { status: 500 });
+    }
     const authHeader = req.headers.get("Authorization");
     const apiKey = authHeader?.split(" ")[1];
-    if (apiKey !== process.env.API_KEY) {
+    if (!authHeader || apiKey !== process.env.INCR_AUTH_API_SECRET) {
       return new Response("Unauthorized", { status: 401 });
     }
   }

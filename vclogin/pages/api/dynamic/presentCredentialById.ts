@@ -15,7 +15,7 @@ import { withLogging } from "@/middleware/logging";
 
 const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Get login_id from query
-  const uuid = req.query["login_id"];
+  const uuid = req.query["auth_id"];
 
   // fetch policy from redis using uuid
   const policy = await redisGet(uuid + "_policy");
@@ -38,7 +38,7 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
       inputDescriptor ? JSON.parse(inputDescriptor) : undefined,
     );
 
-    const challenge = req.query["login_id"];
+    const challenge = uuid;
 
     if (challenge) {
       const token = await getToken(
@@ -77,11 +77,11 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     // Verify the presentation and the status of the credential
     if (await verifyAuthenticationPresentation(presentation)) {
       // Evaluate if the VP should be trusted
-      if (await isTrustedPresentation(presentation, policyObject)) {
+      if (isTrustedPresentation(presentation, policyObject)) {
         logger.debug("Verifiable Presentation verified");
 
         // Get the user claims when the presentation is trusted
-        const userClaims = await extractClaims(presentation, policyObject);
+        const userClaims = extractClaims(presentation, policyObject);
         logger.debug(
           userClaims,
           "Claims extracted from Verifiable Presentation",

@@ -7,6 +7,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import crypto from "crypto";
 import { redisSet } from "@/config/redis";
 import { withLogging } from "@/middleware/logging";
+import { keyToDID } from "@spruceid/didkit-wasm-node";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   //Get Policy from request body
@@ -22,7 +23,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
       //store inputDescriptor in redis with uuid as key
       redisSet(uuid + "_inputDescriptor", JSON.stringify(inputDescriptor), 300);
     }
-    return res.status(200).json({ uuid });
+
+    const did = keyToDID("key", process.env.DID_KEY_JWK!);
+    const qrCodeString =
+      "openid-vc://?client_id=" +
+      did +
+      "&request_uri=" +
+      encodeURIComponent(
+        process.env.EXTERNAL_URL +
+          "/api/dynamic/presentCredentialById?login_id=" +
+          uuid,
+      );
+
+    return res.status(200).json({ uuid, qrCodeString });
   } catch (error) {
     return res.status(500).json({ redirect: "/error" });
   }

@@ -174,10 +174,7 @@ sequenceDiagram
     participant SP as Service Provider
 
     SP ->> B: POST /api/dynamic/createTempAuthorization
-    B-->>SP: Return UUID
-
-    SP->>B: GET /api/dynamic/getQRCodeString
-    B-->>SP: Return QR code string
+    B-->>SP: Return UUID, qrCodeString
 
     SP->>User: Send Auth. page containing QR code
 
@@ -197,23 +194,25 @@ sequenceDiagram
 ### API Documentation
 
 This documentation provides all the necessary information to interact with the
-dynamic API endpoints. The API is documented using Swagger, which provides a
-user-friendly interface to explore and test the API.
+dynamic API endpoints used for incremental authorization. The API is documented
+using Swagger, which provides a user-friendly interface to explore and test the
+API.
 
 <!-- prettier-ignore -->
 > [!NOTE]
-> To access the Swagger documentation, you need to run the bridge in development mode and
+> To access the Swagger documentation, run the bridge in development mode and
 > navigate to `http://localhost:5002/api-docs`.
 
-To authenticate requests to the dynamic API in Swagger, you need to provide a
-valid API key. The API key is stored in the `.env` file in the `vclogin` folder.
+To authenticate requests to the dynamic API in Swagger, an API secret must first
+be set in the `.env` file in the `vclogin` folder with the key name
+`INCR_AUTH_API_SECRET`.
 
 <!-- prettier-ignore -->
 > [!NOTE]
 > To authenticate requests to the dynamic API in Swagger, first click on
 > the "Authorize" button in the top right corner of the Swagger UI. Then, enter
-> the API key in the "Value" field with the format `API_KEY <api_key>`and click
-> on the "Authorize" button.
+> the API key in the "Value" field with the format `INCR_AUTH_API_SECRET <api_key>`
+> and click on the "Authorize" button.
 
 ## Running a Local Deployment
 
@@ -243,8 +242,9 @@ proper domain has to be set up.
    `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over
    what wallets are asked for is desired (example for quick testing:
    `./__tests__/testdata/pex/descriptorEmailFromAltme.json`)
-6. to be able to test dynamic endpoint APIs, you need to provide an API key in
-   the `.env` file in the `vclogin` folder with the key `API_KEY`.
+6. OPTIONAL: to be able to use or test incremental authorization, set an API key
+   in the `.env` file in the `vclogin` folder with the key
+   `INCR_AUTH_API_SECRET`.
 7. at this point, it needs to be ensured that the container for the vclogin
    service is freshly built with the new env file:
    `docker compose down && docker compose build`
