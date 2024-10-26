@@ -4,7 +4,6 @@
  */
 
 import { promises as fs } from "fs";
-import { logger } from "./logger";
 import { isLoginPolicy } from "@/lib/isLoginPolicy";
 import { LoginPolicy } from "@/types/LoginPolicy";
 
@@ -15,25 +14,19 @@ export const reloadConfiguredLoginPolicy = () => {
     try {
       fs.readFile(process.env.LOGIN_POLICY as string, "utf8").then((file) => {
         configuredPolicy = JSON.parse(file);
+        if (!isLoginPolicy(configuredPolicy)) {
+          throw Error(
+            "Configured login policy has syntax error: " + configuredPolicy,
+          );
+        }
       });
     } catch (error) {
-      configuredPolicy = undefined;
-      logger.error("Failed to read login policy:", error);
+      throw Error(
+        "Failed loading login policy from file: " + process.env.LOGIN_POLICY,
+      );
     }
   } else {
-    configuredPolicy = undefined;
-    logger.error("No login policy set");
-    if (process.env.NODE_ENV !== "test") {
-      throw Error("No login policy set");
-    }
-  }
-
-  if (!isLoginPolicy(configuredPolicy)) {
-    configuredPolicy = undefined;
-    logger.error("Configured login policy has syntax error");
-    if (process.env.NODE_ENV !== "test") {
-      throw Error("Configured login policy has syntax error");
-    }
+    throw Error("No login policy file path set");
   }
 };
 

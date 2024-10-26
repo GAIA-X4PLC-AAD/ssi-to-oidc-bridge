@@ -26,13 +26,11 @@ import policyMultiVCFromAltmeComplexConstr from "@/testdata/policies/acceptMulti
 import policyTripleVCSimpleConstr from "@/testdata/policies/acceptTripleVC.json";
 
 describe("evaluateLoginPolicy", () => {
-  it("defaults to false if no policy is available", async () => {
+  it("throws error if no policy is available", async () => {
     vi.stubEnv("LOGIN_POLICY", "");
-    reloadConfiguredLoginPolicy();
-    var trusted = isTrustedPresentation(vpEmployee);
+    expect(() => reloadConfiguredLoginPolicy()).toThrowError();
     vi.unstubAllEnvs();
     reloadConfiguredLoginPolicy();
-    expect(trusted).toBe(false);
   });
 
   it("accepts valid VPs with acceptAnything policy", async () => {

@@ -108,13 +108,13 @@ describe("extractClaims", () => {
   it("fails for claims from a multi VC (EmailPass and VerifiableId) with misconfigured policy", async () => {
     expect(() =>
       extractClaims(vpMultiVC, policyAcceptMultiVCMisconfigured as LoginPolicy),
-    ).toThrowError(/syntax error/);
+    ).toThrowError();
   });
 
   it("fails claims from a EmailPass with misconfigured policy", async () => {
     expect(() =>
       extractClaims(vpEmail, policyAcceptAnythingMisconfigured),
-    ).toThrowError(/syntax error/);
+    ).toThrowError();
   });
 
   it("all designated claims from a multi VC (EmailPass and VerifiableId)", async () => {

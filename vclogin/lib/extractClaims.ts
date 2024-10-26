@@ -18,8 +18,7 @@ export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
   if (!policy && configuredPolicy === undefined) return false;
 
   if (policy && !isLoginPolicy(policy)) {
-    logger.error("Configured login policy has syntax error");
-    return false;
+    throw Error("Configured login policy has syntax error");
   }
 
   var usedPolicy = policy ? policy : configuredPolicy!;
@@ -36,7 +35,6 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
   if (!policy && configuredPolicy === undefined) return false;
 
   if (policy && !isLoginPolicy(policy)) {
-    logger.error("Configured login policy has syntax error");
     throw Error("Configured login policy has syntax error");
   }
 
