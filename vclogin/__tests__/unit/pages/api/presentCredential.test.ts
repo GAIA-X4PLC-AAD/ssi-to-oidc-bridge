@@ -3,14 +3,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { RequestMethod, createMocks } from "node-mocks-http";
 import handler from "@/api/presentCredential";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as jose from "jose";
 import { keyToDID, keyToVerificationMethod } from "@spruceid/didkit-wasm-node";
+import { Checked, IPresentationDefinition, PEX } from "@sphereon/pex";
+import { reloadConfiguredLoginPolicy } from "@/config/loginPolicy";
 
-describe("api/test/presentCredential", () => {
+describe("test api/presentCredential", () => {
   const mockRequest = (method: RequestMethod) => {
     const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
       method: method,
@@ -30,7 +32,13 @@ describe("api/test/presentCredential", () => {
     expect(res.statusCode).toBe(200);
   });
 
-  it("returns valid JWT", async () => {
+  it("returns valid JWT on GET", async () => {
+    vi.stubEnv(
+      "LOGIN_POLICY",
+      "./__tests__/testdata/policies/acceptEmailFromAltmeConstr.json",
+    );
+    reloadConfiguredLoginPolicy();
+
     const { req, res } = mockRequest("GET");
 
     await handler(req, res);
@@ -71,6 +79,17 @@ describe("api/test/presentCredential", () => {
       typ: "oauth-authz-req+jwt",
     });
 
-    // check that the payload contains a presentation_definition member
+    // check that the payload contains a valid presentation_definition
+    const def = payload.presentation_definition;
+    const checkArray = PEX.validateDefinition(
+      def as IPresentationDefinition,
+    ) as Array<Checked>;
+    const problemCount = checkArray.filter(
+      (check) => check.status !== "info",
+    ).length;
+    expect(problemCount).toBe(0);
+
+    vi.unstubAllEnvs();
+    reloadConfiguredLoginPolicy();
   });
 });

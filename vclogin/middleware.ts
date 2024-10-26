@@ -13,8 +13,11 @@ export function middleware(req: NextRequest) {
       return new Response("Internal Server Error", { status: 500 });
     }
     const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response("Unauthorized", { status: 401 });
+    }
     const apiKey = authHeader?.split(" ")[1];
-    if (!authHeader || apiKey !== process.env.INCR_AUTH_API_SECRET) {
+    if (apiKey !== process.env.INCR_AUTH_API_SECRET) {
       return new Response("Unauthorized", { status: 401 });
     }
   }

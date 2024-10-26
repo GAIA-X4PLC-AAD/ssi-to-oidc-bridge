@@ -8,7 +8,7 @@ import { createMocks } from "node-mocks-http";
 import handler from "@/api/clientMetadata";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-describe("/api/clientMetadata", () => {
+describe("test /api/clientMetadata", () => {
   const mockRequest = () => {
     const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
       method: "GET",
