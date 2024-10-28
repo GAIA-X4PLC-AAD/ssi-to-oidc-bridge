@@ -40,7 +40,8 @@ OIDC Provider toward the service. That means any service supporting OIDC or
 OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with
 Verifiable Credentials. When setting up the bridge software, you can configure
 what Verifiable Credentials are accepted and how the data within is put into
-`id_token` or `access_token`.
+`id_token` or `access_token`. This bridge works with users entirely on mobile,
+as well as users on desktop with a mobile wallet.
 
 As a contribution to Gaia-X infrastructure, the main goal here is to enable
 users to use their Gaia-X Participant Credentials to access systems while making
@@ -64,7 +65,7 @@ graph LR
     end
     vclogin <-- OID4VP + SIOPv2 via HTTP --> altme[Altme Wallet<br><i>on Smartphone</i>]
     subgraph home[End User Devices]
-    browser[Browser<br><i>on Desktop</i>]
+    browser[Browser<br><i>on Desktop or Smartphone</i>]
     altme
     end
     browser <-- HTTP --> client
@@ -72,9 +73,12 @@ graph LR
     browser <-- HTTP --> vclogin
 ```
 
-_Note: In a deployment, external HTTP interfaces should be using HTTPS instead._
-_Note: While we test with Altme Wallet, any SSI wallet supporting OID4VP +
-SIOPv2 works._
+_\*In a deployment, external HTTP interfaces should be using HTTPS instead._
+
+<!-- prettier-ignore -->
+> [!NOTE]
+> While we test with Altme Wallet, any SSI wallet supporting OID4VP +
+> SIOPv2 works._
 
 ### OIDC Provider: Ory Hydra
 
@@ -93,10 +97,10 @@ the Verifiable Credentials inside, and the extraction and remapping of claims.
 ## Login Flow
 
 The user's browser starts out on the service website, which takes on the role of
-an OIDC client here. The flow is slightly simplified for improved readability.
-For example, the responses for Redis lookups are not shown. Also, redirects are
-shown immediately going to the redirect target. This is an authorization code
-flow:
+an OIDC client here. This browser may run on a desktop or smartphone. The flow
+is slightly simplified for improved readability. For example, the responses for
+Redis lookups are not shown. Also, redirects are shown immediately going to the
+redirect target. This is an authorization code flow:
 
 ```mermaid
 sequenceDiagram
