@@ -1,0 +1,15 @@
+[
+  {
+    "credentialId": "some random string with spaces!",
+    "patterns": [
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.id"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -5,16 +5,21 @@
 
 import {
   LoginPolicy,
-  ClaimEntry,
   CredentialPattern,
   VcConstraint,
 } from "@/types/LoginPolicy";
 import jp from "jsonpath";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
+import { isLoginPolicy } from "@/lib/isLoginPolicy";
+import { logger } from "@/config/logger";
 
 export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
   var configuredPolicy = getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
+
+  if (policy && !isLoginPolicy(policy)) {
+    throw Error("Configured login policy has syntax error");
+  }
 
   var usedPolicy = policy ? policy : configuredPolicy!;
 
@@ -29,15 +34,50 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
   var configuredPolicy = getConfiguredLoginPolicy();
   if (!policy && configuredPolicy === undefined) return false;
 
+  if (policy && !isLoginPolicy(policy)) {
+    throw Error("Configured login policy has syntax error");
+  }
+
   var usedPolicy = policy ? policy : configuredPolicy!;
 
   const creds = Array.isArray(VP.verifiableCredential)
     ? VP.verifiableCredential
     : [VP.verifiableCredential];
 
-  const vcClaims = creds.map((vc: any) => extractClaimsFromVC(vc, usedPolicy));
-  const claims = vcClaims.reduce(
-    (acc: any, vc: any) => Object.assign(acc, vc),
+  const fit = getConstraintFit(creds, usedPolicy, VP);
+  const patternFit = getPatternConstraintFit(fit, usedPolicy, VP);
+  const vcClaimsList = [];
+  for (let i = 0; i < fit.length; i++) {
+    const vc = fit[i];
+    const pattern = patternFit[i];
+    const vcClaims = extractClaimsFromVC(vc, pattern);
+    vcClaimsList.push(vcClaims);
+  }
+
+  const deepMerge = (target: any, source: any) => {
+    for (const key in source) {
+      if (
+        source[key] &&
+        typeof source[key] === "object" &&
+        !Array.isArray(source[key])
+      ) {
+        if (!target[key]) {
+          Object.assign(target, {
+            [key]: {},
+          });
+        }
+        deepMerge(target[key], source[key]);
+      } else {
+        Object.assign(target, {
+          [key]: source[key],
+        });
+      }
+    }
+    return target;
+  };
+
+  const claims = vcClaimsList.reduce(
+    (acc: any, vc: any) => deepMerge(acc, vc),
     {},
   );
   return claims;
@@ -48,22 +88,22 @@ const getConstraintFit = (
   policy: LoginPolicy,
   VP: any,
 ): any[] => {
-  const patternFits = getPatternClaimFits(creds, policy);
-  const uniqueFits = getAllUniqueDraws(patternFits);
+  const credentialFits = getCredentialClaimFits(creds, policy);
+  const uniqueFits = getAllUniqueDraws(credentialFits);
   if (uniqueFits.length === 0) {
     return [];
   }
   for (let fit of uniqueFits) {
-    if (isValidConstraintFit(fit, policy, VP)) {
+    if (getPatternConstraintFit(fit, policy, VP).length === fit.length) {
       return fit;
     }
   }
   return [];
 };
 
-const getPatternClaimFits = (creds: any[], policy: LoginPolicy): any[][] => {
+const getCredentialClaimFits = (creds: any[], policy: LoginPolicy): any[][] => {
   // collect all credentials that fit an expected credential claim-wise
-  var patternFits = [];
+  var credentialFits = [];
   for (let expectation of policy) {
     let fittingCreds = [];
     for (let cred of creds) {
@@ -71,10 +111,10 @@ const getPatternClaimFits = (creds: any[], policy: LoginPolicy): any[][] => {
         fittingCreds.push(cred);
       }
     }
-    patternFits.push(fittingCreds);
+    credentialFits.push(fittingCreds);
   }
 
-  return patternFits;
+  return credentialFits;
 };
 
 const isCredentialFittingPatternList = (
@@ -110,41 +150,45 @@ const isCredentialFittingPattern = (
   return true;
 };
 
-const getAllUniqueDraws = (patternFits: any[][]): any[][] => {
-  const draws = getAllUniqueDrawsHelper(patternFits, []);
-  return draws.filter((draw) => draw.length == patternFits.length);
+const getAllUniqueDraws = (credentialFits: any[][]): any[][] => {
+  const draws = getAllUniqueDrawsHelper(credentialFits, []);
+  return draws.filter((draw) => draw.length === credentialFits.length);
 };
 
 const getAllUniqueDrawsHelper = (
-  patternFits: any[][],
+  credentialFits: any[][],
   usedIds: any[],
 ): any[][] => {
-  if (patternFits.length === 0) {
-    return [];
+  if (credentialFits.length === 0) {
+    return [[]];
   }
 
   let uniqueDraws: any[][] = [];
-  for (let cred of patternFits[0]) {
+  for (let cred of credentialFits[0]) {
     if (!usedIds.includes(cred.id)) {
-      uniqueDraws.push([
-        cred,
-        ...getAllUniqueDrawsHelper(patternFits.slice(1), [...usedIds, cred.id]),
+      let furtherDraws = getAllUniqueDrawsHelper(credentialFits.slice(1), [
+        ...usedIds,
+        cred.id,
       ]);
+      for (let draw of furtherDraws) {
+        uniqueDraws.push([cred, ...draw]);
+      }
     }
   }
   return uniqueDraws;
 };
 
-const isValidConstraintFit = (
+const getPatternConstraintFit = (
   credFit: any[],
   policy: LoginPolicy,
   VP: any,
-): boolean => {
+): CredentialPattern[] => {
   const credDict: any = {};
   for (let i = 0; i < policy.length; i++) {
     credDict[policy[i].credentialId] = credFit[i];
   }
 
+  const patternList: CredentialPattern[] = [];
   for (let i = 0; i < policy.length; i++) {
     const cred = credFit[i];
     const expectation = policy[i];
@@ -159,17 +203,22 @@ const isValidConstraintFit = (
             VP,
           );
           if (res) {
+            patternList.push(pattern);
             oneFittingPattern = true;
             break;
           }
+        } else {
+          patternList.push(pattern);
+          oneFittingPattern = true;
+          break;
         }
       }
     }
     if (!oneFittingPattern) {
-      return true;
+      return [];
     }
   }
-  return false;
+  return patternList;
 };
 
 const evaluateConstraint = (
@@ -178,8 +227,8 @@ const evaluateConstraint = (
   credDict: any,
   VP: any,
 ): boolean => {
-  var a = "",
-    b = "";
+  var a = undefined,
+    b = undefined;
   switch (constraint.op) {
     case "equals":
     case "equalsDID":
@@ -188,16 +237,19 @@ const evaluateConstraint = (
     case "matches":
       a = resolveValue(constraint.a as string, cred, credDict, VP);
       b = resolveValue(constraint.b as string, cred, credDict, VP);
+      if (!(a && b)) {
+        return false;
+      }
   }
+
+  a = a as string;
+  b = b as string;
 
   switch (constraint.op) {
     case "equals":
       return a === b;
     case "equalsDID":
-      return (
-        a.split("#").slice(0, -1).join("#") ===
-        b.split("#").slice(0, -1).join("#")
-      );
+      return equalsDID(a, b);
     case "startsWith":
       return a.startsWith(b);
     case "endsWith":
@@ -230,7 +282,7 @@ const resolveValue = (
   cred: any,
   credDict: any,
   VP: any,
-): string => {
+): string | undefined => {
   if (expression.startsWith("$")) {
     var nodes: any;
     if (expression.startsWith("$.")) {
@@ -243,8 +295,10 @@ const resolveValue = (
         expression.slice(1).split(".").slice(1).join("."),
       );
     }
-    if (nodes.length > 1 || nodes.length <= 0) {
+    if (nodes.length > 1) {
       throw Error("JSON Paths in constraints must be single-valued");
+    } else if (nodes.length === 0) {
+      return undefined;
     }
     return nodes[0].value;
   }
@@ -252,66 +306,64 @@ const resolveValue = (
   return expression;
 };
 
-const extractClaimsFromVC = (VC: any, policy: LoginPolicy) => {
-  for (let expectation of policy) {
-    for (let pattern of expectation.patterns) {
-      if (pattern.issuer === VC.issuer || pattern.issuer === "*") {
-        const containsAllRequired =
-          pattern.claims.filter((claim: ClaimEntry) => {
-            const claimPathLength = jp.paths(VC, claim.claimPath).length;
-            return claim.required && claimPathLength === 1;
-          }).length > 0 ||
-          pattern.claims.filter((claim: ClaimEntry) => claim.required)
-            .length === 0;
-
-        if (!containsAllRequired) {
-          continue;
-        }
-
-        const extractedClaims = {
-          tokenId: {},
-          tokenAccess: {},
-        };
-
-        for (let claim of pattern.claims) {
-          const nodes = jp.nodes(VC, claim.claimPath);
-          let newPath = claim.newPath;
-          let value: any;
-
-          if (nodes.length > 1) {
-            if (!newPath) {
-              throw Error(
-                "New path not defined for multi-valued claim: " +
-                  claim.claimPath,
-              );
-            }
-
-            value = nodes
-              .map((node: any) => {
-                const obj: any = {};
-                obj[node.path[node.path.length - 1]] = node.value;
-                return obj;
-              })
-              .reduce((acc: any, vals: any) => Object.assign(acc, vals), {});
-          } else {
-            if (!newPath) {
-              newPath = "$." + nodes[0].path[nodes[0].path.length - 1];
-            }
-
-            value = nodes[0].value;
-          }
-
-          const claimTarget =
-            claim.token === "access_token"
-              ? extractedClaims.tokenAccess
-              : extractedClaims.tokenId;
-          jp.value(claimTarget, newPath, value);
-        }
-
-        return extractedClaims;
-      }
+const equalsDID = (a: string, b: string) => {
+  const whiteList = ["key", "web", "pkh"];
+  if (!whiteList.includes(a.split(":")[1])) {
+    return false;
+  }
+  if (!whiteList.includes(b.split(":")[1])) {
+    return false;
+  }
+  const stripDID = (s: string) => {
+    s = s.split(":").slice(2).join(":");
+    if (s.includes("#")) {
+      return s.split("#")[0];
     }
+    return s;
+  };
+  return stripDID(a) == stripDID(b);
+};
+
+// only extraction, no checks
+const extractClaimsFromVC = (VC: any, pattern: CredentialPattern) => {
+  const extractedClaims = {
+    tokenId: {},
+    tokenAccess: {},
+  };
+
+  for (let claim of pattern.claims) {
+    const nodes = jp.nodes(VC, claim.claimPath);
+    let newPath = claim.newPath;
+    let value: any;
+
+    if (nodes.length > 1) {
+      if (!newPath) {
+        throw Error(
+          "New path not defined for multi-valued claim: " + claim.claimPath,
+        );
+      }
+
+      value = nodes
+        .map((node: any) => {
+          const obj: any = {};
+          obj[node.path[node.path.length - 1]] = node.value;
+          return obj;
+        })
+        .reduce((acc: any, vals: any) => Object.assign(acc, vals), {});
+    } else {
+      if (!newPath) {
+        newPath = "$." + nodes[0].path[nodes[0].path.length - 1];
+      }
+
+      value = nodes[0].value;
+    }
+
+    const claimTarget =
+      claim.token === "access_token"
+        ? extractedClaims.tokenAccess
+        : extractedClaims.tokenId;
+    jp.value(claimTarget, newPath, value);
   }
 
-  return {};
+  return extractedClaims;
 };

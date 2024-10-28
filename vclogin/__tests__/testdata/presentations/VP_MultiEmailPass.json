@@ -1,0 +1,123 @@
+{
+  "@context": ["https://www.w3.org/2018/credentials/v1"],
+  "id": "urn:uuid:2c0b29f7-c530-4405-b509-d34d4a8a4028",
+  "type": ["VerifiablePresentation"],
+  "verifiableCredential": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        {
+          "EmailPass": {
+            "@context": {
+              "@protected": true,
+              "@version": 1.1,
+              "email": "schema:email",
+              "id": "@id",
+              "issuedBy": {
+                "@context": {
+                  "@protected": true,
+                  "@version": 1.1,
+                  "logo": {
+                    "@id": "schema:image",
+                    "@type": "@id"
+                  },
+                  "name": "schema:name"
+                },
+                "@id": "schema:issuedBy"
+              },
+              "schema": "https://schema.org/",
+              "type": "@type"
+            },
+            "@id": "https://github.com/TalaoDAO/context#emailpass"
+          }
+        }
+      ],
+      "id": "urn:uuid:a8e2b30c-eeb6-11ee-a822-0a1628958561",
+      "type": ["VerifiableCredential", "EmailPass"],
+      "credentialSubject": {
+        "id": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",
+        "issuedBy": {
+          "name": "Altme"
+        },
+        "email": "first.vc@gmail.com",
+        "type": "EmailPass"
+      },
+      "issuer": "did:web:app.altme.io:issuer",
+      "issuanceDate": "2024-03-30T16:57:55Z",
+      "proof": {
+        "type": "Ed25519Signature2018",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:app.altme.io:issuer#key-1",
+        "created": "2024-03-30T16:57:58.048Z",
+        "jws": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..F9EXluMjwPtCe8A0WKusX0zSsCi6JKh0HDLuNk47-Wvig_8wrwh56IocbNMyNG8b2J4wGuXUuGLTkQuftx6iDA"
+      },
+      "expirationDate": "2025-03-30T16:57:55.390537Z",
+      "issued": "2024-03-30T16:57:57Z",
+      "validUntil": "2025-03-30T16:57:57.995257Z",
+      "validFrom": "2024-03-30T16:57:57Z"
+    },
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        {
+          "EmailPass": {
+            "@context": {
+              "@protected": true,
+              "@version": 1.1,
+              "email": "schema:email",
+              "id": "@id",
+              "issuedBy": {
+                "@context": {
+                  "@protected": true,
+                  "@version": 1.1,
+                  "logo": {
+                    "@id": "schema:image",
+                    "@type": "@id"
+                  },
+                  "name": "schema:name"
+                },
+                "@id": "schema:issuedBy"
+              },
+              "schema": "https://schema.org/",
+              "type": "@type"
+            },
+            "@id": "https://github.com/TalaoDAO/context#emailpass"
+          }
+        }
+      ],
+      "id": "urn:uuid:b55c651d-3f84-11ef-a702-0a1628958560",
+      "type": ["VerifiableCredential", "EmailPass"],
+      "credentialSubject": {
+        "id": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",
+        "type": "EmailPass",
+        "issuedBy": {
+          "name": "Altme"
+        },
+        "email": "second.vc@gmail.com"
+      },
+      "issuer": "did:web:app.altme.io:issuer",
+      "issuanceDate": "2024-07-11T12:54:20Z",
+      "proof": {
+        "type": "Ed25519Signature2018",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:web:app.altme.io:issuer#key-1",
+        "created": "2024-07-11T12:54:28.288Z",
+        "jws": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..kI_Fp52mHMxGR59cHPBf3NZD7QL5OqnsOR112hGJ9zmyAhd0288o9Hzazz-AmsMvW2LaaEDx_qWFwDwQ9Gi0DA"
+      },
+      "expirationDate": "2025-07-11T12:54:20.699044Z",
+      "validFrom": "2024-07-11T12:54:28Z",
+      "validUntil": "2025-07-11T12:54:28.273969Z",
+      "issued": "2024-07-11T12:54:28Z"
+    }
+  ],
+  "proof": {
+    "type": "Ed25519Signature2018",
+    "proofPurpose": "authentication",
+    "challenge": "615e51a4-3f84-11ef-876f-0a1628958560",
+    "verificationMethod": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT#z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT",
+    "created": "2024-07-11T12:52:05.187708Z",
+    "domain": "https://talao.co/",
+    "jws": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..ux7ny5CsclcU_4oovjitC4r7EktTOBH_qbdbca7OUKNbyFW-6CbREe0xj_izYxEqESvoJ-YfuvTkpgR35uw7AQ"
+  },
+  "holder": "did:key:z6Mkj5B9HcSKWGuuawpBcvy5wQwZJ9g2k5HzfmXPAjwbQ9TT"
+}

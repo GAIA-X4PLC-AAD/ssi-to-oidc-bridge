@@ -29,6 +29,10 @@ You operate a service and want to allow your users to sign in using Verifiable
 Credentials from a mobile wallet. But building that takes considerable time and
 expertise.
 
+Additionally, you may need an easy solution to dynamically request additional
+Verifiable Credentials from a user during a session (i.e., "incremental
+authorization"). That would once again require a completely custom solution.
+
 ### The Solution
 
 A service provider can run this dockerized bridge software that acts as a normal
@@ -36,9 +40,10 @@ OIDC Provider toward the service. That means any service supporting OIDC or
 OAuth 2.0 for sign-ins can immediately be upgraded to accept sign-ins with
 Verifiable Credentials. When setting up the bridge software, you can configure
 what Verifiable Credentials are accepted and how the data within is put into
-`id_token` or `access_token`.
+`id_token` or `access_token`. This bridge works with users entirely on mobile,
+as well as users on desktop with a mobile wallet.
 
-As a contribution to Gaia-X infrastructure, the ultimate goal here is to enable
+As a contribution to Gaia-X infrastructure, the main goal here is to enable
 users to use their Gaia-X Participant Credentials to access systems while making
 integration simpler through the use of established SSO protocols. The bridge can
 also be configured to use other Verifiable Credentials.
@@ -60,7 +65,7 @@ graph LR
     end
     vclogin <-- OID4VP + SIOPv2 via HTTP --> altme[Altme Wallet<br><i>on Smartphone</i>]
     subgraph home[End User Devices]
-    browser[Browser<br><i>on Desktop</i>]
+    browser[Browser<br><i>on Desktop or Smartphone</i>]
     altme
     end
     browser <-- HTTP --> client
@@ -68,9 +73,12 @@ graph LR
     browser <-- HTTP --> vclogin
 ```
 
-_Note: In a deployment, external HTTP interfaces should be using HTTPS instead._
-_Note: While we test with Altme Wallet, any SSI wallet supporting OID4VP +
-SIOPv2 works._
+_\*In a deployment, external HTTP interfaces should be using HTTPS instead._
+
+<!-- prettier-ignore -->
+> [!NOTE]
+> While we test with Altme Wallet, any SSI wallet supporting OID4VP +
+> SIOPv2 works._
 
 ### OIDC Provider: Ory Hydra
 
@@ -89,10 +97,10 @@ the Verifiable Credentials inside, and the extraction and remapping of claims.
 ## Login Flow
 
 The user's browser starts out on the service website, which takes on the role of
-an OIDC client here. The flow is slightly simplified for improved readability.
-For example, the responses for Redis lookups are not shown. Also, redirects are
-shown immediately going to the redirect target. This is an authorization code
-flow:
+an OIDC client here. This browser may run on a desktop or smartphone. The flow
+is slightly simplified for improved readability. For example, the responses for
+Redis lookups are not shown. Also, redirects are shown immediately going to the
+redirect target. This is an authorization code flow:
 
 ```mermaid
 sequenceDiagram
@@ -147,6 +155,69 @@ sequenceDiagram
  Client->>Browser: Provide access to protected service
 ```
 
+## Incremental Authorization Flow
+
+Independent of an OIDC session, a service provider can request additional VCs
+from a user. For example, this can be used to incrementally authorize a user to
+interact with more parts of a service. An example is that users of a mobility
+platform could, at any point in time, unlock the car sharing aspect by
+presenting an additional driver's license VC.
+
+From a technical perspective, the service provider backend initiates the request
+by sending a login policy to a specific endpoint to create a temporary new
+authorization endpoint within the bridge. This has the advantage of reusing the
+bridge's existing verification and powerful policy system. A high-level flow
+looks like this:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Wallet
+    participant B as SSI-to-OIDC Bridge
+    participant SP as Service Provider
+
+    SP ->> B: POST /api/dynamic/createTempAuthorization
+    B-->>SP: Return UUID, qrCodeString
+
+    SP->>User: Send Auth. page containing QR code
+
+    SP->>B: GET /api/dynamic/getAuthResponse
+    User->>Wallet: Scan QR code
+    Wallet->>B: GET /api/dynamic/presentCredentialById
+    B-->>Wallet: Return metadata
+    Wallet-->>User: Prompt user
+
+    User ->>Wallet: Select VC(s)
+    Wallet->>B: POST /api/dynamic/presentCredentialById
+    B-->>Wallet: Success
+
+    B-->>SP: Return Auth Response
+```
+
+### API Documentation
+
+This documentation provides all the necessary information to interact with the
+dynamic API endpoints used for incremental authorization. The API is documented
+using Swagger, which provides a user-friendly interface to explore and test the
+API.
+
+<!-- prettier-ignore -->
+> [!NOTE]
+> To access the Swagger documentation, run the bridge in development mode and
+> navigate to `http://localhost:5002/api-docs`.
+
+To authenticate requests to the dynamic API in Swagger, an API secret must first
+be set in the `.env` file in the `vclogin` folder with the key name
+`INCR_AUTH_API_SECRET`.
+
+<!-- prettier-ignore -->
+> [!NOTE]
+> To authenticate requests to the dynamic API in Swagger, first click on
+> the "Authorize" button in the top right corner of the Swagger UI. Then, enter
+> the API key in the "Value" field with the format `INCR_AUTH_API_SECRET <api_key>`
+> and click on the "Authorize" button.
+
 ## Running a Local Deployment
 
 A local deployment is a great way to test the bridge and to use it for
@@ -175,10 +246,13 @@ proper domain has to be set up.
    `/vclogin/.env` with key `PEX_DESCRIPTOR_OVERRIDE` if direct control over
    what wallets are asked for is desired (example for quick testing:
    `./__tests__/testdata/pex/descriptorEmailFromAltme.json`)
-6. at this point, it needs to be ensured that the container for the vclogin
+6. OPTIONAL: to be able to use or test incremental authorization, set an API key
+   in the `.env` file in the `vclogin` folder with the key
+   `INCR_AUTH_API_SECRET`.
+7. at this point, it needs to be ensured that the container for the vclogin
    service is freshly built with the new env file:
    `docker compose down && docker compose build`
-7. `$ docker compose up`
+8. `$ docker compose up`
 
 To validate the running bridge with a simple OIDC client:
 
@@ -246,6 +320,7 @@ PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
 HYDRA_ADMIN_URL=http://localhost:5001
 REDIS_HOST=localhost
 REDIS_PORT=6379
+API_KEY=<api-key>
 ```
 
 _Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override
@@ -261,7 +336,7 @@ refer to the end of the previous section.
 
 ## Running Tests
 
-This repository includes unit tests with `jest` and end-to-end tests with
+This repository includes unit tests with `vitest` and end-to-end tests with
 `playwright`. You may run them as follows:
 
 ```bash
@@ -278,7 +353,7 @@ credential, while forwarding all subject fields to the `id_token`:
 ```JSON
 [
   {
-    "credentialID": "credential1",
+    "credentialID": "1",
     "patterns": [
       {
         "issuer": "*",
@@ -323,7 +398,7 @@ use of this could look like this:
 ```json
 [
   {
-    "credentialId": "one",
+    "credentialId": "1",
     "patterns": [
       {
         "issuer": "did:web:app.altme.io:issuer",
@@ -384,9 +459,109 @@ logical operators that can combine multiple constraints:
 - _or_ Takes two constraint objects `a` and `b`.
 - _not_ Takes one constraint object `a`
 
+### Multiple Expected Credentials
+
+The bridge supports multiple expected credentials in a policy file. This allows
+for more complex scenarios where multiple credentials are needed to perform
+authorization. An example of such a policy file is:
+
+```json
+[
+  {
+    "credentialId": "cred_email",
+    "type": "EmailPass",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "credentialId": "cred_id",
+    "type": "VerifiableId",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.id"
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+<!-- prettier-ignore -->
+> [!IMPORTANT]
+> Each `credentialId` should be unique across all expected credentials in a policy,
+> and should only consist of alphanumeric characters and underscores. Similarly,
+> claim values should never be given colliding `newPath` values to avoid overwriting
+> token data.
+
+<!-- prettier-ignore -->
+> [!NOTE]
+> The expected credentials are matched to the submitted VCs solely on the basis of
+> required fields and constraints. If very similar VCs are required by a policy,
+> it should have constraints that make the matching unambiguous. Otherwise,
+> extracted claims may be switched up.
+
+When having multiple expected credentials, it is possible to define constraints
+for each as defined in [Constraints](#constraints). This is especially powerful
+since it is possible to refer to other expected credentials:
+
+```json
+[
+  {
+    "credentialId": "1",
+    "type": "EmailPass",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ],
+        "constraint": {
+          "op": "equalsDID",
+          "a": "$VP.proof.verificationMethod",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "type": "VerifiableId",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.id"
+          }
+        ],
+        "constraint": {
+          "op": "equals",
+          "a": "$2.credentialSubject.id",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  }
+]
+```
+
 ## Token Introspection
 
-Look into the access token like this:
+Look into the Ory Hydra access token like this:
 
 ```bash
 $ docker run --rm -it \
@@ -420,6 +595,5 @@ service in `compose.yaml`:
 
 - [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html)
 - [OpenID for Verifiable Presentations](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID2.html)
-- [Self-Issued OpenID Provider v2](https://openid.net/specs/openid-connect-self-issued-v2-1_0.html)
 - [Verifiable Credentials Data Model v1.1](https://www.w3.org/TR/vc-data-model/)
 - [DIF Presentation Definition](https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-definition)

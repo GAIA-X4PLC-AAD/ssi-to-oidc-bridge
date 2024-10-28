@@ -1,0 +1,56 @@
+[
+  {
+    "credentialId": "3",
+    "patterns": [
+      {
+        "issuer": "did:tz:tz1NyjrTUNxDpPaqNZ84ipGELAcTWYg6s5Du",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.name"
+          }
+        ],
+        "constraint": {
+          "op": "equals",
+          "a": "$2.credentialSubject.id",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  },
+  {
+    "credentialId": "2",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.email"
+          }
+        ],
+        "constraint": {
+          "op": "equals",
+          "a": "$2.credentialSubject.id",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  },
+  {
+    "credentialId": "1",
+    "patterns": [
+      {
+        "issuer": "did:web:app.altme.io:issuer",
+        "claims": [
+          {
+            "claimPath": "$.credentialSubject.firstName"
+          }
+        ],
+        "constraint": {
+          "op": "equalsDID",
+          "a": "$VP.proof.verificationMethod",
+          "b": "$1.credentialSubject.id"
+        }
+      }
+    ]
+  }
+]

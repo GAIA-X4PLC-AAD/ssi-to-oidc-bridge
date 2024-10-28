@@ -10,7 +10,7 @@ import policyEmployeeFromAnyone from "@/testdata/policies/acceptEmployeeFromAnyo
 import policyEmailFromAltme from "@/testdata/policies/acceptEmailFromAltme.json";
 import policyFromAltme from "@/testdata/policies/acceptFromAltme.json";
 import vpEmail from "@/testdata/presentations/VP_EmailPass.json";
-import { Checked, PEX } from "@sphereon/pex";
+import { Checked, IPresentationDefinition, PEX } from "@sphereon/pex";
 import crypto from "crypto";
 
 Object.defineProperty(global, "crypto", {
@@ -35,7 +35,9 @@ describe("generatePresentationDefinition", () => {
 
   it("produces a valid definition", () => {
     const def = generatePresentationDefinition(policyEmailFromAltme);
-    const checkArray = PEX.validateDefinition(def) as Array<Checked>;
+    const checkArray = PEX.validateDefinition(
+      def as IPresentationDefinition,
+    ) as Array<Checked>;
     const problemCount = checkArray.filter(
       (check) => check.status !== "info",
     ).length;
@@ -48,7 +50,10 @@ describe("generatePresentationDefinition", () => {
     const modVP = JSON.parse(JSON.stringify(vpEmail));
     // the PEX library seems to expect the credentials to always be an array
     modVP.verifiableCredential = [vpEmail.verifiableCredential];
-    const { warnings, errors } = pex.evaluatePresentation(def, modVP);
+    const { warnings, errors } = pex.evaluatePresentation(
+      def as IPresentationDefinition,
+      modVP,
+    );
     expect(warnings!.length).toBe(0);
     expect(errors!.length).toBe(0);
   });

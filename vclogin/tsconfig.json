@@ -18,6 +18,7 @@
     "paths": {
       "@/testdata/*": ["__tests__/testdata/*"],
       "@/lib/*": ["lib/*"],
+      "@/api/*": ["pages/api/*"],
       "@/config/*": ["config/*"],
       "@/types/*": ["types/*"],
       "@/pages/*": ["pages/*"],

@@ -4,17 +4,33 @@
  */
 
 import { promises as fs } from "fs";
+import { isLoginPolicy } from "@/lib/isLoginPolicy";
 import { LoginPolicy } from "@/types/LoginPolicy";
-import { logger } from "./logger";
 
 var configuredPolicy: LoginPolicy | undefined = undefined;
-if (process.env.LOGIN_POLICY) {
-  fs.readFile(process.env.LOGIN_POLICY as string, "utf8").then((file) => {
-    configuredPolicy = JSON.parse(file);
-  });
-} else if (process.env.NODE_ENV !== "test") {
-  logger.error("No login policy set");
-}
+
+export const reloadConfiguredLoginPolicy = () => {
+  if (process.env.LOGIN_POLICY) {
+    try {
+      fs.readFile(process.env.LOGIN_POLICY as string, "utf8").then((file) => {
+        configuredPolicy = JSON.parse(file);
+        if (!isLoginPolicy(configuredPolicy)) {
+          throw Error(
+            "Configured login policy has syntax error: " + configuredPolicy,
+          );
+        }
+      });
+    } catch (error) {
+      throw Error(
+        "Failed loading login policy from file: " + process.env.LOGIN_POLICY,
+      );
+    }
+  } else {
+    throw Error("No login policy file path set");
+  }
+};
+
+reloadConfiguredLoginPolicy();
 
 export const getConfiguredLoginPolicy = () => {
   return configuredPolicy;
