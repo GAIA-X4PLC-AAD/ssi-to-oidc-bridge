@@ -9,7 +9,7 @@
     "start": "NODE_OPTIONS='-r next-logger' next start",
     "lint": "next lint",
     "test": "vitest run --coverage",
-    "test:e2e": "npx playwright test"
+    "test:e2e": "DEBUG=testcontainers* npx playwright test --workers=1"
   },
   "dependencies": {
     "@material-tailwind/react": "^2.0.3",

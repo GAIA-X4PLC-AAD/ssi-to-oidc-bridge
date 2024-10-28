@@ -1,0 +1,90 @@
+services:
+  hydra-migrate:
+    image: oryd/hydra:v2.2.0
+    restart: on-failure
+    networks:
+      - ory-hydra-network
+    command: migrate sql -e --yes
+    environment:
+      - DSN=postgres://hydra:secret@postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
+    depends_on:
+      - postgresd
+
+  hydra:
+    depends_on:
+      - postgresd
+    image: oryd/hydra:v2.2.0
+    networks:
+      - ory-hydra-network
+    ports:
+      - 5004:4444 # Public port
+      - 5001:4445 # Admin port
+    command: serve all --dev
+    environment:
+      - URLS_SELF_ISSUER=http://localhost:5004/
+      - URLS_CONSENT=http://localhost:5002/api/consent
+      - URLS_LOGIN=http://localhost:5002/login
+      - DSN=postgres://hydra:secret@postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
+      - SECRETS_SYSTEM=youReallyNeedToChangeThis
+      - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=public,pairwise
+      - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=youReallyNeedToChangeThis
+      - SERVE_PUBLIC_CORS_ENABLED=true
+      - SERVE_PUBLIC_CORS_ALLOWED_METHODS=POST,GET,PUT,DELETE
+      - SERVE_ADMIN_CORS_ENABLED=true
+      - SERVE_ADMIN_CORS_ALLOWED_METHODS=POST,GET,PUT,DELETE
+      - LOG_LEVEL=error
+      - LOG_FORMAT=json
+      - LOG_LEAK_SENSITIVE_VALUES=false
+      - OAUTH2_EXPOSE_INTERNAL_ERRORS=1
+      - WEBFINGER_OIDC_DISCOVERY_USERINFO_URL=http://localhost:5004/userinfo
+      - OIDC_DYNAMIC_CLIENT_REGISTRATION_ENABLED=true
+    restart: on-failure
+
+  postgresd:
+    image: postgres:16
+    networks:
+      - ory-hydra-network
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=hydra
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=hydra
+    restart: on-failure
+
+  vclogin:
+    env_file:
+      - ./vclogin/.env.test
+    environment:
+      - HYDRA_ADMIN_URL=http://hydra:4445
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - ory-hydra-network
+    ports:
+      - 5002:3000
+    build:
+      context: ./vclogin
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2.2
+    networks:
+      - ory-hydra-network
+    ports:
+      - 6379:6379
+    restart: unless-stopped
+
+  test_client:
+    image: oryd/hydra:v2.2.0
+    networks:
+      - ory-hydra-network
+    ports:
+      - 9010:9010
+    volumes:
+      - ./test_client_test.sh:/test_client_test.sh
+    entrypoint: ["sh", "/test_client_test.sh"]
+
+networks:
+  ory-hydra-network:
+    name: ory-hydra-net
