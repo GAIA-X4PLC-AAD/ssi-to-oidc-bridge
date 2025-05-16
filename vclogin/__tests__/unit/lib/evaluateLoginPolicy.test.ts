@@ -174,4 +174,6 @@ describe("evaluateLoginPolicy", () => {
     trusted = isTrustedPresentation(vpMultiEmail, policyTripleVCSimpleConstr);
     expect(trusted).toBe(false);
   });
+
+  //TODO: add a few tests for jwt_vc
 });

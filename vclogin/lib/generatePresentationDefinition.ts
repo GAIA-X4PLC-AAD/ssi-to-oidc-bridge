@@ -28,24 +28,6 @@ export const generatePresentationDefinition = (
     );
 
   var pd: PresentationDefinition = {
-    format: {
-      ldp_vc: {
-        proof_type: [
-          "JsonWebSignature2020",
-          "Ed25519Signature2018",
-          "EcdsaSecp256k1Signature2019",
-          "RsaSignature2018",
-        ],
-      },
-      ldp_vp: {
-        proof_type: [
-          "JsonWebSignature2020",
-          "Ed25519Signature2018",
-          "EcdsaSecp256k1Signature2019",
-          "RsaSignature2018",
-        ],
-      },
-    },
     id: crypto.randomUUID(),
     name: "SSI-to-OIDC Bridge",
     purpose: "Sign-in",

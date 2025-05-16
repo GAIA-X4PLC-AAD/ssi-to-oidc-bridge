@@ -13,6 +13,12 @@ export type PresentationDefinition = {
     ldp_vp: {
       proof_type: string[];
     };
+    jwt_vp_json: {
+      alg_values_supported: string[];
+    };
+    jwt_vc_json: {
+      alg_values_supported: string[];
+    };
   };
   id: string;
   name: string;

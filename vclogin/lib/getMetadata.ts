@@ -22,26 +22,30 @@ export const getMetadata = (redirect_uris: string[]) => {
       "RS256",
     ],
     vp_formats: {
-      jwt_vp: {
+      ldp_vp: {
+        proof_type: [
+          "JsonWebSignature2020",
+          "Ed25519Signature2018",
+          "EcdsaSecp256k1Signature2019",
+          "RsaSignature2018",
+        ],
+      },
+      ldp_vc: {
+        proof_type: [
+          "JsonWebSignature2020",
+          "Ed25519Signature2018",
+          "EcdsaSecp256k1Signature2019",
+          "RsaSignature2018",
+        ],
+      },
+      jwt_vp_json: {
         alg_values_supported: ["ES256", "ES256K", "EdDSA", "RS256"],
       },
-      jwt_vc: {
+      jwt_vc_json: {
         alg_values_supported: ["ES256", "ES256K", "EdDSA", "RS256"],
       },
     },
-    subject_syntax_types_supported: [
-      "did:key",
-      "did:ebsi",
-      "did:tz",
-      "did:pkh",
-      "did:key",
-      "did:ethr",
-    ],
-    subject_syntax_types_discriminations: [
-      "did:key:jwk_jcs-pub",
-      "did:ebsi:v1",
-    ],
-    subject_trust_frameworks_supported: ["ebsi"],
+    subject_syntax_types_supported: ["did:key", "did:pkh"],
     id_token_types_supported: ["subject_signed_id_token"],
     client_name: "SSI-to-OIDC Bridge",
     request_uri_parameter_supported: true,
