@@ -4,7 +4,8 @@
  */
 
 import bs58 from "bs58";
-import { jwtVerify, JWTVerifyResult } from "jose";
+import { verifySignature, stringToBytes } from "@taquito/utils";
+import { jwtVerify, importJWK } from "jose";
 import {
   verifyCredential,
   verifyPresentation,
@@ -19,7 +20,7 @@ export const verifyAuthenticationPresentation = async (VP: any) => {
 
     let creds;
     if (typeof VP === "string" && VP.split(".").length === 3) {
-      const { payload, protectedHeader } = await verifyJWT(VP);
+      const { payload } = await verifyJWT(VP);
 
       creds = Array.isArray(payload.verifiableCredential)
         ? payload.verifiableCredential
@@ -43,13 +44,13 @@ export const verifyAuthenticationPresentation = async (VP: any) => {
   }
 };
 
-const jwkFromDID = async (did: string) => {
-  if (did.startsWith("did:key")) {
-    const split = did.split("#");
-    key58 =
+const jwkFromKid = (kid: string) => {
+  if (kid.startsWith("did:key")) {
+    const split = kid.split("#");
+    const key58 =
       split.length == 2
         ? split[1]
-        : did.replace(/^did:key:/, "").replace(/^z/, "");
+        : kid.replace(/^did:key:/, "").replace(/^z/, "");
     const decoded = bs58.decode(key58);
     const ed25519PubKeyBytes = decoded.slice(2); // remove multicodec prefix (0xED01)
     if (decoded[0] !== 0xed || decoded[1] !== 0x01) {
@@ -63,27 +64,60 @@ const jwkFromDID = async (did: string) => {
       x,
     };
   }
-  //TODO: add support for did:pkh:tezos
   throw new Error("Unable to get key from JWT VC/VP");
 };
 
 const verifyJWT = async (token: string) => {
-  const [headerB64] = jwt.split(".");
+  const [headerB64, payloadB64, signatureB64] = token.split(".");
   const header = JSON.parse(Buffer.from(headerB64, "base64url").toString());
-  const did = header.kid;
-  let jwk = jwkFromDID(did);
-  const key = await importJWK(jwk, "EdDSA");
-  const { payload, protectedHeader } = await jwtVerify(jwt, key);
-  return { payload, protectedHeader };
+
+  // try normal JWT verification
+  try {
+    const jwk = jwkFromKid(header.kid);
+    const key = await importJWK(jwk, "EdDSA");
+    const { payload, protectedHeader } = await jwtVerify(token, key);
+    return { payload, protectedHeader };
+  } catch (error) {}
+
+  // try micheline signed JWT-like verification
+  // (custom format that allows signing JWT VCs on crypto wallets)
+  if (header.alg !== "EdDSA" || header.kid.startsWith("edkp")) {
+    throw new Error("Invalid JWT signature");
+  }
+  const payloadBytes = payloadBytesFromString(headerB64 + "." + payloadB64);
+  const publicKey = header.kid;
+  const signature = Buffer.from(signatureB64, "base64url").toString("ascii");
+  // console.log("Micheline sig: " + signature);
+  const isVerified = verifySignature(payloadBytes, publicKey, signature);
+  // console.log("MICHELINE RESULT: " + isVerified);
+
+  if (!isVerified) {
+    throw new Error("Invalid JWT signature");
+  }
+
+  const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
+  return { payload, header };
 };
+
+// specific to Tezos Micheline signatures and not fully JWT standard compliant
+// but only way to support safe signatures from crypto wallets
+function payloadBytesFromString(text: string) {
+  const bytes = stringToBytes(text);
+  const bytesLength = (bytes.length / 2).toString(16);
+  const addPadding = `00000000${bytesLength}`;
+  const paddedBytesLength = addPadding.slice(addPadding.length - 8);
+  return "05" + "01" + paddedBytesLength + bytes;
+}
 
 const verifyJustPresentation = async (VP: any): Promise<boolean> => {
   if (typeof VP === "string" && VP.split(".").length === 3) {
     // likely a JWT VP
     try {
-      const { payload, protectedHeader } = await verifyJWT(VP);
+      await verifyJWT(VP);
     } catch (error) {
       logger.error({ errors: error }, "Unable to verify JWT VP");
+      //TODO: remove debug output
+      logger.debug(error, "Error message");
       return false;
     }
     return true;
@@ -103,7 +137,7 @@ const verifyJustPresentation = async (VP: any): Promise<boolean> => {
 const verifyJustCredential = async (VC: any): Promise<boolean> => {
   if (typeof VC === "string" && VC.split(".").length === 3) {
     try {
-      const { payload, protectedHeader } = await verifyJWT(VC);
+      await verifyJWT(VC);
     } catch (error) {
       logger.error({ errors: error }, "Unable to verify JWT VC");
       return false;
@@ -120,5 +154,9 @@ const verifyJustCredential = async (VC: any): Promise<boolean> => {
       return false;
     }
   }
-  return false;
+};
+
+export const test = {
+  verifyJustCredential,
+  jwkFromKid,
 };

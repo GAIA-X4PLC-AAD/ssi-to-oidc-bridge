@@ -11,7 +11,6 @@ import {
 import jp from "jsonpath";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 import { isLoginPolicy } from "@/lib/isLoginPolicy";
-import { logger } from "@/config/logger";
 
 export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
   var configuredPolicy = getConfiguredLoginPolicy();
