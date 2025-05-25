@@ -5,6 +5,13 @@
     "no-unused-vars": [
       "error",
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ],
+    "prefer-const": [
+      "error",
+      {
+        "destructuring": "all",
+        "ignoreReadBeforeAssign": false
+      }
     ]
   }
 }

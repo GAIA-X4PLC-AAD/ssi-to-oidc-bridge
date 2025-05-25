@@ -38,7 +38,7 @@ describe("isLoginPolicy", () => {
 
   it("rejects syntactically incorrect policies", async () => {
     expect(isLoginPolicy(vpEmail)).toBe(false);
-    let badPolicy = JSON.parse(JSON.stringify(policyEmployeeFromAnyone));
+    const badPolicy = JSON.parse(JSON.stringify(policyEmployeeFromAnyone));
     delete badPolicy[0].patterns[0].issuer;
     expect(isLoginPolicy(badPolicy)).toBe(false);
   });

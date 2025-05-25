@@ -28,7 +28,7 @@ const loggerHttp = pinoHttp({
 });
 
 export const withLogging = (
-  handler: (a: NextApiRequest, b: NextApiResponse) => Promise<void>,
+  handler: (_a: NextApiRequest, _b: NextApiResponse) => Promise<void>,
 ) => {
   return async (
     req: NextApiRequest,

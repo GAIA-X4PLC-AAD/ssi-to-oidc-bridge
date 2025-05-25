@@ -36,8 +36,8 @@ export const isLoginPolicy = (value: any): value is LoginPolicy => {
     return false;
   }
 
-  for (let val of value) {
-    let cred = val as ExpectedCredential;
+  for (const val of value) {
+    const cred = val as ExpectedCredential;
     if (!cred.credentialId || !cred.patterns) {
       return false;
     }
@@ -47,7 +47,7 @@ export const isLoginPolicy = (value: any): value is LoginPolicy => {
       return false;
     }
 
-    for (let pattern of cred.patterns) {
+    for (const pattern of cred.patterns) {
       if (
         !pattern.issuer ||
         !pattern.claims ||
@@ -56,7 +56,7 @@ export const isLoginPolicy = (value: any): value is LoginPolicy => {
         return false;
       }
 
-      for (let claim of pattern.claims) {
+      for (const claim of pattern.claims) {
         if (!claim.claimPath) {
           return false;
         }
@@ -69,7 +69,7 @@ export const isLoginPolicy = (value: any): value is LoginPolicy => {
   }
 
   // check that ids are unique
-  let ids = value.map((cred) => cred.credentialId);
+  const ids = value.map((cred) => cred.credentialId);
   if (new Set(ids).size !== ids.length) {
     return false;
   }

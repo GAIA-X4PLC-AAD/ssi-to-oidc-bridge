@@ -46,7 +46,7 @@ export const generatePresentationDefinition = (
     return pd;
   }
 
-  for (let expectation of policy) {
+  for (const expectation of policy) {
     if (expectation.patterns.length > 1) {
       const req = {
         name: "Group " + expectation.credentialId,
@@ -61,8 +61,8 @@ export const generatePresentationDefinition = (
       pd["submission_requirements"] = submission_requirements.concat(req);
     }
 
-    for (let pattern of expectation.patterns) {
-      let descr: InputDescriptor = {
+    for (const pattern of expectation.patterns) {
+      const descr: InputDescriptor = {
         id:
           expectation.credentialId +
           "pattern" +
@@ -76,7 +76,7 @@ export const generatePresentationDefinition = (
         descr.group = ["group_" + expectation.credentialId];
       }
 
-      let fields = pattern.claims
+      const fields = pattern.claims
         .filter((claim) =>
           Object.hasOwn(claim, "required") ? claim.required : true,
         )
