@@ -11,28 +11,21 @@ import { verifyAuthenticationPresentation } from "@/lib/verifyPresentation";
 import { getToken } from "@/lib/getToken";
 import { logger } from "@/config/logger";
 import { redisSet, redisGet } from "@/config/redis";
+import { jsonFromJWT } from "@/lib/jwtVerification";
 import { withLogging } from "@/middleware/logging";
 
 const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  // Get login_id from query
   const uuid = req.query["auth_id"];
-
-  // fetch policy from redis using uuid
   const policy = await redisGet(uuid + "_policy");
-
-  // fetch inputDescriptor from redis using uuid
   const inputDescriptor = await redisGet(uuid + "_inputDescriptor");
   logger.debug(
     JSON.parse(inputDescriptor!),
     "Input descriptor used by dynamic endpoint",
   );
 
-  //if policy is found
   if (policy) {
     const policyObject = JSON.parse(policy) as LoginPolicy;
 
-    // generate presentation definition using policy
-    // and inputDescriptor if it exists
     const presentation_definition = generatePresentationDefinition(
       policyObject,
       inputDescriptor ? JSON.parse(inputDescriptor) : undefined,
@@ -61,11 +54,24 @@ const getHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  // Parse the JSON string into a JavaScript object
-  const presentation = JSON.parse(req.body.vp_token);
   logger.debug(req.body.vp_token, "Verifiable Presentation was sent");
+  // Parse the JSON string into a JavaScript object if it is ldp_vp
+  let presentation = req.body.vp_token;
+  if (!(presentation.split(".").length === 3)) {
+    presentation = JSON.parse(presentation);
+  }
 
-  const uuid = presentation["proof"]["challenge"];
+  let uuid: string;
+  if (
+    Object.hasOwn(presentation, "holder") &&
+    Object.hasOwn(presentation, "proof")
+  ) {
+    uuid = presentation["proof"]["challenge"];
+  } else {
+    const payload = jsonFromJWT(presentation);
+    uuid = payload.nonce;
+  }
+
   const policy = await redisGet(uuid + "_policy");
 
   if (policy) {
@@ -74,7 +80,6 @@ const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     // Constants for Redis to store the authentication result
     const MAX_AGE = 20 * 60;
 
-    // Verify the presentation and the status of the credential
     if (await verifyAuthenticationPresentation(presentation)) {
       // Evaluate if the VP should be trusted
       if (isTrustedPresentation(presentation, policyObject)) {
