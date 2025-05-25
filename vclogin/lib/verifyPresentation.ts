@@ -5,7 +5,8 @@
 
 import { base58btc } from "multiformats/bases/base58";
 import { verifySignature, stringToBytes } from "@taquito/utils";
-import { jwtVerify, importJWK } from "jose";
+import { jwtVerifyWrap } from "@/lib/jwtVerification";
+import { importJWK } from "jose";
 import {
   verifyCredential,
   verifyPresentation,
@@ -14,6 +15,7 @@ import { logger } from "@/config/logger";
 
 export const verifyAuthenticationPresentation = async (VP: any) => {
   try {
+    //TODO: refactor to not check VP twice
     if (!(await verifyJustPresentation(VP))) {
       return false;
     }
@@ -22,9 +24,9 @@ export const verifyAuthenticationPresentation = async (VP: any) => {
     if (typeof VP === "string" && VP.split(".").length === 3) {
       const { payload } = await verifyJWT(VP);
 
-      creds = Array.isArray(payload.verifiableCredential)
-        ? payload.verifiableCredential
-        : [payload.verifiableCredential];
+      creds = Array.isArray(payload.vp.verifiableCredential)
+        ? payload.vp.verifiableCredential
+        : [payload.vp.verifiableCredential];
     } else {
       creds = Array.isArray(VP.verifiableCredential)
         ? VP.verifiableCredential
@@ -73,7 +75,7 @@ const verifyJWT = async (token: string) => {
   try {
     const jwk = jwkFromKid(header.kid);
     const key = await importJWK(jwk, "EdDSA");
-    const { payload, protectedHeader } = await jwtVerify(token, key);
+    const { payload, protectedHeader } = await jwtVerifyWrap(token, key);
     return { payload, protectedHeader };
   } catch (error) {}
 
@@ -154,5 +156,6 @@ const verifyJustCredential = async (VC: any): Promise<boolean> => {
 
 export const test = {
   verifyJustCredential,
+  verifyJWT,
   jwkFromKid,
 };

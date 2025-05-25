@@ -3,8 +3,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { importJWK } from "jose";
+import * as jwtVerification from "@/lib/jwtVerification";
+import type { KeyLike } from "jose";
 import {
   verifyAuthenticationPresentation,
   test,
@@ -49,8 +51,17 @@ describe("verifyPresentation", () => {
     expect(result).toBe(true);
   });
 
-  // it("verifies a valid VP with Employee jwt_vc", async () => {
-  //   const result = await verifyAuthenticationPresentation(jwtVpEmployee);
-  //   expect(result).toBe(true);
-  // });
+  it("verifies a valid VP with Employee jwt_vc", async () => {
+    const realJwtVerifyWrap = jwtVerification.jwtVerifyWrap;
+    vi.spyOn(jwtVerification, "jwtVerifyWrap").mockImplementation(
+      (token: string, secret: KeyLike | Uint8Array, options = {}) => {
+        return realJwtVerifyWrap(token, secret, {
+          ...options,
+          clockTolerance: "100 years", // allow expired test token
+        });
+      },
+    );
+    const result = await verifyAuthenticationPresentation(jwtVpEmployee);
+    expect(result).toBe(true);
+  });
 });
