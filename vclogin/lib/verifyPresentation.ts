@@ -6,6 +6,7 @@
 import { base58btc } from "multiformats/bases/base58";
 import { verifySignature, stringToBytes } from "@taquito/utils";
 import { jwtVerifyWrap } from "@/lib/jwtVerification";
+import { jsonFromJWT } from "@/lib/jwtVerification";
 import { importJWK } from "jose";
 import {
   verifyCredential,
@@ -15,15 +16,13 @@ import { logger } from "@/config/logger";
 
 export const verifyAuthenticationPresentation = async (VP: any) => {
   try {
-    //TODO: refactor to not check VP twice
     if (!(await verifyJustPresentation(VP))) {
       return false;
     }
 
     let creds;
     if (typeof VP === "string" && VP.split(".").length === 3) {
-      const { payload } = await verifyJWT(VP);
-
+      const payload = jsonFromJWT(VP);
       creds = Array.isArray(payload.vp.verifiableCredential)
         ? payload.vp.verifiableCredential
         : [payload.vp.verifiableCredential];
@@ -114,8 +113,6 @@ const verifyJustPresentation = async (VP: any): Promise<boolean> => {
       await verifyJWT(VP);
     } catch (error) {
       logger.error({ errors: error }, "Unable to verify JWT VP");
-      //TODO: remove debug output
-      logger.debug(error, "Error message");
       return false;
     }
     return true;
