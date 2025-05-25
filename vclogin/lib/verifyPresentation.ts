@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import bs58 from "bs58";
+import { base58btc } from "multiformats/bases/base58";
 import { verifySignature, stringToBytes } from "@taquito/utils";
 import { jwtVerify, importJWK } from "jose";
 import {
@@ -48,14 +48,12 @@ const jwkFromKid = (kid: string) => {
   if (kid.startsWith("did:key")) {
     const split = kid.split("#");
     const key58 =
-      split.length == 2
-        ? split[1]
-        : kid.replace(/^did:key:/, "").replace(/^z/, "");
-    const decoded = bs58.decode(key58);
-    const ed25519PubKeyBytes = decoded.slice(2); // remove multicodec prefix (0xED01)
+      split.length == 2 ? split[1] : kid.replace(/^did:key:/, "").slice(1);
+    const decoded = base58btc.decode(key58);
     if (decoded[0] !== 0xed || decoded[1] !== 0x01) {
       throw new Error("Not a valid Ed25519 did:key");
     }
+    const ed25519PubKeyBytes = decoded.slice(2); // remove multicodec prefix (0xED01)
     const x = Buffer.from(ed25519PubKeyBytes).toString("base64url");
 
     return {
@@ -87,9 +85,7 @@ const verifyJWT = async (token: string) => {
   const payloadBytes = payloadBytesFromString(headerB64 + "." + payloadB64);
   const publicKey = header.kid;
   const signature = Buffer.from(signatureB64, "base64url").toString("ascii");
-  // console.log("Micheline sig: " + signature);
   const isVerified = verifySignature(payloadBytes, publicKey, signature);
-  // console.log("MICHELINE RESULT: " + isVerified);
 
   if (!isVerified) {
     throw new Error("Invalid JWT signature");
