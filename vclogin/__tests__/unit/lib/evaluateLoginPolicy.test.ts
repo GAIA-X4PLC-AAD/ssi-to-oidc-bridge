@@ -25,6 +25,9 @@ import policyMultiVCFromAltmeSimpleConstr from "@/testdata/policies/acceptMultiV
 import policyMultiVCFromAltmeComplexConstr from "@/testdata/policies/acceptMultiVCFromAltmeComplexConstr.json";
 import policyTripleVCSimpleConstr from "@/testdata/policies/acceptTripleVC.json";
 
+import jwtVPEmployeeResponse from "@/testdata/presentations/JWT_VC_EmployeeCredential.json";
+const jwtVpEmployee = jwtVPEmployeeResponse.vp_token;
+
 describe("evaluateLoginPolicy", () => {
   it("throws error if no policy is available", async () => {
     vi.stubEnv("LOGIN_POLICY", "");
@@ -39,6 +42,8 @@ describe("evaluateLoginPolicy", () => {
     trusted = isTrustedPresentation(vpEmail, policyAcceptAnything);
     expect(trusted).toBe(true);
     trusted = isTrustedPresentation(vpTezos, policyAcceptAnything);
+    expect(trusted).toBe(true);
+    trusted = isTrustedPresentation(jwtVpEmployee, policyAcceptAnything);
     expect(trusted).toBe(true);
   });
 

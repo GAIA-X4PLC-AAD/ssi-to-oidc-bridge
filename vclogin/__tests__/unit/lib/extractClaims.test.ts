@@ -20,8 +20,11 @@ import policyMultiVCromAltmeConstr from "@/testdata/policies/acceptMultiVCFromAl
 import policyAcceptMultiVCMisconfigured from "@/testdata/policies/acceptMultiVCFromAltmeMisconfigured.json";
 import { LoginPolicy } from "@/types/LoginPolicy";
 
+import jwtVPEmployeeResponse from "@/testdata/presentations/JWT_VC_EmployeeCredential.json";
+const jwtVpEmployee = jwtVPEmployeeResponse.vp_token;
+
 describe("extractClaims", () => {
-  it("all subject claims from an EmployeeCredential are extracted", async () => {
+  it("all subject claims from an EmployeeCredential ldp_vc are extracted", async () => {
     var claims = extractClaims(vpEmployee, policyAcceptAnything);
     var expected = {
       tokenAccess: {},
@@ -46,7 +49,26 @@ describe("extractClaims", () => {
     expect(claims).toStrictEqual(expected);
   });
 
-  it("all designated claims from an EmailPass Credential are mapped", async () => {
+  it("all subject claims from an EmployeeCredential jwt_vc are extracted", async () => {
+    var claims = extractClaims(jwtVpEmployee, policyAcceptAnything);
+    var expected = {
+      tokenAccess: {},
+      tokenId: {
+        subjectData: {
+          "gx:headquarterAddress": "Teststreet",
+          "gx:legalAddress": "Teststreet",
+          "gx:legalName": "Testcompany",
+          "gx:parentOrganization": "None",
+          "gx:registrationNumber": "1234",
+          "gx:subOrganization": "None",
+          type: "gx:LegalParticipant",
+        },
+      },
+    };
+    expect(claims).toStrictEqual(expected);
+  });
+
+  it("all designated claims from an EmailPass Credential ldp_vc are mapped", async () => {
     var claims = extractClaims(vpEmail, policyEmailFromAltme);
     var expected = {
       tokenId: {
@@ -57,7 +79,7 @@ describe("extractClaims", () => {
     expect(claims).toStrictEqual(expected);
   });
 
-  it("all designated claims from an EmailPass Credential are mapped (constrained)", async () => {
+  it("all designated claims from an EmailPass Credential ldp_vc are mapped (constrained)", async () => {
     var claims = extractClaims(vpEmail, policyEmailFromAltmeConstr);
     var expected = {
       tokenId: {
@@ -68,7 +90,7 @@ describe("extractClaims", () => {
     expect(claims).toStrictEqual(expected);
   });
 
-  it("all designated claims from an EmployeeCredential are extracted", async () => {
+  it("all designated claims from an EmployeeCredential ldp_vc are extracted", async () => {
     var claims = extractClaims(vpEmployee, policyEmployeeFromAnyone);
     var expected = {
       tokenAccess: {},
@@ -81,7 +103,7 @@ describe("extractClaims", () => {
     expect(claims).toStrictEqual(expected);
   });
 
-  it("all designated claims from a multi VC (EmailPass) are extracted", async () => {
+  it("all designated claims from a multi VC (EmailPass) ldp_vc are extracted", async () => {
     var claims = extractClaims(vpMultiEmail, policyMultiEmailFromAltmeConstr);
     var expected = {
       tokenAccess: {},
@@ -93,7 +115,7 @@ describe("extractClaims", () => {
     expect(claims).toStrictEqual(expected);
   });
 
-  it("all designated claims from a multi VC (EmailPass and VerifiableId) are extracted", async () => {
+  it("all designated claims from a multi VC (EmailPass and VerifiableId) ldp_vc are extracted", async () => {
     var claims = extractClaims(vpMultiVC, policyMultiVCromAltmeConstr);
     var expected = {
       tokenAccess: {},
@@ -105,19 +127,19 @@ describe("extractClaims", () => {
     expect(claims).toStrictEqual(expected);
   });
 
-  it("fails for claims from a multi VC (EmailPass and VerifiableId) with misconfigured policy", async () => {
+  it("fails for claims from a multi VC (EmailPass and VerifiableId) ldp_vc with misconfigured policy", async () => {
     expect(() =>
       extractClaims(vpMultiVC, policyAcceptMultiVCMisconfigured as LoginPolicy),
     ).toThrowError();
   });
 
-  it("fails claims from a EmailPass with misconfigured policy", async () => {
+  it("fails claims from a EmailPass ldp_vc with misconfigured policy", async () => {
     expect(() =>
       extractClaims(vpEmail, policyAcceptAnythingMisconfigured),
     ).toThrowError();
   });
 
-  it("all designated claims from a multi VC (EmailPass and VerifiableId)", async () => {
+  it("all designated claims from a multi VC (EmailPass and VerifiableId) ldp_vc", async () => {
     var claims = extractClaims(vpMultiVC, policyAcceptAnythingMultiVC);
     var expected = {
       tokenAccess: {},

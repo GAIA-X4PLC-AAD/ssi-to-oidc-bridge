@@ -11,6 +11,29 @@ import {
 import jp from "jsonpath";
 import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 import { isLoginPolicy } from "@/lib/isLoginPolicy";
+import { jsonFromJWT } from "@/lib/jwtVerification";
+
+const getCredentialsFromPresentation = (VP: any): any[] => {
+  let creds;
+  if (typeof VP === "string" && VP.split(".").length === 3) {
+    const payload = jsonFromJWT(VP);
+
+    creds = Array.isArray(payload.vp.verifiableCredential)
+      ? payload.vp.verifiableCredential
+      : [payload.vp.verifiableCredential];
+    creds = creds.map(jsonFromJWT);
+  } else {
+    creds = Array.isArray(VP.verifiableCredential)
+      ? VP.verifiableCredential
+      : [VP.verifiableCredential];
+  }
+
+  if (creds.length < 1) {
+    throw Error("Verifiable Presentation has no VCs");
+  }
+
+  return creds;
+};
 
 export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
   var configuredPolicy = getConfiguredLoginPolicy();
@@ -20,11 +43,8 @@ export const isTrustedPresentation = (VP: any, policy?: LoginPolicy) => {
     throw Error("Configured login policy has syntax error");
   }
 
-  var usedPolicy = policy ? policy : configuredPolicy!;
-
-  const creds = Array.isArray(VP.verifiableCredential)
-    ? VP.verifiableCredential
-    : [VP.verifiableCredential];
+  const usedPolicy = policy ? policy : configuredPolicy!;
+  const creds = getCredentialsFromPresentation(VP);
 
   return getConstraintFit(creds, usedPolicy, VP).length > 0;
 };
@@ -37,11 +57,8 @@ export const extractClaims = (VP: any, policy?: LoginPolicy) => {
     throw Error("Configured login policy has syntax error");
   }
 
-  var usedPolicy = policy ? policy : configuredPolicy!;
-
-  const creds = Array.isArray(VP.verifiableCredential)
-    ? VP.verifiableCredential
-    : [VP.verifiableCredential];
+  const usedPolicy = policy ? policy : configuredPolicy!;
+  const creds = getCredentialsFromPresentation(VP);
 
   const fit = getConstraintFit(creds, usedPolicy, VP);
   const patternFit = getPatternConstraintFit(fit, usedPolicy, VP);
@@ -133,7 +150,11 @@ const isCredentialFittingPattern = (
   cred: any,
   pattern: CredentialPattern,
 ): boolean => {
-  if (cred.issuer !== pattern.issuer && pattern.issuer !== "*") {
+  if (Object.hasOwn(cred, "vc") && Object.hasOwn(cred, "iss")) {
+    if (cred.iss !== pattern.issuer && pattern.issuer !== "*") {
+      return false;
+    }
+  } else if (cred.issuer !== pattern.issuer && pattern.issuer !== "*") {
     return false;
   }
 
@@ -332,6 +353,8 @@ const extractClaimsFromVC = (VC: any, pattern: CredentialPattern) => {
 
   for (let claim of pattern.claims) {
     const nodes = jp.nodes(VC, claim.claimPath);
+    if (nodes.length === 0) continue;
+
     let newPath = claim.newPath;
     let value: any;
 

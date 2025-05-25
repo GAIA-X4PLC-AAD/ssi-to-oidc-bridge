@@ -9,3 +9,10 @@ export async function jwtVerifyWrap(
 ) {
   return jwtVerify(token, secret, options);
 }
+
+export function jsonFromJWT(token: string) {
+  const [headerB64, payloadB64] = token.split(".");
+  const header = JSON.parse(Buffer.from(headerB64, "base64url").toString());
+  const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
+  return { ...header, ...payload };
+}

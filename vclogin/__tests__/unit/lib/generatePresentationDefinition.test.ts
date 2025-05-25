@@ -33,7 +33,18 @@ describe("generatePresentationDefinition", () => {
     expect(generatePresentationDefinition(policyFromAltme)).not.toBe(undefined);
   });
 
-  it("produces a valid definition", () => {
+  it("produces a valid definition for policyAcceptAnything", () => {
+    const def = generatePresentationDefinition(policyAcceptAnything);
+    const checkArray = PEX.validateDefinition(
+      def as IPresentationDefinition,
+    ) as Array<Checked>;
+    const problemCount = checkArray.filter(
+      (check) => check.status !== "info",
+    ).length;
+    expect(problemCount).toBe(0);
+  });
+
+  it("produces a valid definition for policyEmailFromAltme", () => {
     const def = generatePresentationDefinition(policyEmailFromAltme);
     const checkArray = PEX.validateDefinition(
       def as IPresentationDefinition,
@@ -44,7 +55,21 @@ describe("generatePresentationDefinition", () => {
     expect(problemCount).toBe(0);
   });
 
-  it("produces a definition that accepts a test VP", () => {
+  it("produces a definition that accepts a test ldp_vp for anything", () => {
+    const pex = new PEX();
+    const def = generatePresentationDefinition(policyAcceptAnything);
+    const modVP = JSON.parse(JSON.stringify(vpEmail));
+    // the PEX library seems to expect the credentials to always be an array
+    modVP.verifiableCredential = [vpEmail.verifiableCredential];
+    const { warnings, errors } = pex.evaluatePresentation(
+      def as IPresentationDefinition,
+      modVP,
+    );
+    expect(warnings!.length).toBe(0);
+    expect(errors!.length).toBe(0);
+  });
+
+  it("produces a definition that accepts a test ldp_vp for Email", () => {
     const pex = new PEX();
     const def = generatePresentationDefinition(policyEmailFromAltme);
     const modVP = JSON.parse(JSON.stringify(vpEmail));

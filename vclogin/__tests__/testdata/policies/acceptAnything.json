@@ -7,8 +7,16 @@
         "claims": [
           {
             "claimPath": "$.credentialSubject.*",
-            "newPath": "$.subjectData",
-            "required": false
+            "newPath": "$.subjectData"
+          }
+        ]
+      },
+      {
+        "issuer": "*",
+        "claims": [
+          {
+            "claimPath": "$.vc.credentialSubject.*",
+            "newPath": "$.subjectData"
           }
         ]
       }

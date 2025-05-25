@@ -14,6 +14,7 @@ import { getConfiguredLoginPolicy } from "@/config/loginPolicy";
 import { withLogging } from "@/middleware/logging";
 import { logger } from "@/config/logger";
 import { redisSet, redisGet } from "@/config/redis";
+import { jsonFromJWT } from "@/lib/jwtVerification";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
@@ -61,9 +62,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
       res.status(200);
       res.send(token);
     } else if (method === "POST") {
-      // Parse the JSON string into a JavaScript object
-      const presentation = JSON.parse(req.body.vp_token);
       logger.debug(req.body.vp_token, "Verifiable Presentation was sent");
+      // Parse the JSON string into a JavaScript object if it is ldp_vp
+      let presentation = req.body.vp_token;
+      if (!(presentation.split(".").length === 3)) {
+        presentation = JSON.parse(presentation);
+      }
 
       // Verify the presentation and the status of the credential
       if (await verifyAuthenticationPresentation(presentation)) {
@@ -83,8 +87,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
 
       // Get the user claims
       const userClaims = extractClaims(presentation);
-      const subject = presentation["holder"];
-      const login_id = presentation["proof"]["challenge"];
+      let subject: string, login_id: string;
+      if (
+        Object.hasOwn(presentation, "holder") &&
+        Object.hasOwn(presentation, "proof")
+      ) {
+        subject = presentation["holder"];
+        login_id = presentation["proof"]["challenge"];
+      } else {
+        const payload = jsonFromJWT(presentation);
+        subject = payload.sub;
+        login_id = payload.nonce;
+      }
+
       const challenge = (await redisGet("" + login_id))!;
       logger.debug({ subject, challenge }, "Sign-in confirmed");
 
@@ -134,7 +149,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
             }),
         )
         // This will handle any error that happens when making HTTP calls to hydra
-        .catch((_) => res.status(401).end());
+        .catch((error) => {
+          logger.error(error, "Failed to login with hydra");
+          res.status(401).end();
+        });
     } else {
       res.status(500).end();
     }

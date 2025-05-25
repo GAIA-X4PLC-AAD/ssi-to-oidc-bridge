@@ -48,18 +48,25 @@ export const generatePresentationDefinition = (
 
   for (let expectation of policy) {
     if (expectation.patterns.length > 1) {
-      let req = {
+      const req = {
         name: "Group " + expectation.credentialId,
         rule: "pick",
         count: 1,
         from: "group_" + expectation.credentialId,
       };
-      pd.submission_requirements!.push(req);
+      let { submission_requirements } = pd;
+      if (!submission_requirements) {
+        submission_requirements = [];
+      }
+      pd["submission_requirements"] = submission_requirements.concat(req);
     }
 
     for (let pattern of expectation.patterns) {
       let descr: InputDescriptor = {
-        id: expectation.credentialId,
+        id:
+          expectation.credentialId +
+          "pattern" +
+          expectation.patterns.indexOf(pattern),
         purpose: "Sign-in",
         name: "Input descriptor for " + expectation.credentialId,
         constraints: {},
