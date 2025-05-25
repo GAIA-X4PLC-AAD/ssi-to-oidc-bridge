@@ -48,6 +48,17 @@ users to use their Gaia-X Participant Credentials to access systems while making
 integration simpler through the use of established SSO protocols. The bridge can
 also be configured to use other Verifiable Credentials.
 
+### Compatibility
+
+This artifact is intended to at minimum work with:
+
+- OID4VP Draft 18
+- W3C Verifiable Credentials v1
+  - ldp_vc, ldp_vp, jwt_vc_json, jwt_vp_json
+  - for jwt proofs, additionally an experimental one based on Tezos wallet
+    signatures is supported (ref.
+    <https://github.com/GAIA-X4PLC-AAD/gx-credentials>)
+
 ## Architecture
 
 There are two main components to this project, as well as some additional
@@ -258,7 +269,7 @@ To validate the running bridge with a simple OIDC client:
 
 <!-- prettier-ignore -->
 > [!NOTE]
-> You might run into a "Permisson denied" issue when running the shell
+> You might run into a "Permission denied" issue when running the shell
 > script `./test_client.sh`. You need to mark the file as executable using
 > `chmod +x ./test_client.sh`.
 
@@ -379,9 +390,11 @@ A pattern object has the following fields:
 
 - `claimPath` is a JSONPath that points to one or more values in the credential.
   If it points to multiple values, they will be aggregated into a new object and
-  indexed by just their final JSONPath component. _This is generally convenient,
-  but can lead to values being overwritten if not careful, and working with a
-  credential that uses the same path components in different depths._
+  indexed by just their final JSONPath component. For `ldp_vc`, the path begins
+  at their root, and for `jwt_vc`, the path begins at the payload root. _This is
+  generally convenient, but can lead to values being overwritten if not careful,
+  and working with a credential that uses the same path components in different
+  depths._
 - `newPath` is the new path of the value relative to the root of the token it
   will be written into. This value is optional, as long as `claimPath` points to
   exactly one value. In that case, it defaults to
