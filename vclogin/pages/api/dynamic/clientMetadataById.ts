@@ -12,8 +12,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
     const { method } = req;
     if (method === "GET") {
       const metadata = getMetadata([
-        process.env.NEXT_PUBLIC_INTERNET_URL +
-          "/api/dynamic/presentCredentialById",
+        process.env.EXTERNAL_URL + "/api/dynamic/presentCredentialById",
       ]);
       res.status(200).json(metadata);
     } else {
