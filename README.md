@@ -331,7 +331,7 @@ PEX_DESCRIPTOR_OVERRIDE=./__tests__/testdata/pex/descriptorAnything.json
 HYDRA_ADMIN_URL=http://localhost:5001
 REDIS_HOST=localhost
 REDIS_PORT=6379
-API_KEY=<api-key>
+INCR_AUTH_API_KEY=<api-secret>
 ```
 
 _Note: The PEX_DESCRIPTOR_OVERRIDE is optional and provides a way to override
