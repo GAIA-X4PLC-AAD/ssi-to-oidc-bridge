@@ -1,0 +1,13 @@
+onlyBuiltDependencies:
+  - '@scarf/scarf'
+  - '@sphereon/pex'
+  - '@taquito/taquito'
+  - '@tree-sitter-grammars/tree-sitter-yaml'
+  - core-js-pure
+  - cpu-features
+  - esbuild
+  - protobufjs
+  - ssh2
+  - tree-sitter
+  - tree-sitter-json
+  - unrs-resolver
