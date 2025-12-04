@@ -25,12 +25,14 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: "**/package-lock.json"
+          cache-dependency-path: "**/pnpm-lock.yaml"
+      - name: Install pnpm
+        run: npm install -g pnpm
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Build vclogin
-        run: npm run build --if-present
+        run: pnpm run build
       - name: Test vclogin
-        run: npm test
+        run: pnpm run test
       - name: Lint vclogin
-        run: npm run lint
+        run: pnpm run lint
