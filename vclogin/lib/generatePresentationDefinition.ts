@@ -40,8 +40,8 @@ export const generatePresentationDefinition = (
   } else if (incrAuthInputDescriptor) {
     pd.input_descriptors = incrAuthInputDescriptor;
     logger.debug(
-      "Using input descriptor override for incremental authorization",
       pd,
+      "Using input descriptor override for incremental authorization",
     );
     return pd;
   }
